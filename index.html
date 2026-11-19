@@ -1,0 +1,1232 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comando Integrado de Campanha</title>
+<meta name="description" content="Proposta de uma nova aplicação de monitoramento de campanha que une o CRM de rede da Engaja, a inteligência eleitoral da Política ONE e o planejamento territorial do Comando 2026.">
+<meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16181b" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light dark;
+  --fundo:#f4f1ea; --superficie:#fffdf8; --superficie-2:#ece8de; --linha:#d9d3c5; --linha-forte:#b9b1a0;
+  --texto:#1d1f22; --texto-suave:#55585e; --texto-fraco:#7a7d83;
+  --acao:#0b5c4a; --acao-texto:#ffffff; --acao-suave:#d8ebe4;
+  --alerta:#9a4b00; --alerta-suave:#f7e6d2; --perigo:#a1262b; --perigo-suave:#f6dcdc;
+  --tag-e:#2b5fa8; --tag-p:#7a3e9d; --tag-c:#0b5c4a; --tag-n:#9a4b00;
+  --sombra: 0 0 0 1px rgb(0 0 0 / .06), 0 1px 2px -1px rgb(0 0 0 / .08), 0 4px 10px 0 rgb(0 0 0 / .04);
+  --raio:10px; --raio-g:16px;
+  --sans:"IBM Plex Sans", system-ui, sans-serif; --serif:"IBM Plex Serif", Georgia, serif; --mono:"IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --fundo:#16181b; --superficie:#1e2125; --superficie-2:#262a2f; --linha:#33383e; --linha-forte:#4a5058;
+    --texto:#ecebe7; --texto-suave:#b3b5b9; --texto-fraco:#8d9096;
+    --acao:#5cc6a7; --acao-texto:#0d1a16; --acao-suave:#1d3b33;
+    --alerta:#f0a35c; --alerta-suave:#3a2a19; --perigo:#f08a8e; --perigo-suave:#3b2022;
+    --tag-e:#86b0f0; --tag-p:#c9a0e6; --tag-c:#5cc6a7; --tag-n:#f0a35c;
+    --sombra: 0 0 0 1px rgb(255 255 255 / .07);
+  }
+}
+:root[data-theme="dark"]{
+  --fundo:#16181b; --superficie:#1e2125; --superficie-2:#262a2f; --linha:#33383e; --linha-forte:#4a5058;
+  --texto:#ecebe7; --texto-suave:#b3b5b9; --texto-fraco:#8d9096;
+  --acao:#5cc6a7; --acao-texto:#0d1a16; --acao-suave:#1d3b33;
+  --alerta:#f0a35c; --alerta-suave:#3a2a19; --perigo:#f08a8e; --perigo-suave:#3b2022;
+  --tag-e:#86b0f0; --tag-p:#c9a0e6; --tag-c:#5cc6a7; --tag-n:#f0a35c;
+  --sombra: 0 0 0 1px rgb(255 255 255 / .07);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--fundo);color:var(--texto);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--acao);text-underline-offset:3px;text-decoration-thickness:from-font}
+h1,h2,h3,h4{line-height:1.15;text-wrap:balance;margin:0}
+p{text-wrap:pretty;margin:0 0 .8em}
+.num,td.n,.tab{font-variant-numeric:tabular-nums}
+code,.mono{font-family:var(--mono);font-size:.88em}
+code{background:var(--superficie-2);padding:.08em .35em;border-radius:5px;overflow-wrap:anywhere}
+:focus-visible{outline:2px solid var(--acao);outline-offset:2px;border-radius:4px}
+.pular{position:absolute;left:-999px;top:8px;background:var(--acao);color:var(--acao-texto);padding:8px 12px;border-radius:8px;z-index:50}
+.pular:focus{left:8px}
+
+/* layout */
+.casca{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:100vh}
+nav.lateral{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--linha);padding:24px 16px;background:var(--fundo)}
+.marca{font-family:var(--serif);font-weight:600;font-size:19px;line-height:1.2;margin-bottom:4px}
+.marca-sub{font-size:12.5px;color:var(--texto-fraco);margin-bottom:20px}
+nav.lateral ol{list-style:none;margin:0;padding:0;counter-reset:s}
+nav.lateral li{counter-increment:s}
+nav.lateral a{display:flex;gap:10px;padding:6px 8px;border-radius:8px;color:var(--texto-suave);text-decoration:none;font-size:14px;line-height:1.3}
+nav.lateral a::before{content:counter(s,decimal-leading-zero);font-family:var(--mono);font-size:12px;color:var(--texto-fraco);padding-top:1px}
+nav.lateral a:hover{background:var(--superficie-2);color:var(--texto)}
+nav.lateral a.ativo{background:var(--acao-suave);color:var(--texto);font-weight:600}
+.tema{margin-top:20px;display:flex;gap:6px}
+.tema button{flex:1}
+main{padding:40px 48px 96px;max-width:1180px}
+section{scroll-margin-top:24px;padding-top:56px}
+section:first-child{padding-top:0}
+.rotulo{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--texto-fraco);margin-bottom:10px}
+h1{font-family:var(--serif);font-size:clamp(34px,4.6vw,54px);font-weight:600;letter-spacing:-.015em;max-width:18ch}
+h2{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:-.01em;margin-bottom:14px}
+h3{font-size:18px;font-weight:600;margin:24px 0 8px}
+h4{font-size:15px;font-weight:600;margin:0 0 6px}
+.lead{font-size:18px;color:var(--texto-suave);max-width:68ch;margin-top:16px}
+.texto{max-width:72ch}
+.suave{color:var(--texto-suave)}
+.fraco{color:var(--texto-fraco);font-size:13.5px}
+
+/* blocos */
+.cartao{background:var(--superficie);border-radius:var(--raio-g);box-shadow:var(--sombra);padding:20px}
+.grade{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.kpi .v{font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .d{font-size:13.5px;color:var(--texto-suave);margin-top:4px}
+.aviso{border-left:3px solid var(--alerta);background:var(--alerta-suave);padding:12px 16px;border-radius:0 var(--raio) var(--raio) 0;margin:16px 0}
+.aviso.perigo{border-color:var(--perigo);background:var(--perigo-suave)}
+.aviso.ok{border-color:var(--acao);background:var(--acao-suave)}
+ul.lista{padding-left:20px;margin:0 0 .8em}
+ul.lista li{margin:3px 0}
+
+/* tabelas */
+.tabela-wrap{overflow-x:auto;border-radius:var(--raio-g);box-shadow:var(--sombra);background:var(--superficie);margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--linha);vertical-align:top}
+th{font-weight:600;background:var(--superficie-2);position:sticky;top:0;font-size:13px}
+tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right}
+.s{font-family:var(--mono);font-size:12px;padding:2px 7px;border-radius:99px;white-space:nowrap;display:inline-block}
+.s-sim{background:var(--acao-suave);color:var(--texto)}
+.s-par{background:var(--alerta-suave);color:var(--texto)}
+.s-nao{background:var(--superficie-2);color:var(--texto-fraco)}
+
+/* tags de origem */
+.tag{font-family:var(--mono);font-size:11.5px;font-weight:500;padding:1px 7px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
+.tag.e{color:var(--tag-e)} .tag.p{color:var(--tag-p)} .tag.c{color:var(--tag-c)} .tag.n{color:var(--tag-n)}
+
+/* controles */
+button,.botao{font:inherit;font-size:14px;font-weight:500;padding:8px 14px;border-radius:10px;border:1px solid var(--linha-forte);background:var(--superficie);color:var(--texto);cursor:pointer;touch-action:manipulation;transition-property:background-color,border-color,transform;transition-duration:.15s}
+button:hover{background:var(--superficie-2)}
+button:active{transform:scale(.97)}
+button[aria-pressed="true"],button.on{background:var(--acao);color:var(--acao-texto);border-color:var(--acao)}
+.filtros{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+label.campo{display:flex;flex-direction:column;gap:4px;font-size:13.5px;color:var(--texto-suave)}
+input[type=number],input[type=text],select{font:inherit;font-size:16px;padding:7px 10px;border-radius:8px;border:1px solid var(--linha-forte);background:var(--superficie);color:var(--texto);width:100%;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--acao)}
+
+/* módulos */
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.mod{display:flex;flex-direction:column;gap:8px}
+.mod header{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.mod .id{font-family:var(--mono);font-size:12px;color:var(--texto-fraco)}
+.mod .tags{display:flex;gap:5px;flex-wrap:wrap}
+.mod details{border-top:1px solid var(--linha);padding-top:8px;margin-top:auto}
+.mod summary{cursor:pointer;font-size:14px;font-weight:500;color:var(--acao)}
+.mod ul{padding-left:18px;margin:8px 0 0;font-size:14px}
+.mod li{margin:4px 0}
+.fase{font-family:var(--mono);font-size:11.5px;color:var(--texto-fraco)}
+
+/* fluxos */
+.fluxo-abas{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px}
+.passos{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;counter-reset:p}
+.passo{counter-increment:p;position:relative;flex:1 1 150px;min-width:150px;text-align:left;padding:12px 12px 12px 12px;border-radius:12px;background:var(--superficie);box-shadow:var(--sombra);border:1px solid transparent;cursor:pointer}
+.passo::before{content:counter(p);font-family:var(--mono);font-size:12px;color:var(--texto-fraco);display:block}
+.passo strong{display:block;font-size:14px;line-height:1.3}
+.passo span{display:block;font-size:12.5px;color:var(--texto-suave);margin-top:4px;line-height:1.35}
+.passo.on{border-color:var(--acao);background:var(--acao-suave)}
+.passo:not(:last-child)::after{content:"";position:absolute;right:-9px;top:50%;width:8px;height:2px;background:var(--linha-forte)}
+.detalhe-tela{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;margin-top:18px}
+
+/* wireframes */
+.wf{background:var(--superficie-2);border-radius:14px;padding:10px;font-size:11.5px;color:var(--texto-suave);font-family:var(--mono);min-height:320px;display:flex;flex-direction:column;gap:6px}
+.wf.cel{max-width:300px;margin:0 auto;border:6px solid var(--linha-forte);border-radius:26px;padding:12px 10px}
+.wf-barra{display:flex;gap:6px;align-items:center;background:var(--superficie);border-radius:8px;padding:6px 8px}
+.wf-barra .esp{flex:1}
+.wf-linha{display:flex;gap:6px}
+.wf-linha>*{flex:1}
+.wf-b{background:var(--superficie);border:1px dashed var(--linha-forte);border-radius:8px;padding:7px 8px;min-height:34px;line-height:1.3}
+.wf-b b{display:block;color:var(--texto);font-weight:500;font-size:11.5px}
+.wf-b.alto{min-height:110px}
+.wf-b.mapa{min-height:160px;background:repeating-linear-gradient(45deg,var(--superficie),var(--superficie) 8px,var(--superficie-2) 8px,var(--superficie-2) 16px)}
+.wf-b.acao{border-style:solid;border-color:var(--acao);color:var(--acao);text-align:center}
+.wf-b.k{min-height:46px}
+.wf-menu{display:flex;flex-direction:column;gap:4px;flex:0 0 74px !important}
+.wf-menu i{font-style:normal;background:var(--superficie);border-radius:6px;padding:4px 5px}
+.wf-menu i.on{background:var(--acao-suave);color:var(--texto)}
+.ficha h3{margin-top:0}
+.ficha dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px}
+.ficha dt{font-weight:600;color:var(--texto-suave)}
+.ficha dd{margin:0}
+
+/* diagrama indicação */
+.cadeia{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
+.no{background:var(--superficie);box-shadow:var(--sombra);border-radius:10px;padding:8px 12px}
+.no small{display:block;color:var(--texto-fraco);font-size:12px}
+.seta{color:var(--texto-fraco);font-family:var(--mono)}
+.arvore{font-family:var(--mono);font-size:13px;line-height:1.7;background:var(--superficie);box-shadow:var(--sombra);border-radius:var(--raio-g);padding:16px 20px;overflow-x:auto;white-space:pre}
+
+/* calculadoras */
+.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.calc .entradas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.barra{height:10px;background:var(--superficie-2);border-radius:99px;overflow:hidden}
+.barra i{display:block;height:100%;background:var(--acao);border-radius:99px;transition:width .25s ease-out}
+.comp{display:grid;grid-template-columns:150px 1fr 56px;gap:10px;align-items:center;font-size:14px;margin:7px 0}
+.comp .num{text-align:right}
+.nota{font-size:54px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.classe{font-family:var(--mono);font-size:13px;padding:3px 10px;border-radius:99px;background:var(--acao-suave);display:inline-block;margin-top:8px}
+.fx{font-family:var(--mono);font-size:13px;background:var(--superficie-2);padding:10px 12px;border-radius:10px;overflow-x:auto;white-space:pre-wrap;line-height:1.6}
+.matriz{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.matriz .q{padding:14px;border-radius:12px;background:var(--superficie);box-shadow:var(--sombra);min-height:110px}
+.matriz .q b{display:block;margin-bottom:4px}
+.roteiro{display:grid;gap:12px}
+.etapa{display:grid;grid-template-columns:120px 1fr;gap:16px;align-items:start}
+.etapa .quando{font-family:var(--mono);font-size:13px;color:var(--texto-fraco);padding-top:20px}
+footer{margin-top:72px;padding-top:20px;border-top:1px solid var(--linha);font-size:13.5px;color:var(--texto-fraco)}
+
+@media (max-width:980px){
+  .casca{grid-template-columns:1fr}
+  nav.lateral{position:static;height:auto;border-right:0;border-bottom:1px solid var(--linha);padding:16px}
+  nav.lateral ol{display:flex;flex-wrap:wrap;gap:4px}
+  nav.lateral a{font-size:13px;padding:5px 8px}
+  main{padding:28px 16px 72px}
+  .g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .detalhe-tela,.calc{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .calc .entradas{grid-template-columns:1fr}
+  .comp{grid-template-columns:110px 1fr 48px}
+  .etapa{grid-template-columns:1fr;gap:4px}
+  .etapa .quando{padding-top:0}
+  .passo:not(:last-child)::after{display:none}
+  .matriz{grid-template-columns:1fr}
+}
+@media print{nav.lateral,.filtros,.tema{display:none}.casca{display:block}main{padding:0}}
+</style>
+</head>
+<body>
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+<div class="casca">
+<nav class="lateral" aria-label="Seções da proposta">
+  <div class="marca">Comando Integrado de Campanha</div>
+  <div class="marca-sub">Proposta de aplicação, versão 1, 19/11/2026</div>
+  <ol id="indice">
+    <li><a href="#resumo">Resumo</a></li>
+    <li><a href="#diagnostico">O que as 3 aplicações fazem</a></li>
+    <li><a href="#matriz">Matriz de funcionalidades</a></li>
+    <li><a href="#principios">Princípios da nova aplicação</a></li>
+    <li><a href="#modulos">Módulos</a></li>
+    <li><a href="#fluxos">Fluxos de telas</a></li>
+    <li><a href="#indicacao">Rastreio da indicação</a></li>
+    <li><a href="#eficacia">Eficácia das lideranças</a></li>
+    <li><a href="#clusters">Clusters de municípios</a></li>
+    <li><a href="#calculos">Cálculos e projeções</a></li>
+    <li><a href="#quociente">Simulador de vaga</a></li>
+    <li><a href="#relatorios">Relatórios</a></li>
+    <li><a href="#alertas">Monitoramentos e alertas</a></li>
+    <li><a href="#perfis">Perfis e permissões</a></li>
+    <li><a href="#dados">Modelo de dados</a></li>
+    <li><a href="#arquitetura">Arquitetura</a></li>
+    <li><a href="#roteiro">Roteiro em fases</a></li>
+    <li><a href="#riscos">Riscos e correções urgentes</a></li>
+  </ol>
+  <div class="tema" role="group" aria-label="Tema">
+    <button type="button" data-tema="light">Claro</button>
+    <button type="button" data-tema="dark">Escuro</button>
+  </div>
+</nav>
+
+<main id="conteudo">
+
+<!-- 01 -->
+<section id="resumo">
+  <div class="rotulo">01 · Resumo</div>
+  <h1>Uma só aplicação para a rede, o território e o voto</h1>
+  <p class="lead">Esta proposta junta três aplicações numa só. A Engaja registra a rede de apoiadores. A Política ONE mostra os dados eleitorais oficiais. O Comando 2026 planeja metas por liderança e por município. A nova aplicação liga as três pontas: quem indicou quem, onde essa rede vota e quantos votos ela trouxe de fato.</p>
+
+  <div class="grade g4" style="margin-top:28px">
+    <div class="cartao kpi"><div class="v">16</div><div class="d">módulos propostos, cada um com a origem da ideia</div></div>
+    <div class="cartao kpi"><div class="v">4</div><div class="d">fluxos de telas com esboço de cada tela</div></div>
+    <div class="cartao kpi"><div class="v">3</div><div class="d">calculadoras para testar as regras nesta página</div></div>
+    <div class="cartao kpi"><div class="v">5</div><div class="d">fases de entrega, da correção urgente ao pós-eleição</div></div>
+  </div>
+
+  <h3>O problema</h3>
+  <ul class="lista texto">
+    <li>A rede fica na Engaja. O plano de metas fica no Comando 2026. O dado oficial fica na Política ONE e em arquivos do TSE. Nenhuma das três liga a rede ao voto real.</li>
+    <li>A Engaja guarda só o último responsável de cada pessoa. Ela não guarda canal, UTM nem histórico de troca de vínculo.</li>
+    <li>O Comando 2026 tem 3 regras diferentes de potencial. O mesmo município recebe 3 notas diferentes.</li>
+    <li>Nenhuma das três mede a eficácia da liderança em votos. Elas medem cadastros.</li>
+  </ul>
+
+  <h3>A proposta em 5 pontos</h3>
+  <ol class="lista texto">
+    <li><strong>Pessoa única.</strong> Contato, liderança, responsável e membro da equipe são a mesma pessoa, com papéis diferentes. A ideia vem da Engaja.</li>
+    <li><strong>Indicação como registro próprio.</strong> Cada indicação grava quem indicou, por qual link, canal, evento e UTM. A troca de vínculo fica no histórico.</li>
+    <li><strong>Meta com dono.</strong> A meta nasce do par liderança × município e soma no município, na GRE, no cluster e no estado. A ideia vem do Comando 2026.</li>
+    <li><strong>Voto real no fim da cadeia.</strong> O resultado do TSE por seção entra no mesmo banco. A aplicação compara a rede de cada liderança com o voto das seções onde essa rede vota. A base de dados oficiais vem da Política ONE.</li>
+    <li><strong>Todo número com base, fonte e data.</strong> Toda tela diz de onde vem o número, quando foi calculado e se é estimativa. A regra vem da Política ONE.</li>
+  </ol>
+
+  <div class="aviso">
+    <strong>Contexto de data.</strong> A eleição de 04/10/2026 já passou. A primeira entrega útil é o diagnóstico de 2026: meta × resultado por município e por liderança. A aplicação completa serve ao próximo ciclo (2028 e 2030) e pode atender várias campanhas ao mesmo tempo.
+  </div>
+</section>
+
+<!-- 02 -->
+<section id="diagnostico">
+  <div class="rotulo">02 · Diagnóstico</div>
+  <h2>O que cada aplicação faz hoje</h2>
+  <p class="texto suave">A base deste diagnóstico são 3 inventários feitos em 19/11/2026: o mapa da Engaja (595 rotas, 63 seções de telas), a documentação da Política ONE (46 telas, mais de 60 endpoints) e o código do Comando 2026 (HTML de 4,15 MB e o schema <code>campanha</code> do Supabase).</p>
+
+  <div class="grade g3" style="margin-top:20px">
+    <article class="cartao">
+      <div class="rotulo"><span class="tag e">Engaja</span></div>
+      <h3 style="margin-top:4px">CRM da rede de apoiadores</h3>
+      <p class="suave" style="font-size:14.5px">Laravel e React. A pessoa (<code>people</code>) é a entidade central.</p>
+      <ul class="lista" style="font-size:14.5px">
+        <li>Responsável direto por pessoa e rede em 3 níveis (Próxima, Engajada, Multiplicada).</li>
+        <li>Link de indicação: landing page com <code>?p=</code> id da pessoa.</li>
+        <li>20 tipos de "pegada" na linha do tempo da pessoa.</li>
+        <li>Metas por campanha, agrupamento, cidade, bairro, local de votação e cabo eleitoral.</li>
+        <li>Ranking semanal com 3 pontos por cadastro direto e 1 ponto por cadastro da rede.</li>
+        <li>Projeção Prophet, chance de bater a meta e relatório diário de IA.</li>
+        <li>Editor de landing pages, API de cadastro, 10 eventos de webhook, aplicativo offline.</li>
+        <li>Dobradas entre campanhas com consentimento.</li>
+      </ul>
+      <h4 style="margin-top:12px">Lacunas</h4>
+      <ul class="lista fraco">
+        <li>Sem UTM, sem canal, sem histórico de indicação.</li>
+        <li>Sem qualidade da liderança e sem voto real por liderança.</li>
+        <li>Só 12 locais de votação identificados na campanha.</li>
+        <li>417 localidades com meta incongruente (58.812 votos de diferença); o sistema só alerta.</li>
+        <li>Sem eventos, tarefas e disparo em massa.</li>
+      </ul>
+    </article>
+    <article class="cartao">
+      <div class="rotulo"><span class="tag p">Política ONE</span></div>
+      <h3 style="margin-top:4px">Inteligência eleitoral pública</h3>
+      <p class="suave" style="font-size:14.5px">Nuxt com API própria. Dados do TSE, Câmara, Senado, CGU, IBGE e BCB.</p>
+      <ul class="lista" style="font-size:14.5px">
+        <li>Pessoa única entre eleições de 2000 a 2026.</li>
+        <li>Resultado por cargo com % dos votos válidos e custo por voto.</li>
+        <li>Mapa com Força relativa (índice 100) e "De onde vem a base".</li>
+        <li>Apuração ao vivo com projeção, faixa de 80% e 95%, eventos, replay e telão.</li>
+        <li>Composição das casas com quociente eleitoral por UF.</li>
+        <li>10 rankings do mandato com método versionado e "base pequena".</li>
+        <li>Ficha do candidato em 8 abas: eleições, atuação, emendas, patrimônio, finanças, notícias, redes.</li>
+        <li>115 indicadores por município e local (Censo, renda, abstenção).</li>
+      </ul>
+      <h4 style="margin-top:12px">Lacunas</h4>
+      <ul class="lista fraco">
+        <li>Sem resultado e sem agregação de pesquisas.</li>
+        <li>Sem simulador de quociente e sobras para Deputado Federal.</li>
+        <li>Sem metas, regiões próprias e dados de campo.</li>
+        <li>Redes sociais sem métricas e sem sentimento.</li>
+      </ul>
+    </article>
+    <article class="cartao">
+      <div class="rotulo"><span class="tag c">Comando 2026</span></div>
+      <h3 style="margin-top:4px">Planejamento territorial da campanha</h3>
+      <p class="suave" style="font-size:14.5px">HTML único no GitHub Pages com Supabase (schema <code>campanha</code>).</p>
+      <ul class="lista" style="font-size:14.5px">
+        <li>645 municípios, 16 GREs, UGIs e unidades do CREA-SP.</li>
+        <li>Grade de planejamento: 3.142 vínculos liderança × município, com meta.</li>
+        <li>3.303 lideranças e 101 responsáveis.</li>
+        <li>Potencial por município em 3 cenários, com a conta no hover.</li>
+        <li>Estratégia 645: 6 clusters, ritmo, probabilidade de cumprir a meta e fila de ação.</li>
+        <li>Integração Engaja: webhook com HMAC, fila, cron de 5 min, carga CSV com conferência.</li>
+        <li>Mogi Mirim e Mogi Guaçu por escola (53 locais), setor e bairro.</li>
+        <li>Modo Vitrine e relatório em PDF.</li>
+      </ul>
+      <h4 style="margin-top:12px">Lacunas</h4>
+      <ul class="lista fraco">
+        <li>Cerca de 20 camadas de código que envolvem umas às outras.</li>
+        <li>Dados pessoais embutidos num endereço público.</li>
+        <li>Tabelas do TSE vazias no banco novo; webhook parado desde 11/11/2026.</li>
+        <li>3 regras de potencial; sem fase pós-eleição.</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<!-- 03 -->
+<section id="matriz">
+  <div class="rotulo">03 · Comparação</div>
+  <h2>Matriz de funcionalidades</h2>
+  <p class="texto suave">Cada linha diz se a função existe em cada aplicação hoje e o que a nova aplicação faz. Legenda: <span class="s s-sim">sim</span> existe e funciona; <span class="s s-par">parcial</span> existe com limite; <span class="s s-nao">não</span> não existe.</p>
+  <div class="filtros" role="group" aria-label="Filtrar a matriz">
+    <button type="button" data-mf="todas" class="on">Todas</button>
+    <button type="button" data-mf="novo">Só o que nenhuma tem</button>
+    <button type="button" data-mf="rede">Rede e captação</button>
+    <button type="button" data-mf="territorio">Território e metas</button>
+    <button type="button" data-mf="eleitoral">Dado eleitoral</button>
+    <button type="button" data-mf="operacao">Operação e comunicação</button>
+  </div>
+  <div class="tabela-wrap"><table id="tab-matriz"><thead><tr><th>Função</th><th>Engaja</th><th>Política ONE</th><th>Comando 2026</th><th>Nova aplicação</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<!-- 04 -->
+<section id="principios">
+  <div class="rotulo">04 · Princípios</div>
+  <h2>Oito regras que valem para todas as telas</h2>
+  <div class="grade g2" style="margin-top:16px">
+    <div class="cartao"><h4>1. Uma pessoa, um registro</h4><p class="suave" style="margin:0">Telefone com DDD é a chave de contato. CPF e título de eleitor são opcionais e validados pelo dígito. Duplicado vira fusão com histórico, nunca exclusão.</p></div>
+    <div class="cartao"><h4>2. Ausente não é zero</h4><p class="suave" style="margin:0">Sem dado, a tela mostra "sem dado". Um município sem meta não entra na média de cumprimento. A regra vem do Comando 2026.</p></div>
+    <div class="cartao"><h4>3. Todo número com base</h4><p class="suave" style="margin:0">Todo percentual diz de quê e de quem. Exemplo: "62% dos cadastros da rede de Fulano têm local de votação". A mesma medida usa a mesma base no sistema inteiro.</p></div>
+    <div class="cartao"><h4>4. Estimativa sempre marcada</h4><p class="suave" style="margin:0">Projeção, potencial e voto atribuído levam o selo "estimativa", a faixa de incerteza e a versão do método. Recorte com base pequena leva o selo "base pequena".</p></div>
+    <div class="cartao"><h4>5. Uma regra de potencial</h4><p class="suave" style="margin:0">Um só Potencial Único (PU) por município, com pesos editáveis pela coordenação e versão gravada. As 3 regras atuais saem do código.</p></div>
+    <div class="cartao"><h4>6. Nada pessoal fora do login</h4><p class="suave" style="margin:0">A página pública não leva nenhum dado pessoal embutido. Dados pessoais só saem do banco por função com permissão (RLS) e ficam no registro de auditoria.</p></div>
+    <div class="cartao"><h4>7. Celular primeiro para a liderança</h4><p class="suave" style="margin:0">A tela da liderança funciona no celular e sem internet. A tela da coordenação usa o computador, com tabelas e mapas densos.</p></div>
+    <div class="cartao"><h4>8. Proposta antes de mudança</h4><p class="suave" style="margin:0">Meta nova, liderança nova e troca de vínculo entram como proposta. O número oficial só muda depois da aprovação. A regra vem do Comando 2026.</p></div>
+  </div>
+</section>
+
+<!-- 05 -->
+<section id="modulos">
+  <div class="rotulo">05 · Módulos</div>
+  <h2>Dezesseis módulos</h2>
+  <p class="texto suave">Cada módulo diz de onde vem a ideia. <span class="tag e">E</span> Engaja, <span class="tag p">P</span> Política ONE, <span class="tag c">C</span> Comando 2026, <span class="tag n">N</span> novo, que nenhuma das três tem. Abra "Funcionalidades" em cada cartão para ver a lista completa.</p>
+  <div class="filtros" role="group" aria-label="Filtrar módulos por origem">
+    <button type="button" data-of="todas" class="on">Todos</button>
+    <button type="button" data-of="e">Com ideia da Engaja</button>
+    <button type="button" data-of="p">Com ideia da Política ONE</button>
+    <button type="button" data-of="c">Com ideia do Comando 2026</button>
+    <button type="button" data-of="n">Com parte nova</button>
+  </div>
+  <div class="filtros" role="group" aria-label="Filtrar módulos por fase" style="margin-top:-4px">
+    <button type="button" data-ff="todas" class="on">Todas as fases</button>
+    <button type="button" data-ff="1">Fase 1</button>
+    <button type="button" data-ff="2">Fase 2</button>
+    <button type="button" data-ff="3">Fase 3</button>
+    <button type="button" data-ff="4">Fase 4</button>
+  </div>
+  <div class="mods" id="lista-mods"></div>
+  <p class="fraco" id="conta-mods" role="status" style="margin-top:10px"></p>
+</section>
+
+<!-- 06 -->
+<section id="fluxos">
+  <div class="rotulo">06 · Fluxos de telas</div>
+  <h2>Como cada pessoa usa a aplicação</h2>
+  <p class="texto suave">Escolha um fluxo. Clique num passo para ver o esboço da tela, o que ela mostra, as ações e os dados que usa. Os esboços mostram a organização dos blocos, não o visual final.</p>
+  <div class="fluxo-abas" role="tablist" aria-label="Fluxos" id="abas-fluxo"></div>
+  <p id="fluxo-desc" class="texto suave"></p>
+  <div class="passos" id="passos"></div>
+  <div class="detalhe-tela" id="detalhe-tela"></div>
+</section>
+
+<!-- 07 -->
+<section id="indicacao">
+  <div class="rotulo">07 · Indicação</div>
+  <h2>Rastrear de quem veio cada indicação</h2>
+  <p class="texto">Na Engaja, a indicação é só um campo (<code>relation_people_id</code>) e o parâmetro <code>?p=</code> na landing page. Quando o vínculo muda, o anterior se perde. A nova aplicação grava cada indicação como um registro próprio, com canal e prova.</p>
+
+  <h3>A cadeia de uma indicação</h3>
+  <div class="cadeia" style="margin:12px 0 8px">
+    <div class="no">Liderança<small>dona do link</small></div><span class="seta">→</span>
+    <div class="no">Link curto<small>/c/K7M2Q · canal WhatsApp</small></div><span class="seta">→</span>
+    <div class="no">Clique<small>data, aparelho, UTM</small></div><span class="seta">→</span>
+    <div class="no">Cadastro<small>telefone, município, local de votação</small></div><span class="seta">→</span>
+    <div class="no">Indicação<small>pendente, confirmada ou recusada</small></div><span class="seta">→</span>
+    <div class="no">Rede e meta<small>pontos, ritmo, IEL</small></div><span class="seta">→</span>
+    <div class="no">Voto<small>seção onde a pessoa vota</small></div>
+  </div>
+
+  <div class="grade g2" style="margin-top:20px">
+    <div class="cartao">
+      <h4>Registros novos</h4>
+      <div class="tabela-wrap" style="box-shadow:none;margin:8px 0 0"><table>
+        <thead><tr><th>Registro</th><th>Campos principais</th></tr></thead>
+        <tbody>
+          <tr><td><code>link_convite</code></td><td>código curto, dono, landing page, canal, campanha de comunicação, evento, validade, cliques, cadastros</td></tr>
+          <tr><td><code>clique</code></td><td>link, data e hora, UTM (source, medium, campaign, content), referência, aparelho (hash), cidade aproximada</td></tr>
+          <tr><td><code>indicacao</code></td><td>indicado, indicador, link, canal, evento, data, situação, quem confirmou, motivo, primeiro ou último toque</td></tr>
+          <tr><td><code>vinculo_historico</code></td><td>pessoa, responsável antes, responsável depois, motivo, autor, data</td></tr>
+          <tr><td><code>consentimento</code></td><td>pessoa, finalidade (contato, WhatsApp, dobrada), texto aceito, versão, data, origem</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="cartao">
+      <h4>Regras de atribuição</h4>
+      <ul class="lista" style="font-size:14.5px">
+        <li><strong>Primeiro toque:</strong> o dono do primeiro link que trouxe a pessoa recebe o crédito da indicação no ranking e no IEL.</li>
+        <li><strong>Último toque:</strong> o relatório também mostra quem converteu (por exemplo, o evento onde a pessoa fez o cadastro).</li>
+        <li><strong>Canais:</strong> WhatsApp, Instagram, Facebook, QR Code impresso, evento, anúncio, importação, cadastro manual, API.</li>
+        <li><strong>Sem link:</strong> a pessoa entra na fila "sem dono". A coordenação vincula à mão, com motivo gravado.</li>
+        <li><strong>Reinscrição:</strong> o mesmo telefone vira "tentativa duplicada" e não soma ponto. A Engaja já registra esse evento.</li>
+        <li><strong>Troca de vínculo:</strong> entra como proposta. Depois da aprovação, o histórico guarda o responsável anterior e o ponto já ganho continua com ele.</li>
+        <li><strong>Dobrada:</strong> o cadastro feito pela campanha parceira leva a marca da dobrada e não conta no ranking interno.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Árvore da rede, sem limite de níveis</h3>
+  <p class="texto suave">A Engaja usa 3 níveis fixos. A nova aplicação guarda a árvore inteira e calcula a profundidade. Os 3 rótulos da Engaja continuam como faixas: nível 1 Próxima, nível 2 Engajada, nível 3 ou mais Multiplicada.</p>
+<div class="arvore" aria-label="Exemplo de árvore da rede">Coordenação
+└── Responsável GRE 03 (101 responsáveis no estado)
+    ├── Liderança A · Mogi Mirim · 412 na rede · IEL 78
+    │   ├── Pessoa A1 · WhatsApp · confirmada · vota na escola E12
+    │   │   └── Pessoa A1a · QR do evento 14/08 · pendente
+    │   └── Pessoa A2 · Instagram (utm_campaign=saude) · confirmada
+    └── Liderança B · Itapira · 87 na rede · IEL 41 · alerta: 38% sem local de votação
+        └── Pessoa B1 · sem link · vinculada à mão (motivo gravado)</div>
+
+  <h3>Antifraude e qualidade do cadastro</h3>
+  <div class="grade g3">
+    <div class="cartao"><h4>Na entrada</h4><ul class="lista" style="font-size:14px;margin:0"><li>Telefone com 10 ou 11 dígitos e DDD válido.</li><li>Código por WhatsApp (opcional por landing page).</li><li>CPF e título com dígito verificador.</li></ul></div>
+    <div class="cartao"><h4>No padrão</h4><ul class="lista" style="font-size:14px;margin:0"><li>Muitos cadastros do mesmo aparelho em poucos minutos.</li><li>Cadastros de madrugada em lote.</li><li>Nomes repetidos com telefones em sequência.</li></ul></div>
+    <div class="cartao"><h4>Na checagem</h4><ul class="lista" style="font-size:14px;margin:0"><li>Amostra de 5% dos cadastros de cada liderança por mês.</li><li>Ligação ou mensagem confirma apoio e local de votação.</li><li>O resultado entra no componente "Adesão" do IEL.</li></ul></div>
+  </div>
+</section>
+
+<!-- 08 -->
+<section id="eficacia">
+  <div class="rotulo">08 · Lideranças</div>
+  <h2>Índice de Eficácia da Liderança (IEL)</h2>
+  <p class="texto">Hoje o ranking da Engaja conta cadastros. Uma liderança pode trazer 500 cadastros e 40% deles sem local de votação. O IEL mede 6 coisas, de 0 a 100, e dá uma nota final de 0 a 100. Antes da eleição, o componente "Conversão em voto" fica fora e o peso dele passa para os outros, na mesma proporção.</p>
+
+  <div class="calc cartao" style="margin-top:16px">
+    <div>
+      <h4>Teste com os números de uma liderança</h4>
+      <div class="entradas" id="iel-ent">
+        <label class="campo">Meta de cadastros<input type="number" id="i-meta" value="400" min="1"></label>
+        <label class="campo">Cadastros totais<input type="number" id="i-tot" value="460" min="0"></label>
+        <label class="campo">Cadastros válidos<input type="number" id="i-val" value="390" min="0"></label>
+        <label class="campo">Checados na amostra<input type="number" id="i-chk" value="24" min="0"></label>
+        <label class="campo">Apoio confirmado na amostra<input type="number" id="i-apo" value="17" min="0"></label>
+        <label class="campo">Diretos que trouxeram alguém (%)<input type="number" id="i-mul" value="35" min="0" max="100"></label>
+        <label class="campo">Cadastros por dia (média de 14 dias)<input type="number" id="i-rit" value="3.2" step="0.1" min="0"></label>
+        <label class="campo">Dias até a data da meta<input type="number" id="i-dias" value="45" min="0"></label>
+        <label class="campo">Pós-eleição: votos atribuídos<input type="number" id="i-vat" value="" placeholder="vazio antes da eleição" min="0"></label>
+        <label class="campo">Fator eleitor (votos por cadastro)<input type="number" id="i-fe" value="0.5" step="0.05" min="0.05" max="1"></label>
+      </div>
+    </div>
+    <div>
+      <div class="rotulo">Resultado</div>
+      <div class="nota" id="iel-nota">0</div>
+      <div class="classe" id="iel-classe">-</div>
+      <div id="iel-comps" style="margin-top:16px"></div>
+      <p class="fraco" id="iel-obs" style="margin-top:10px"></p>
+    </div>
+  </div>
+
+  <h3>Como cada componente é calculado</h3>
+  <div class="tabela-wrap"><table>
+    <thead><tr><th>Componente</th><th class="n">Peso</th><th>Fórmula (resultado de 0 a 100)</th><th>Por que entra</th></tr></thead>
+    <tbody>
+      <tr><td>Volume</td><td class="n">20</td><td><code>mín(1,2; válidos ÷ meta) ÷ 1,2 × 100</code></td><td>Mede a entrega contra a meta. Passar de 120% não soma mais.</td></tr>
+      <tr><td>Qualidade</td><td class="n">20</td><td><code>válidos ÷ totais × 100</code>. Válido = telefone único e válido, município de voto e local de votação informados.</td><td>Cadastro sem local de votação não ajuda a meta por seção.</td></tr>
+      <tr><td>Adesão</td><td class="n">15</td><td><code>apoio confirmado ÷ checados × 100</code>, com encolhimento para a média da campanha quando a amostra tem menos de 20 pessoas.</td><td>Separa apoio real de lista de telefones.</td></tr>
+      <tr><td>Multiplicação</td><td class="n">10</td><td><code>% dos diretos com pelo menos 1 indicado</code></td><td>Mostra se a rede cresce sozinha.</td></tr>
+      <tr><td>Ritmo</td><td class="n">15</td><td>Probabilidade de cumprir a meta no prazo: <code>Φ((μ − falta + 0,5) ÷ √μ) × 100</code>, com <code>μ = ritmo × dias</code>. Método da Estratégia 645.</td><td>Antecipa quem vai ficar para trás.</td></tr>
+      <tr><td>Conversão em voto</td><td class="n">20</td><td>Pós-eleição: <code>mín(1,5; votos atribuídos ÷ (válidos × fe)) ÷ 1,5 × 100</code></td><td>Responde a pergunta final: a rede virou voto?</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Como atribuir votos a uma liderança depois da eleição</h3>
+  <p class="texto">O voto é secreto. A aplicação não sabe em quem cada pessoa votou. Ela estima o efeito da rede pela seção eleitoral, em 3 passos:</p>
+  <ol class="lista texto">
+    <li><strong>Seções da rede.</strong> Para cada liderança, a aplicação conta quantos cadastros válidos votam em cada seção (ou local de votação).</li>
+    <li><strong>Ganho na seção.</strong> Ganho = votos do candidato na seção em 2026 menos o voto esperado. O voto esperado é o voto de 2022 na seção, corrigido pela variação média das seções parecidas sem rede (mesmo município, mesmo perfil de eleitorado). Esse é um método de diferença em diferenças.</li>
+    <li><strong>Rateio.</strong> O ganho de cada seção é dividido entre as lideranças com cadastros nela, na proporção dos cadastros válidos. A soma das lideranças é o "voto atribuído".</li>
+  </ol>
+  <div class="aviso">O voto atribuído é estimativa. A tela mostra a faixa de 80% (por reamostragem das seções) e o selo "base pequena" quando a liderança tem menos de 30 cadastros com seção. Sem seção, a aplicação usa o local de votação e, por último, o município.</div>
+
+  <h3>Classes e ações</h3>
+  <div class="grade g4">
+    <div class="cartao"><h4>A · 75 a 100</h4><p class="suave" style="margin:0;font-size:14.5px">Referência. Ganha mais municípios, vira responsável de área e treina outras lideranças.</p></div>
+    <div class="cartao"><h4>B · 55 a 74</h4><p class="suave" style="margin:0;font-size:14.5px">Boa. Recebe meta maior quando o ritmo está acima da média da GRE.</p></div>
+    <div class="cartao"><h4>C · 35 a 54</h4><p class="suave" style="margin:0;font-size:14.5px">Atenção. A tela diz o componente mais fraco e a ação: completar local de votação, checar apoio, acelerar.</p></div>
+    <div class="cartao"><h4>D · 0 a 34</h4><p class="suave" style="margin:0;font-size:14.5px">Crítica. Entra na fila de conversa do responsável. A meta pode ir para outra liderança por proposta.</p></div>
+  </div>
+</section>
+
+<!-- 09 -->
+<section id="clusters">
+  <div class="rotulo">09 · Território</div>
+  <h2>Clusters de municípios</h2>
+  <p class="texto">O Comando 2026 agrupa os 645 municípios em 16 GREs do CREA-SP. A Engaja agrupa cidades e bairros à mão, até por polígono no mapa. A nova aplicação aceita os 3 tipos de agrupamento ao mesmo tempo. Um município pode estar numa GRE, num cluster calculado e numa região de campanha.</p>
+
+  <div class="grade g3" style="margin-top:16px">
+    <div class="cartao"><h4>Agrupamento fixo</h4><p class="suave" style="margin:0;font-size:14.5px">Divisão oficial: GRE, UGI e unidade do CREA-SP, região administrativa do estado, região da capital. Não muda durante o ciclo.</p></div>
+    <div class="cartao"><h4>Agrupamento manual</h4><p class="suave" style="margin:0;font-size:14.5px">Região de campanha: lista de municípios ou desenho no mapa (polígono, retângulo, círculo, raio de 100 km). Tem responsável e meta própria. Ideia da Engaja.</p></div>
+    <div class="cartao"><h4>Cluster calculado</h4><p class="suave" style="margin:0;font-size:14.5px">Grupo por comportamento: potencial, execução, histórico e risco. É recalculado toda noite, com versão gravada.</p></div>
+  </div>
+
+  <h3>Potencial Único (PU)</h3>
+  <p class="texto">Hoje existem 3 notas de potencial: Sugestões, Panorama e Estratégia 645. O PU substitui as 3. Cada componente é convertido em posição percentual (de 0 a 1) entre os municípios, para que São Paulo (cerca de 9 milhões de eleitores) não esmague os pequenos. A nota é a soma ponderada, de 0 a 100.</p>
+  <div class="calc cartao" style="margin-top:12px">
+    <div>
+      <h4>Pesos (a coordenação ajusta e a versão fica gravada)</h4>
+      <div id="pu-pesos"></div>
+    </div>
+    <div>
+      <h4>Município de exemplo (posições percentuais)</h4>
+      <div id="pu-mun"></div>
+      <div style="margin-top:14px"><span class="rotulo">PU do exemplo</span><div class="nota" id="pu-nota" style="font-size:44px">0</div></div>
+    </div>
+  </div>
+
+  <h3>Seis clusters calculados</h3>
+  <p class="texto suave">Os nomes vêm da Estratégia 645. A regra fica explícita e usa o PU e a execução (cadastros válidos ÷ meta de cadastros).</p>
+  <div class="tabela-wrap"><table>
+    <thead><tr><th>Cluster</th><th>Regra</th><th>Ação padrão</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Núcleo histórico</strong></td><td>Votos do candidato na eleição anterior no percentil 90 ou mais, em número ou em densidade (votos ÷ eleitorado)</td><td>Proteger: manter lideranças e meta pelo menos igual ao voto anterior (regra do piso)</td></tr>
+      <tr><td><strong>Motor da campanha</strong></td><td>PU no percentil 60 ou mais e execução de 60% ou mais</td><td>Ampliar meta e usar como modelo para municípios vizinhos</td></tr>
+      <tr><td><strong>Alto potencial em alerta</strong></td><td>PU no percentil 60 ou mais e probabilidade de cumprir a meta abaixo de 0,35</td><td>Intervenção do responsável em até 7 dias</td></tr>
+      <tr><td><strong>Oportunidade parada</strong></td><td>PU no percentil 60 ou mais e nenhuma liderança, ou 14 dias sem cadastro</td><td>Recrutar liderança: inspetor, presidente de entidade, vereador aliado</td></tr>
+      <tr><td><strong>Eficiente</strong></td><td>PU abaixo do percentil 60 e execução de 80% ou mais</td><td>Manter com pouco esforço</td></tr>
+      <tr><td><strong>Base em construção</strong></td><td>Os demais</td><td>Ação de baixo custo: lista de transmissão, evento regional</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Matriz potencial × execução</h3>
+  <div class="matriz" style="max-width:720px">
+    <div class="q"><b>Potencial alto · execução baixa</b><span class="suave" style="font-size:14px">Onde se perde mais voto. Primeira linha da fila de ação.</span></div>
+    <div class="q"><b>Potencial alto · execução alta</b><span class="suave" style="font-size:14px">Motor. Revisar se a meta está tímida.</span></div>
+    <div class="q"><b>Potencial baixo · execução baixa</b><span class="suave" style="font-size:14px">Baixa prioridade. Ação barata ou nenhuma.</span></div>
+    <div class="q"><b>Potencial baixo · execução alta</b><span class="suave" style="font-size:14px">Eficiente. Pode ceder esforço para os vizinhos.</span></div>
+  </div>
+
+  <h3>Do município à seção</h3>
+  <p class="texto">O Comando 2026 tem escola, setor e bairro só em Mogi Mirim e Mogi Guaçu (53 locais de votação). A nova aplicação carrega os locais de votação do TSE para os 645 municípios, com latitude e longitude. Cada cadastro com endereço vai para o local mais próximo quando não informa o local. A meta do município é rateada entre os locais pelo voto válido anterior, com o método do maior resto já usado no Comando 2026.</p>
+</section>
+
+<!-- 10 -->
+<section id="calculos">
+  <div class="rotulo">10 · Cálculos</div>
+  <h2>Cálculos e projeções</h2>
+  <p class="texto suave">Cada cálculo tem nome, fórmula, fonte e versão. A tela "Como é calculado" de cada número abre esta mesma explicação com um exemplo real.</p>
+
+  <h3>Meta em cascata: do voto ao cadastro</h3>
+  <div class="calc cartao">
+    <div class="entradas">
+      <label class="campo">Meta de votos<input type="number" id="c-votos" value="100000" min="0"></label>
+      <label class="campo">Fator eleitor (fe)<input type="number" id="c-fe" value="0.5" step="0.05" min="0.05" max="1"></label>
+      <label class="campo">Fator do responsável (fl)<input type="number" id="c-fl" value="0.9" step="0.05" min="0" max="1"></label>
+      <label class="campo">Fator da liderança (fm)<input type="number" id="c-fm" value="0.8" step="0.05" min="0" max="1"></label>
+      <label class="campo">Parte captada por lideranças (%)<input type="number" id="c-pl" value="70" min="0" max="100"></label>
+      <label class="campo">Dias até a eleição<input type="number" id="c-dias" value="120" min="1"></label>
+      <label class="campo">Cadastros válidos hoje<input type="number" id="c-hoje" value="42099" min="0"></label>
+      <label class="campo">Ritmo atual (cadastros por dia)<input type="number" id="c-rit" value="900" min="0"></label>
+    </div>
+    <div>
+      <div id="c-saida"></div>
+      <div class="fx" id="c-fx" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <h3>Catálogo de cálculos</h3>
+  <div class="tabela-wrap"><table>
+    <thead><tr><th>Cálculo</th><th>Fórmula ou método</th><th>Origem</th></tr></thead>
+    <tbody>
+      <tr><td>Meta do município</td><td>Soma das metas dos vínculos liderança × município, mais a meta lançada no próprio município. Um único agregado no banco; a tela não recalcula.</td><td><span class="tag c">C</span></td></tr>
+      <tr><td>Incongruência de meta</td><td>Meta instituída do local menos a soma atribuída às lideranças. A nova aplicação gera uma proposta de rateio para fechar a diferença.</td><td><span class="tag e">E</span> <span class="tag n">N</span></td></tr>
+      <tr><td>Potencial Único</td><td>Soma ponderada de posições percentuais (seção 09).</td><td><span class="tag c">C</span> <span class="tag n">N</span></td></tr>
+      <tr><td>Sugestão de meta</td><td>Potencial = voto anterior × (1 + g) + λ × espaço, cortado no teto (votos válidos do cargo). Cenários: conservador g 0,10 e λ 0,30; base g 0,15 e λ 0,50; agressivo g 0,25 e λ 0,70.</td><td><span class="tag c">C</span></td></tr>
+      <tr><td>Regra do piso</td><td>Promessas ≥ teto(voto anterior ÷ fe) no município.</td><td><span class="tag c">C</span></td></tr>
+      <tr><td>Ritmo</td><td>Média de 7 ou 14 dias, suavizada com a média da GRE (peso de 7 dias). Fuso de Brasília.</td><td><span class="tag c">C</span></td></tr>
+      <tr><td>Probabilidade de cumprir a meta</td><td>Aproximação normal da Poisson: Φ((μ − falta + 0,5) ÷ √μ), μ = ritmo × dias restantes.</td><td><span class="tag c">C</span></td></tr>
+      <tr><td>Projeção de cadastros</td><td>Prophet com regressores (visitas das landing pages, eventos, feriados) e faixa de 80%. Reserva: média de 7 dias.</td><td><span class="tag e">E</span></td></tr>
+      <tr><td>Fila de ação</td><td>Prioridade = (1 − probabilidade) × falta + falta para o piso.</td><td><span class="tag c">C</span></td></tr>
+      <tr><td>Força relativa</td><td>(% dos válidos do candidato no lugar ÷ % médio do candidato) × 100.</td><td><span class="tag p">P</span></td></tr>
+      <tr><td>De onde vem a base</td><td>Votos do candidato no lugar ÷ votos totais do candidato.</td><td><span class="tag p">P</span></td></tr>
+      <tr><td>Custo por voto</td><td>Despesa contratada na prestação de contas ÷ votos. Para a própria campanha, também por região: gasto alocado ÷ votos da região.</td><td><span class="tag p">P</span> <span class="tag n">N</span></td></tr>
+      <tr><td>Abstenção além do esperado</td><td>Abstenção observada no local menos a esperada pelo perfil de idade do eleitorado.</td><td><span class="tag p">P</span></td></tr>
+      <tr><td>Quociente e sobras</td><td>Simulador da seção 11: QE, QP, cláusula de 80% e 20% do QE, maiores médias.</td><td><span class="tag n">N</span></td></tr>
+      <tr><td>Projeção de vaga na apuração</td><td>Variação por município contra a eleição anterior, com simulação e faixa de 80% e 95%; saída: chance de eleição e votos que faltam para a vaga.</td><td><span class="tag p">P</span> <span class="tag n">N</span></td></tr>
+      <tr><td>Agregador de pesquisas</td><td>Média ponderada por tamanho da amostra e recência (meia-vida de 14 dias), com o instituto e o registro no TSE.</td><td><span class="tag n">N</span></td></tr>
+      <tr><td>Voto atribuído à liderança</td><td>Diferença em diferenças por seção (seção 08).</td><td><span class="tag n">N</span></td></tr>
+      <tr><td>Migração de votos 2022 para 2026</td><td>Inferência ecológica por seção, marcada como estimativa.</td><td><span class="tag p">P</span> <span class="tag n">N</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 11 -->
+<section id="quociente">
+  <div class="rotulo">11 · Vaga</div>
+  <h2>Simulador de quociente e sobras</h2>
+  <p class="texto">Nenhuma das 3 aplicações calcula a vaga de Deputado Federal. Este simulador mostra a regra. Os partidos e os votos abaixo são fictícios. Troque os números para testar.</p>
+  <div class="aviso">Regra simplificada: quociente eleitoral (QE) = votos válidos ÷ vagas, arredondado. Quociente partidário = votos do partido ÷ QE, sem fração. Nas sobras, participam os partidos com pelo menos 80% do QE, pelas maiores médias. O simulador supõe que cada partido tem candidatos com pelo menos 10% e 20% do QE. Conferir a regra na resolução do TSE do ciclo antes de usar em decisão.</div>
+  <div class="grade g3" style="margin:12px 0">
+    <label class="campo">Vagas<input type="number" id="q-vagas" value="70" min="1"></label>
+    <label class="campo">Partido do candidato<select id="q-meu"></select></label>
+    <label class="campo">Posição do candidato na lista do partido<input type="number" id="q-pos" value="9" min="1"></label>
+  </div>
+  <div class="grade g2">
+    <div class="tabela-wrap" style="margin:0"><table id="q-tab"><thead><tr><th>Partido ou federação</th><th class="n">Votos</th></tr></thead><tbody></tbody></table></div>
+    <div class="cartao" id="q-saida"></div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section id="relatorios">
+  <div class="rotulo">12 · Relatórios</div>
+  <h2>Catálogo de relatórios</h2>
+  <p class="texto suave">Cada relatório sai em PDF (retrato), Excel ou tela, com o recorte escolhido. Os agendados chegam por e-mail ou WhatsApp. Todo relatório leva a data dos dados, a fonte e a base de cada percentual.</p>
+  <div class="filtros" role="group" aria-label="Filtrar relatórios">
+    <button type="button" data-rf="todos" class="on">Todos</button>
+    <button type="button" data-rf="Diário">Diários</button>
+    <button type="button" data-rf="Semanal">Semanais</button>
+    <button type="button" data-rf="Sob pedido">Sob pedido</button>
+    <button type="button" data-rf="Pós-eleição">Pós-eleição</button>
+  </div>
+  <div class="tabela-wrap"><table id="tab-rel"><thead><tr><th>Relatório</th><th>Frequência</th><th>Para quem</th><th>Conteúdo</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<!-- 13 -->
+<section id="alertas">
+  <div class="rotulo">13 · Monitoramento</div>
+  <h2>Monitoramentos e alertas</h2>
+  <p class="texto suave">Cada alerta tem regra, destino e ação sugerida. O alerta aparece no sino, na tela de quem precisa agir e, se for urgente, no WhatsApp. Um alerta repetido em 24 horas vira um só, com contagem.</p>
+  <div class="tabela-wrap"><table>
+    <thead><tr><th>Alerta</th><th>Regra</th><th>Vai para</th><th>Ação sugerida</th></tr></thead>
+    <tbody>
+      <tr><td>Integração parada</td><td>Nenhum evento de webhook em 60 min no horário comercial, ou fila com mais de 100 eventos</td><td>Administração</td><td>Abrir a tela Saúde e reprocessar</td></tr>
+      <tr><td>Liderança parada</td><td>7 dias sem cadastro válido na rede</td><td>Responsável da liderança</td><td>Mensagem pronta de retomada</td></tr>
+      <tr><td>Meta em risco</td><td>Probabilidade de cumprir a meta abaixo de 0,35</td><td>Responsável e coordenação da GRE</td><td>Abrir a fila de ação do recorte</td></tr>
+      <tr><td>Queda de ritmo</td><td>Média de 7 dias 30% abaixo dos 7 dias anteriores, no município ou na GRE</td><td>Coordenação da GRE</td><td>Ver o gráfico de ritmo e as lideranças que pararam</td></tr>
+      <tr><td>Qualidade baixa</td><td>Mais de 30% dos cadastros da liderança sem local de votação ou com telefone inválido</td><td>Liderança e responsável</td><td>Lista de cadastros para completar</td></tr>
+      <tr><td>Suspeita de fraude</td><td>Mais de 20 cadastros do mesmo aparelho em 1 hora, ou lote de madrugada</td><td>Administração</td><td>Bloquear pontos da liderança até a checagem</td></tr>
+      <tr><td>Meta incongruente</td><td>Meta do local diferente da soma atribuída em mais de 10%</td><td>Coordenação</td><td>Proposta de rateio automático</td></tr>
+      <tr><td>Proposta pendente</td><td>Proposta sem decisão há 3 dias</td><td>Quem aprova</td><td>Abrir a fila de propostas</td></tr>
+      <tr><td>Oportunidade sem dono</td><td>Município com PU no percentil 60 ou mais e nenhuma liderança</td><td>Coordenação</td><td>Lista de inspetores, presidentes de entidade e vereadores aliados no município</td></tr>
+      <tr><td>Notícia negativa</td><td>Notícia ou postagem com sentimento negativo e alcance acima do limite</td><td>Comunicação</td><td>Abrir a notícia e registrar a resposta</td></tr>
+      <tr><td>Pesquisa nova</td><td>Novo registro no TSE para o cargo e a UF</td><td>Coordenação e comunicação</td><td>Ver a metodologia e, depois da divulgação, o resultado no agregador</td></tr>
+      <tr><td>Gasto acima do ritmo</td><td>Despesa acumulada acima da curva planejada contra o limite legal</td><td>Financeiro</td><td>Ver despesas por categoria e por região</td></tr>
+      <tr><td>Evento sem presença</td><td>Evento com menos de 50% dos confirmados no check-in</td><td>Organizador do evento</td><td>Lista de ausentes para contato</td></tr>
+      <tr><td>Apuração: vaga em jogo</td><td>Chance de eleição entre 20% e 80% durante a apuração</td><td>Sala de situação</td><td>Abrir o painel de apuração por município</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 14 -->
+<section id="perfis">
+  <div class="rotulo">14 · Acesso</div>
+  <h2>Perfis e permissões</h2>
+  <p class="texto suave">O Comando 2026 tem 4 papéis e nomes trocados entre o banco e a tela. A Engaja tem coordenador, membro e coordenação partidária. A nova aplicação usa 7 perfis, com o mesmo nome no banco e na tela. A abrangência (estado, GRE, cluster, município, rede) limita o que cada pessoa vê.</p>
+  <div class="tabela-wrap"><table>
+    <thead><tr><th>Função</th><th>Administração</th><th>Coordenação</th><th>Coord. regional</th><th>Responsável</th><th>Liderança</th><th>Comunicação</th><th>Parceiro (dobrada ou partido)</th></tr></thead>
+    <tbody>
+      <tr><td>Abrangência</td><td>Tudo</td><td>Campanha</td><td>Suas GREs ou regiões</td><td>Seus municípios</td><td>Sua rede</td><td>Campanha, sem dado pessoal</td><td>Totais da dobrada</td></tr>
+      <tr><td>Ver pessoas</td><td><span class="s s-sim">sim</span></td><td><span class="s s-sim">sim</span></td><td><span class="s s-sim">recorte</span></td><td><span class="s s-sim">recorte</span></td><td><span class="s s-par">só a rede</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-par">só os da dobrada</span></td></tr>
+      <tr><td>Exportar pessoas</td><td><span class="s s-sim">sim</span></td><td><span class="s s-sim">sim, com motivo</span></td><td><span class="s s-par">com aprovação</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-nao">não</span></td></tr>
+      <tr><td>Propor meta ou liderança</td><td><span class="s s-sim">sim</span></td><td><span class="s s-sim">sim</span></td><td><span class="s s-sim">sim</span></td><td><span class="s s-sim">sim</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-nao">não</span></td></tr>
+      <tr><td>Aprovar proposta</td><td><span class="s s-sim">sim</span></td><td><span class="s s-sim">sim</span></td><td><span class="s s-par">até o limite da GRE</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-nao">não</span></td></tr>
+      <tr><td>Mudar parâmetros e pesos</td><td><span class="s s-sim">sim, com senha</span></td><td><span class="s s-par">propõe</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-nao">não</span></td></tr>
+      <tr><td>Disparo de mensagem</td><td><span class="s s-sim">sim</span></td><td><span class="s s-sim">sim</span></td><td><span class="s s-par">recorte</span></td><td><span class="s s-par">sua rede</span></td><td><span class="s s-par">um a um</span></td><td><span class="s s-sim">sim, por segmento</span></td><td><span class="s s-nao">não</span></td></tr>
+      <tr><td>Monitoramento digital</td><td><span class="s s-sim">sim</span></td><td><span class="s s-sim">sim</span></td><td><span class="s s-sim">leitura</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-nao">não</span></td><td><span class="s s-sim">sim</span></td><td><span class="s s-nao">não</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="fraco">Toda leitura de dado pessoal e toda exportação entram na auditoria com usuário, data, recorte e motivo.</p>
+</section>
+
+<!-- 15 -->
+<section id="dados">
+  <div class="rotulo">15 · Dados</div>
+  <h2>Modelo de dados</h2>
+  <p class="texto suave">Um schema por campanha não é preciso. Todas as tabelas levam <code>campanha_id</code>, e a RLS separa as campanhas. Os dados oficiais (TSE, IBGE) ficam num schema comum e servem a todas as campanhas.</p>
+  <div class="grade g3" style="margin-top:12px">
+    <div class="cartao"><h4>Pessoas e rede</h4><ul class="lista" style="font-size:14px;margin:0">
+      <li><code>pessoa</code>: identificação, contato, endereço, município de voto, zona, seção, local, origem, consentimento</li>
+      <li><code>papel</code>: liderança, responsável, membro, cabo, com período</li>
+      <li><code>indicacao</code>, <code>vinculo_historico</code></li>
+      <li><code>link_convite</code>, <code>clique</code></li>
+      <li><code>status_hist</code>, <code>categoria</code>, <code>campo_extra</code></li>
+      <li><code>pegada</code>: linha do tempo (tipos da Engaja e novos)</li>
+      <li><code>fusao</code>: duplicados unidos, com prova</li>
+    </ul></div>
+    <div class="cartao"><h4>Território e metas</h4><ul class="lista" style="font-size:14px;margin:0">
+      <li><code>municipio</code>, <code>distrito</code>, <code>bairro</code>, <code>local_votacao</code>, <code>secao</code></li>
+      <li><code>agrupamento</code> (fixo, manual, calculado) e <code>agrupamento_membro</code></li>
+      <li><code>vinculo_lideranca_municipio</code>: meta, dobrada, observação</li>
+      <li><code>meta</code>: por nível (estado, agrupamento, município, local, pessoa)</li>
+      <li><code>proposta</code> e <code>proposta_item</code></li>
+      <li><code>parametro</code> e <code>metodo_versao</code></li>
+      <li><code>cluster_snapshot</code>: cluster por município por dia</li>
+    </ul></div>
+    <div class="cartao"><h4>Operação e eleição</h4><ul class="lista" style="font-size:14px;margin:0">
+      <li><code>evento</code>, <code>presenca</code> (check-in por QR)</li>
+      <li><code>tarefa</code> e <code>missao</code></li>
+      <li><code>interacao</code>, <code>demanda</code>, <code>mensagem</code>, <code>disparo</code></li>
+      <li><code>despesa</code> (por região e categoria)</li>
+      <li><code>tse_resultado_secao</code>, <code>tse_candidato</code>, <code>tse_eleitorado_local</code></li>
+      <li><code>pesquisa_registro</code>, <code>pesquisa_resultado</code></li>
+      <li><code>noticia</code>, <code>postagem</code>, <code>sentimento</code></li>
+      <li><code>alerta</code>, <code>auditoria</code>, <code>integracao_evento</code></li>
+    </ul></div>
+  </div>
+  <h3>Como os dados atuais migram</h3>
+  <div class="tabela-wrap"><table>
+    <thead><tr><th>Hoje (schema <code>campanha</code>)</th><th class="n">Linhas em 19/11/2026</th><th>Destino</th></tr></thead>
+    <tbody>
+      <tr><td><code>df_engaja_contatos</code></td><td class="n">42.214</td><td><code>pessoa</code> e <code>indicacao</code> (a cadeia de convites vira indicações confirmadas)</td></tr>
+      <tr><td><code>df_camp_liderancas</code></td><td class="n">3.303</td><td><code>pessoa</code> com <code>papel</code> liderança (fusão com o contato do Engaja pelo telefone)</td></tr>
+      <tr><td><code>df_camp_lideranca_municipios</code></td><td class="n">3.142</td><td><code>vinculo_lideranca_municipio</code></td></tr>
+      <tr><td><code>df_camp_responsaveis</code></td><td class="n">101</td><td><code>pessoa</code> com <code>papel</code> responsável</td></tr>
+      <tr><td><code>df_municipios</code>, <code>df_gre_ugi_unidade</code></td><td class="n">645 e cerca de 649</td><td><code>municipio</code> e <code>agrupamento</code> fixo</td></tr>
+      <tr><td><code>df_engaja_eventos</code></td><td class="n">147.906</td><td><code>integracao_evento</code> (fica como arquivo)</td></tr>
+      <tr><td><code>df_auditoria</code></td><td class="n">18.736</td><td><code>auditoria</code></td></tr>
+      <tr><td><code>df_tse_*</code></td><td class="n">0</td><td>Carregar de novo do TSE no schema comum, por seção</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 16 -->
+<section id="arquitetura">
+  <div class="rotulo">16 · Arquitetura</div>
+  <h2>Arquitetura</h2>
+  <div class="grade g2">
+    <div class="cartao"><h4>Interface</h4><ul class="lista" style="font-size:14.5px;margin:0">
+      <li>Aplicação modular (um módulo por pasta), com build e testes. Sem camadas que envolvem funções umas das outras.</li>
+      <li>PWA instalável no celular, com cadastro offline e envio quando a conexão volta. Ideia da API mobile da Engaja.</li>
+      <li>Mapa com MapLibre e malhas em PMTiles no Storage. Nenhuma malha embutida no HTML.</li>
+      <li>Estado na URL: recorte, filtros e aba. Um link abre a mesma visão para outra pessoa.</li>
+      <li>Hospedagem estática (GitHub Pages ou Cloudflare Pages) sem nenhum dado embutido.</li>
+    </ul></div>
+    <div class="cartao"><h4>Banco e serviços</h4><ul class="lista" style="font-size:14.5px;margin:0">
+      <li>Supabase Arquivologia: Postgres com RLS por campanha e por abrangência, Auth com link mágico para lideranças.</li>
+      <li>Agregados em visões materializadas, com refresh por cron e sob demanda (já existe no Comando 2026).</li>
+      <li>Edge Functions: webhook da Engaja (já existe), link curto <code>/c/código</code> que grava o clique, API de cadastro, envio de alertas.</li>
+      <li>Busca por nome com <code>pg_trgm</code>. Sem serviço externo de busca.</li>
+      <li>Cargas do TSE e do IBGE por GitHub Actions, com conferência de somas e registro de carga.</li>
+    </ul></div>
+    <div class="cartao"><h4>Integrações</h4><ul class="lista" style="font-size:14.5px;margin:0">
+      <li>Engaja: webhook, carga CSV e conferência diária, enquanto a captação continuar lá.</li>
+      <li>TSE: resultados por seção, eleitorado por local, candidatos, prestação de contas, registro de pesquisas.</li>
+      <li>Fontes públicas da Política ONE: Câmara, Senado, Portal da Transparência, IBGE.</li>
+      <li>BrandInsights (escuta social já em produção): menções, sentimento e perfis de redes.</li>
+      <li>WhatsApp: API oficial para disparo com consentimento; link de conversa para envio um a um.</li>
+    </ul></div>
+    <div class="cartao"><h4>Segurança e LGPD</h4><ul class="lista" style="font-size:14.5px;margin:0">
+      <li>Consentimento gravado por finalidade, com versão do texto.</li>
+      <li>Descadastro pelo titular por link (a Engaja já tem).</li>
+      <li>Exportação de dado pessoal com motivo e auditoria.</li>
+      <li>Rotas com dado fechado sem cache público. A Política ONE serviu dado anônimo a usuário logado por esse erro.</li>
+      <li>Prazo de retenção: dados pessoais apagados ou anonimizados ao fim do ciclo, salvo consentimento novo.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- 17 -->
+<section id="roteiro">
+  <div class="rotulo">17 · Roteiro</div>
+  <h2>Roteiro em 5 fases</h2>
+  <p class="texto suave">Os prazos são estimativa para uma pessoa com apoio do Claude. Cada fase entrega algo que funciona sozinho.</p>
+  <div class="roteiro" style="margin-top:16px">
+    <div class="etapa"><div class="quando">Fase 0 · 1 a 2 semanas</div><div class="cartao"><h4>Correções urgentes no Comando 2026</h4><ul class="lista" style="font-size:14.5px;margin:0"><li>Tirar do HTML público os dados pessoais embutidos (lista de candidatos com contatos e votantes da eleição CONFEA).</li><li>Trocar no painel da Engaja o endereço do webhook e reprocessar os 26 eventos na fila.</li><li>Carregar o TSE no schema <code>campanha</code> (hoje as 6 tabelas <code>df_tse_*</code> têm 0 linhas) e criar a função ausente <code>df_engaja_ritmo_mapa</code>.</li></ul></div></div>
+    <div class="etapa"><div class="quando">Fase 1 · 6 semanas</div><div class="cartao"><h4>Núcleo e diagnóstico de 2026</h4><ul class="lista" style="font-size:14.5px;margin:0"><li>Módulos M01, M02, M03, M05 e M06: pessoas, rede, indicações, território e metas.</li><li>Migração dos dados atuais.</li><li>Relatório "Meta × resultado 2026" por município, GRE e liderança.</li></ul></div></div>
+    <div class="etapa"><div class="quando">Fase 2 · 6 semanas</div><div class="cartao"><h4>Lideranças, cálculos e campo</h4><ul class="lista" style="font-size:14.5px;margin:0"><li>Módulos M04, M07, M08, M14 e M16: captação com link curto e UTM, cálculos, IEL, relatórios e aplicativo de campo.</li><li>Voto atribuído por seção para 2026, como primeiro teste do método.</li></ul></div></div>
+    <div class="etapa"><div class="quando">Fase 3 · 6 semanas</div><div class="cartao"><h4>Operação e inteligência</h4><ul class="lista" style="font-size:14.5px;margin:0"><li>Módulos M09, M10, M11 e M12: inteligência eleitoral, eventos e tarefas, comunicação e monitoramento digital.</li></ul></div></div>
+    <div class="etapa"><div class="quando">Fase 4 · antes da eleição</div><div class="cartao"><h4>Apuração e pós-eleição</h4><ul class="lista" style="font-size:14.5px;margin:0"><li>Módulos M13 e M15 completos: apuração ao vivo, telão, projeção de vaga, ensaio com os dados de 2026 no relógio.</li></ul></div></div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section id="riscos">
+  <div class="rotulo">18 · Riscos</div>
+  <h2>Riscos e correções urgentes</h2>
+  <div class="aviso perigo"><strong>Dado pessoal em endereço público.</strong> O HTML do Comando 2026 no GitHub Pages embute 220 candidatos de 2024 de PSD e Republicanos com dados de registro e contatos de chefes e gerentes, e os nomes dos votantes da eleição CONFEA/CREA. Qualquer pessoa com o endereço lê esses dados sem login. Isso é risco de LGPD e deve ser a primeira correção.</div>
+  <div class="aviso"><strong>Integração Engaja parada.</strong> O último evento do webhook chegou em 11/11/2026 às 15h38 (UTC). Há 26 eventos na fila. A data coincide com a migração de projeto do banco.</div>
+  <div class="aviso"><strong>Dependência da Engaja.</strong> Enquanto a captação ficar na Engaja, a nova aplicação depende do webhook e da carga CSV. A fase 2 cria a captação própria (landing page, link curto, API). A troca pode ser gradual, por região.</div>
+  <div class="aviso"><strong>Voto atribuído pode ser mal lido.</strong> O voto é secreto. O voto atribuído é estimativa por seção, não prova de voto. A tela mostra sempre a faixa e o selo de estimativa. Não deve servir para punir uma liderança sozinho.</div>
+  <div class="aviso ok"><strong>O que já está pronto para reaproveitar.</strong> Webhook com HMAC e fila, cron de sincronização, grade de planejamento, propostas com aprovação, regra do piso, cálculo de probabilidade, território do CREA-SP com teste de integridade e o relatório por escola de Mogi Mirim e Mogi Guaçu.</div>
+</section>
+
+<footer>
+  <p>Proposta preparada a partir de 3 inventários de 19/11/2026: mapa da Engaja BR (rastreador v3.3.1, coletado em 04/10/2026), documentação da Política ONE (coleta de 20/10/2026) e código do Comando 2026 com o schema <code>campanha</code> do Supabase. Nenhum dado pessoal de contato aparece nesta página. Os números de partidos no simulador são fictícios.</p>
+  <p>Autor: Bruno-LSO. Links: <a href="https://gstcnfprs.github.io/dpfd/" target="_blank" rel="noopener">painel Comando 2026</a> · <a href="https://politica.one" target="_blank" rel="noopener">Política ONE</a> · <a href="https://engajabr.com.br" target="_blank" rel="noopener">Engaja BR</a> · <a href="https://dadosabertos.tse.jus.br" target="_blank" rel="noopener">Portal de dados abertos do TSE</a></p>
+</footer>
+</main>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var fmt=new Intl.NumberFormat('pt-BR');
+var fmt1=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:1,minimumFractionDigits:1});
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+/* tema */
+function aplicaTema(t){ if(t){document.documentElement.setAttribute('data-theme',t)} $$('.tema button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.tema===t))}); }
+var temaSalvo=null; try{temaSalvo=localStorage.getItem('cic-tema')}catch(e){}
+aplicaTema(temaSalvo);
+$$('.tema button').forEach(function(b){b.addEventListener('click',function(){aplicaTema(b.dataset.tema); try{localStorage.setItem('cic-tema',b.dataset.tema)}catch(e){}})});
+
+/* índice ativo */
+var links=$$('#indice a');
+if('IntersectionObserver' in window){
+  var obs=new IntersectionObserver(function(ents){ents.forEach(function(en){ if(en.isIntersecting){ links.forEach(function(a){a.classList.toggle('ativo',a.getAttribute('href')==='#'+en.target.id)}) } })},{rootMargin:'-20% 0px -70% 0px'});
+  $$('main section').forEach(function(s){obs.observe(s)});
+}
+
+/* grupos de botões de filtro */
+function grupoFiltro(sel,attr,cb){
+  var bs=$$(sel);
+  bs.forEach(function(b){ b.setAttribute('aria-pressed',String(b.classList.contains('on'))); b.addEventListener('click',function(){ bs.forEach(function(x){x.classList.remove('on');x.setAttribute('aria-pressed','false')}); b.classList.add('on'); b.setAttribute('aria-pressed','true'); cb(b.dataset[attr]); }); });
+}
+
+/* ---------- matriz ---------- */
+var S={s:'<span class="s s-sim">sim</span>',p:'<span class="s s-par">parcial</span>',n:'<span class="s s-nao">não</span>'};
+var MATRIZ=[
+ ['rede','Pessoa única com papéis (contato, liderança, responsável)','s','n','p','Pessoa única com papéis datados'],
+ ['rede','Responsável direto e árvore da rede','s','n','p','Árvore sem limite de níveis'],
+ ['rede','Link de indicação por pessoa','s','n','n','Link curto por pessoa, canal e evento'],
+ ['rede','UTM e canal de origem','n','n','n','UTM, canal e clique gravados'],
+ ['rede','Histórico de troca de vínculo','p','n','p','Histórico completo, troca por proposta'],
+ ['rede','Linha do tempo da pessoa (pegadas)','s','n','n','Pegadas da Engaja e novas (evento, tarefa, mensagem)'],
+ ['rede','Landing pages e formulários','s','n','n','Editor simples com modelos'],
+ ['rede','API de cadastro e webhooks','s','n','p','Sim, com fila e reprocessamento'],
+ ['rede','Dobradas entre campanhas','s','n','p','Sim, com consentimento e crédito separado'],
+ ['rede','Antifraude do cadastro','p','n','n','Regras de aparelho, horário e checagem por amostra'],
+ ['territorio','Hierarquia GRE, UGI e unidade','n','n','s','Agrupamento fixo'],
+ ['territorio','Agrupamentos manuais desenhados no mapa','s','n','n','Sim'],
+ ['territorio','Clusters calculados','n','n','p','6 clusters com regra explícita e versão'],
+ ['territorio','Meta por município com dono','p','n','s','Sim, liderança × município'],
+ ['territorio','Meta por local de votação e seção','p','n','p','Sim, nos 645 municípios'],
+ ['territorio','Correção de meta incongruente','p','n','n','Proposta de rateio automático'],
+ ['territorio','Propostas com aprovação','n','n','s','Sim, para meta, liderança e vínculo'],
+ ['territorio','Potencial por município','p','n','p','Potencial Único com pesos editáveis'],
+ ['territorio','Projeção de cadastros e chance de meta','s','n','s','Prophet e Poisson, com faixa'],
+ ['eleitoral','Histórico TSE por seção','p','s','p','Sim, schema comum para todas as campanhas'],
+ ['eleitoral','Força relativa e "De onde vem a base"','n','s','n','Sim'],
+ ['eleitoral','Custo por voto','n','s','n','Sim, também por região da própria campanha'],
+ ['eleitoral','Simulador de quociente e sobras','n','n','n','Sim'],
+ ['eleitoral','Projeção de vaga na apuração','n','p','n','Sim, para cargo proporcional'],
+ ['eleitoral','Apuração ao vivo e telão','n','s','n','Sim, com o recorte da campanha'],
+ ['eleitoral','Agregador de pesquisas','n','p','n','Sim'],
+ ['eleitoral','Voto real por liderança','n','n','n','Voto atribuído por seção'],
+ ['eleitoral','Meta × resultado por município','n','n','s','Sim, também por liderança e local'],
+ ['operacao','Ranking e gamificação','s','n','p','Ranking pelo IEL, não só por cadastro'],
+ ['operacao','Índice de eficácia da liderança','n','n','n','IEL com 6 componentes'],
+ ['operacao','Interações e agenda de contato','s','n','n','Sim'],
+ ['operacao','Eventos com check-in','n','n','n','Sim, por QR Code'],
+ ['operacao','Tarefas e missões da equipe','p','n','n','Sim'],
+ ['operacao','Disparo segmentado de mensagens','n','n','n','Sim, com consentimento'],
+ ['operacao','Monitoramento de redes e notícias','n','p','n','Sim, com sentimento (BrandInsights)'],
+ ['operacao','Aplicativo offline','s','n','n','PWA offline'],
+ ['operacao','Saúde das integrações','p','n','s','Sim, com alertas'],
+ ['operacao','Modo apresentação executiva','n','p','s','Modo Vitrine'],
+ ['operacao','Auditoria de dado pessoal','p','n','p','Toda leitura e exportação']
+];
+function desenhaMatriz(f){
+  var tb=$('#tab-matriz tbody'); var h='';
+  MATRIZ.forEach(function(r){
+    var nenhuma=(r[2]==='n'&&r[3]==='n'&&r[4]==='n');
+    if(f==='novo'&&!nenhuma) return;
+    if(f!=='todas'&&f!=='novo'&&r[0]!==f) return;
+    h+='<tr><td>'+esc(r[1])+'</td><td>'+S[r[2]]+'</td><td>'+S[r[3]]+'</td><td>'+S[r[4]]+'</td><td>'+esc(r[5])+'</td></tr>';
+  });
+  tb.innerHTML=h;
+}
+desenhaMatriz('todas'); grupoFiltro('[data-mf]','mf',desenhaMatriz);
+
+/* ---------- módulos ---------- */
+var MODS=[
+ {id:'M01',n:'Comando (sala de situação)',o:['c','p'],f:1,d:'Tela inicial da coordenação: mapa do estado com o recorte escolhido e os números que mudaram.',it:['Mapa com cor por GRE, cluster, execução, PU ou resultado','Recorte encadeado: estado, GRE, cluster, município, local','Cartões só com o que muda no recorte, com fonte e data','Busca global (Ctrl+K) por município, pessoa, liderança e tela','Atualização a cada 10 min sem repintar quando nada mudou','Modo Vitrine para reunião e telão','Contagem de dias e fase do ciclo (pré-campanha, campanha, apuração, pós-eleição)']},
+ {id:'M02',n:'Pessoas e relacionamento',o:['e'],f:1,d:'Ficha única da pessoa com tudo o que a campanha sabe dela.',it:['Ficha com abas: resumo, dados, endereço, rede, interações, demandas, pegadas','Status com histórico (frio, contato iniciado, apoia, não apoia)','Categorias e campos personalizados','Aniversariantes com mensagem pronta','Interações: ligação, WhatsApp, reunião, com agenda da próxima','Demandas do cidadão com etapas','Fusão de duplicados com prova','Busca por nome, telefone, título ou CPF']},
+ {id:'M03',n:'Rede e indicações',o:['e','n'],f:1,d:'Quem indicou quem, por qual canal, e como a rede cresce.',it:['Registro de indicação com canal, link, evento e UTM','Árvore sem limite de níveis, com faixas Próxima, Engajada e Multiplicada','Histórico de troca de vínculo','Fila de pessoas sem dono e vínculo manual com motivo','Primeiro e último toque','Confirmação de indicação (pendente, confirmada, recusada)','Painel "Quem traz mais gente" com promoção a liderança']},
+ {id:'M04',n:'Captação',o:['e','n'],f:2,d:'Landing pages, links curtos, QR Codes e API para cadastrar apoiadores.',it:['Link curto por pessoa e canal (/c/código) que grava o clique','QR Code em PDF para material impresso e eventos','Landing pages por modelo, com variáveis do dono do link','Página de sucesso com o link próprio do novo cadastro','API de cadastro com chave, IPs permitidos e relatório','Webhooks com log e reenvio','Dobradas com consentimento','Grupos de WhatsApp com limite e distribuição']},
+ {id:'M05',n:'Território e clusters',o:['c','e','p','n'],f:1,d:'Municípios, locais de votação e os 3 tipos de agrupamento.',it:['645 municípios com GRE, UGI e unidade, e teste de integridade','Regiões de campanha desenhadas no mapa','6 clusters calculados toda noite, com versão','Mapas de calor com faixas automáticas (Fisher-Jenks ou quantis)','Locais de votação do TSE com coordenada nos 645 municípios','Setores e bairros por local de votação','Camadas: aliados (prefeitos, vereadores), entidades, inspetores, base profissional']},
+ {id:'M06',n:'Metas e planejamento',o:['c','e'],f:1,d:'A grade que liga cada liderança a cada município, com meta.',it:['Grade editável: uma linha por vínculo liderança × município','Meta em cascata: estado, agrupamento, município, local, pessoa','Propostas de meta e de liderança com aprovação por item','Correção de meta incongruente por rateio do maior resto','Regra do piso (meta ≥ voto anterior)','Pendências: sem liderança, sem responsável, fusões, compostos','Exportação em Excel formatado']},
+ {id:'M07',n:'Cálculos e projeções',o:['c','e','p','n'],f:2,d:'Todos os cálculos num só lugar, com fórmula, versão e exemplo.',it:['Potencial Único e sugestão de meta em 3 cenários','Ritmo, probabilidade de cumprir a meta e data estimada','Projeção de cadastros (Prophet) com faixa','Fila de ação por prioridade','Simulador de quociente e sobras','Agregador de pesquisas','Tela "Como é calculado" para cada número']},
+ {id:'M08',n:'Eficácia das lideranças',o:['e','n'],f:2,d:'IEL de 0 a 100 para cada liderança, com o componente mais fraco à vista.',it:['IEL com volume, qualidade, adesão, multiplicação, ritmo e conversão em voto','Classes A, B, C e D com ação sugerida','Ranking semanal pelo IEL, com divisões (ideia da Engaja)','Checagem por amostra de 5% dos cadastros','Voto atribuído por seção depois da eleição','Comparação entre lideranças do mesmo município','Histórico do IEL por semana']},
+ {id:'M09',n:'Inteligência eleitoral',o:['p','c'],f:3,d:'O dado oficial do TSE dentro da campanha.',it:['Histórico por seção de 2014 a 2026','Ficha do candidato e dos rivais: eleições, finanças, emendas, notícias','Força relativa e "De onde vem a base"','Comparar 2 candidatos no mapa (dobradas e rivais)','Abstenção além do esperado por local','Custo por voto dos concorrentes do mesmo cargo e UF','Emenda e voto no mesmo lugar']},
+ {id:'M10',n:'Agenda, eventos e tarefas',o:['n'],f:3,d:'O trabalho de campo da equipe, com presença e resultado.',it:['Agenda do candidato e da equipe por região','Evento com inscrição, check-in por QR e lista de presença','Cadastros feitos no evento ligados ao evento (último toque)','Tarefas e missões para lideranças, com prazo e prova','Roteiro de visitas por cluster e prioridade','Relatório pós-evento: presentes, cadastros, custo']},
+ {id:'M11',n:'Comunicação',o:['e','n'],f:3,d:'Mensagens um a um e disparo por segmento, com consentimento.',it:['Mensagens prontas com variáveis','Segmentos salvos que viram lista de ação (disparo, tarefa, exportação)','Disparo pela API oficial do WhatsApp só para quem consentiu','Medição de entrega, leitura e resposta','Pesquisa rápida por mensagem (apoio, local de votação)','Descadastro pelo titular']},
+ {id:'M12',n:'Monitoramento digital',o:['p','n'],f:3,d:'Redes, notícias e pesquisas, com sentimento.',it:['Menções e sentimento do candidato e dos rivais (BrandInsights)','Clipping com veículos locais de SP','Métricas dos perfis: seguidores, alcance, engajamento','Registro de pesquisas no TSE e resultado no agregador','Alerta de notícia negativa com alcance alto']},
+ {id:'M13',n:'Apuração e pós-eleição',o:['p','c','n'],f:4,d:'A noite da eleição e o diagnóstico depois dela.',it:['Apuração ao vivo lida do TSE a cada 30 s, com eventos e replay','Projeção de vaga com chance de eleição e votos que faltam','Telão da sala de situação','Meta × resultado por município, GRE, cluster e liderança','Voto atribuído por liderança e IEL final','Relatório de lições e planejamento do próximo ciclo','Modo ensaio que reproduz uma eleição passada no relógio']},
+ {id:'M14',n:'Relatórios',o:['c','e'],f:2,d:'Catálogo de relatórios em PDF, Excel e tela, agendados ou sob pedido.',it:['Diário da coordenação','Semanal por GRE e por liderança','Ficha do município','Relatório por escola (modelo de Mogi Mirim e Mogi Guaçu) para todos os municípios','Envio agendado por e-mail ou WhatsApp','Toda tabela exportável com o recorte atual']},
+ {id:'M15',n:'Administração, LGPD e saúde',o:['c','e'],f:4,d:'Usuários, perfis, parâmetros, auditoria e integrações.',it:['7 perfis com abrangência','Parâmetros e pesos com versão e senha','Auditoria de leitura e exportação de dado pessoal','Consentimento por finalidade','Saúde das integrações: webhook, fila, cargas, conferência diária','Multicampanha com RLS']},
+ {id:'M16',n:'Aplicativo de campo',o:['e','n'],f:2,d:'A tela da liderança no celular, também sem internet.',it:['Minha meta, meu ritmo, minha posição no ranking e meu IEL','Compartilhar meu link (WhatsApp, QR)','Cadastro offline com envio depois','Minha rede com quem está parado','Tarefas, eventos e check-in','Login por link mágico, sem senha']}
+];
+var NOME_ORIG={e:'Engaja',p:'Política ONE',c:'Comando 2026',n:'Novo'};
+var filtroO='todas', filtroF='todas';
+function desenhaMods(){
+  var h='',c=0;
+  MODS.forEach(function(m){
+    if(filtroO!=='todas'&&m.o.indexOf(filtroO)<0) return;
+    if(filtroF!=='todas'&&String(m.f)!==filtroF) return;
+    c++;
+    h+='<article class="cartao mod"><header><h4 style="margin:0">'+esc(m.n)+'</h4><span class="id">'+m.id+'</span></header>'+
+       '<div class="tags">'+m.o.map(function(o){return '<span class="tag '+o+'" title="'+NOME_ORIG[o]+'">'+o.toUpperCase()+' '+NOME_ORIG[o]+'</span>'}).join('')+'</div>'+
+       '<p class="suave" style="margin:0;font-size:14.5px">'+esc(m.d)+'</p><div class="fase">Fase '+m.f+'</div>'+
+       '<details><summary>Funcionalidades ('+m.it.length+')</summary><ul>'+m.it.map(function(i){return '<li>'+esc(i)+'</li>'}).join('')+'</ul></details></article>';
+  });
+  $('#lista-mods').innerHTML=h||'<p class="suave">Nenhum módulo neste filtro.</p>';
+  $('#conta-mods').textContent=c+' de '+MODS.length+' módulos neste filtro.';
+}
+desenhaMods();
+grupoFiltro('[data-of]','of',function(v){filtroO=v;desenhaMods()});
+grupoFiltro('[data-ff]','ff',function(v){filtroF=v;desenhaMods()});
+
+/* ---------- telas (esboços) ---------- */
+function B(t,s,cls){return '<div class="wf-b '+(cls||'')+'"><b>'+t+'</b>'+(s||'')+'</div>'}
+function L(){return '<div class="wf-linha">'+Array.prototype.slice.call(arguments).join('')+'</div>'}
+function barra(t){return '<div class="wf-barra"><b>'+t+'</b><span class="esp"></span><span>Ctrl+K</span><span>sino 3</span><span>perfil</span></div>'}
+function menu(on){var it=['Comando','Território','Pessoas','Rede','Metas','Lideranças','Captação','Agenda','Comunicação','Inteligência','Digital','Relatórios','Apuração','Admin'];return '<div class="wf-menu">'+it.map(function(i){return '<i'+(i===on?' class="on"':'')+'>'+i+'</i>'}).join('')+'</div>'}
+function desk(on,corpo){return '<div class="wf">'+barra('Comando Integrado · '+on)+'<div class="wf-linha" style="flex:1">'+menu(on)+'<div style="display:flex;flex-direction:column;gap:6px;flex:1">'+corpo+'</div></div></div>'}
+function cel(corpo){return '<div class="wf cel">'+corpo+'</div>'}
+
+var TELAS={
+ link:{t:'Link curto da liderança',p:'Público',m:'M04',
+  w:cel(B('Endereço','/c/K7M2Q?utm_source=whatsapp')+B('Edge Function','grava o clique: data, UTM, aparelho (hash), dono do link')+B('Redireciona','para a landing page padrão da liderança','alto')+B('Sem cookie de terceiros','nenhum dado pessoal no clique')),
+  mostra:['Nada visível: é um redirecionamento rápido'],acoes:['Gravar o clique','Guardar o código no navegador para o cadastro'],dados:['link_convite','clique']},
+ landing:{t:'Landing page com formulário',p:'Público',m:'M04',
+  w:cel(B('Foto e nome do candidato','número, cargo')+B('Texto da causa','','alto')+B('Formulário','nome · telefone com DDD · município · local de votação (opcional) · aceite LGPD')+B('Enviar meu cadastro','','acao')+B('Rodapé','política de privacidade · descadastro')),
+  mostra:['Variáveis do dono do link: "Fulano convidou você"','Campos definidos por landing page'],acoes:['Validar telefone e DDD','Código por WhatsApp (opcional)','Detectar telefone já cadastrado'],dados:['pessoa','consentimento','indicacao']},
+ sucesso:{t:'Página de sucesso',p:'Público',m:'M04',
+  w:cel(B('Cadastro feito','obrigado, Maria')+B('Seu link para convidar','/c/R4T9X','alto')+L(B('WhatsApp','','acao'),B('Copiar','','acao'))+B('Entrar no grupo da sua cidade','grupo com vaga, distribuído pelo limite')),
+  mostra:['O link próprio do novo cadastro','O grupo de WhatsApp da cidade'],acoes:['Compartilhar o link','Entrar no grupo'],dados:['link_convite (novo)','grupo_whatsapp']},
+ arvore:{t:'Entrada na árvore da rede',p:'Sistema',m:'M03',
+  w:desk('Rede',B('Indicação criada','indicado: Maria · indicador: Liderança A · canal: WhatsApp · utm_campaign: saude')+L(B('Situação','pendente → confirmada (regra: telefone válido e único)'),B('Primeiro toque','Liderança A'))+B('Árvore','Coordenação › Responsável GRE 03 › Liderança A › Maria','alto')+B('Pontos','+3 para Liderança A · +1 para o responsável acima')),
+  mostra:['A indicação com canal e situação','A posição na árvore'],acoes:['Confirmar automaticamente pela regra','Mandar para a fila "sem dono" quando não há link'],dados:['indicacao','pessoa','pegada']},
+ avisolider:{t:'Aviso à liderança',p:'Liderança',m:'M16',
+  w:cel(B('Notificação','Maria entrou na sua rede pelo WhatsApp')+B('Sua semana','14 cadastros · meta 20 · faltam 6','alto')+B('Sua posição','8º lugar na GRE 03 · IEL 78')+B('Ver minha rede','','acao')),
+  mostra:['Quem entrou e por qual canal','O progresso da semana'],acoes:['Abrir a rede','Mandar boas-vindas pronta'],dados:['indicacao','meta','iel']},
+ login:{t:'Entrada',p:'Coordenação',m:'M15',
+  w:'<div class="wf">'+B('Comando Integrado de Campanha','','alto')+L(B('E-mail ou nome',''),B('Senha',''))+B('Entrar','','acao')+B('Liderança?','receba um link de acesso no WhatsApp')+'</div>',
+  mostra:['Entrada por e-mail e senha para a equipe','Link mágico para lideranças'],acoes:['Entrar','Pedir link'],dados:['auth','perfil']},
+ comando:{t:'Comando',p:'Coordenação',m:'M01',
+  w:desk('Comando',L(B('Recorte','Estado › GRE 03 › cluster Motor'),B('Fase','Campanha · faltam 120 dias'))+L(B('Mapa do estado','cor: execução da meta · clique abre o município','mapa'),'<div style="display:flex;flex-direction:column;gap:6px">'+B('Meta','100.000 votos · 63% cadastrado','k')+B('Hoje','+412 cadastros · ritmo 7 dias 905/dia','k')+B('Em risco','38 municípios com chance < 0,35','k')+B('Alertas','webhook ok · 3 propostas','k')+'</div>')+L(B('Fila de ação','10 municípios com maior prioridade'),B('Ranking IEL','10 lideranças do recorte'))),
+  mostra:['Mapa com 6 modos de cor','Cartões do recorte','Fila de ação e ranking'],acoes:['Escolher o recorte','Abrir município','Abrir alerta','Modo Vitrine'],dados:['mv_municipio','meta','alerta','cluster_snapshot']},
+ municipio:{t:'Ficha do município',p:'Coordenação',m:'M05',
+  w:desk('Território',B('Itapira · GRE 03 · cluster: Alto potencial em alerta','PU 72 · eleitorado · votos 2022 · meta 2026')+L(B('Meta × realizado','meta 1.200 votos · 2.400 promessas · 1.310 cadastros (55% da meta de cadastros)'),B('Probabilidade','0,31 · data estimada: após a eleição'))+L(B('Mapa por local de votação','12 locais · meta rateada · cadastros por local','mapa'),B('Lideranças','5 lideranças · IEL 41 a 82 · 1 parada há 9 dias','alto'))+L(B('Histórico eleitoral','2018 · 2022 · 2024 por cargo'),B('Aliados e entidades','prefeito, vereadores, inspetores'))),
+  mostra:['PU, cluster e meta com a conta','Locais de votação','Lideranças com IEL'],acoes:['Propor meta','Propor liderança','Gerar relatório do município'],dados:['municipio','local_votacao','vinculo_lideranca_municipio','tse_resultado_secao']},
+ planejamento:{t:'Planejamento (grade)',p:'Coordenação',m:'M06',
+  w:desk('Metas',L(B('Busca','município, GRE, liderança'),B('Pendências','sem liderança 41 · sem responsável 12 · incongruentes 9'),B('Nova proposta','','acao'))+B('Grade','GRE · Município · Liderança · Categoria · Eleitorado · Votos 2022 · Meta · Cadastros · IEL · Dobrada · Observação','alto')+B('Rodapé da seleção','soma da meta · eleitorado e votos contados uma vez por município')),
+  mostra:['Uma linha por vínculo','Pendências como filtros','Soma da seleção'],acoes:['Editar na célula (vira proposta)','Exportar Excel','Fundir homônimos'],dados:['vinculo_lideranca_municipio','proposta','meta']},
+ propostas:{t:'Fila de propostas',p:'Coordenação',m:'M06',
+  w:desk('Metas',B('Propostas pendentes','14 itens · mais antiga há 2 dias')+B('Proposta 0231','Liderança C em 3 municípios · meta 300 / 120 / 80 · autor: responsável GRE 05','alto')+L(B('Aprovar','','acao'),B('Mudar a meta',''),B('Recusar com motivo',''))),
+  mostra:['Cada município da proposta separado','Efeito nos números antes de aprovar'],acoes:['Aprovar, mudar ou recusar por item'],dados:['proposta','proposta_item']},
+ alertas:{t:'Central de alertas',p:'Coordenação',m:'M15',
+  w:desk('Comando',B('Alertas','filtro: todos · urgentes · meus')+B('Lista','Meta em risco: 38 municípios · Liderança parada: 21 · Qualidade baixa: 7 · Proposta pendente: 3','alto')+B('Ação do alerta','abre a tela já filtrada')),
+  mostra:['Alertas agrupados com contagem'],acoes:['Abrir a tela filtrada','Marcar como resolvido'],dados:['alerta']},
+ semanal:{t:'Relatório semanal',p:'Coordenação',m:'M14',
+  w:desk('Relatórios',L(B('Recorte','estado · GRE · cluster'),B('Período','semana 46'))+B('Prévia do PDF','capa · resumo · meta × realizado por GRE · lideranças A e D · clusters · alertas','alto')+L(B('Gerar PDF','','acao'),B('Agendar envio',''))),
+  mostra:['Prévia do relatório'],acoes:['Gerar','Agendar'],dados:['mv_*','iel','cluster_snapshot']},
+ minharede:{t:'Minha rede (celular)',p:'Liderança',m:'M16',
+  w:cel(B('Olá, Liderança A','GRE 03 · Mogi Mirim')+L(B('Meta','400','k'),B('Feito','312','k'),B('IEL','78','k'))+B('Ritmo','3,2 por dia · chance 0,64 de bater a meta')+B('Compartilhar meu link','','acao')+B('Minha rede','5 parados há 7 dias','alto')+B('Tarefas','2 abertas')),
+  mostra:['Meta, feito e IEL','Ritmo e chance'],acoes:['Compartilhar link','Ver parados','Abrir tarefa'],dados:['meta','iel','pessoa (só a rede)']},
+ compartilhar:{t:'Compartilhar link',p:'Liderança',m:'M04',
+  w:cel(B('Escolha o canal','')+L(B('WhatsApp','','acao'),B('Instagram','','acao'))+L(B('QR Code','','acao'),B('Copiar','','acao'))+B('Mensagem pronta','Oi, {nome}! Conheça o projeto...','alto')+B('Cada canal gera um link próprio','assim a campanha sabe de onde veio')),
+  mostra:['Canais com link próprio'],acoes:['Compartilhar'],dados:['link_convite']},
+ offline:{t:'Cadastro offline',p:'Liderança',m:'M16',
+  w:cel(B('Sem internet','os cadastros ficam no aparelho')+B('Novo cadastro','nome · telefone · município · local','alto')+B('Salvar','','acao')+B('Na fila','4 cadastros esperando conexão')),
+  mostra:['Fila local de cadastros'],acoes:['Salvar no aparelho','Enviar quando voltar a conexão'],dados:['fila local','pessoa']},
+ tarefas:{t:'Tarefas e missões',p:'Liderança',m:'M10',
+  w:cel(B('Missões da semana','')+B('Completar local de votação','23 pessoas da sua rede · prazo sexta','alto')+B('Convidar 5 pessoas para o evento de sábado','2 de 5')+B('Marcar como feita','','acao')),
+  mostra:['Tarefas com prazo e progresso'],acoes:['Concluir com prova'],dados:['tarefa','missao']},
+ checkin:{t:'Evento com check-in',p:'Liderança',m:'M10',
+  w:cel(B('Encontro regional · sábado 14h','Mogi Mirim · 120 confirmados')+B('Ler QR do participante','','alto')+B('Presentes','86 de 120 (72% dos confirmados)')+B('Cadastrar quem não tem conta','vira indicação do evento')),
+  mostra:['Presença ao vivo'],acoes:['Ler QR','Cadastro no evento'],dados:['evento','presenca','indicacao']},
+ ranking:{t:'Ranking pelo IEL',p:'Liderança',m:'M08',
+  w:cel(B('Ranking da GRE 03','semana 46')+B('1º Liderança F · IEL 91','2º Liderança A · IEL 78 (você)','alto')+B('Seu ponto fraco','Qualidade: 18% sem local de votação')+B('Ver como melhorar','','acao')),
+  mostra:['Posição pelo IEL','Componente mais fraco'],acoes:['Abrir a lista para completar'],dados:['iel']},
+ apuracao:{t:'Apuração ao vivo',p:'Sala de situação',m:'M13',
+  w:desk('Apuração',L(B('Seções apuradas','62% · atualizado há 30 s','k'),B('Votos do candidato','48.210','k'),B('Chance de eleição','71% (faixa 80%)','k'))+L(B('Mapa','apurado × esperado por município','mapa'),B('Quociente ao vivo','QE parcial · cadeiras do partido · posição do candidato na lista','alto'))+B('Acontecimentos','14h52 Campinas 100% apurada · 15h03 candidato sobe para 9º no partido')),
+  mostra:['Placar, chance e quociente ao vivo','Eventos'],acoes:['Telão','Replay'],dados:['tse (divulgação)','projecao']},
+ projvaga:{t:'Projeção de vaga',p:'Sala de situação',m:'M13',
+  w:desk('Apuração',B('Projeção','votos projetados 81.000 (faixa 80%: 76.000 a 86.000)')+L(B('Votos que faltam para a vaga','~3.400 sobre a última média do partido','k'),B('Municípios que faltam apurar','com mais peso para o candidato','alto'))+B('Estimativa. Não é resultado oficial.','')),
+  mostra:['Faixa da projeção','Votos que faltam'],acoes:['Ver a curva da projeção'],dados:['projecao','tse_resultado_secao 2022']},
+ telao:{t:'Telão',p:'Sala de situação',m:'M13',
+  w:'<div class="wf">'+B('Telão','carrossel de quadros: placar do candidato · partido · quociente · municípios-chave','alto')+L(B('Pausar',''),B('Próximo quadro',''),B('Tela cheia',''))+'</div>',
+  mostra:['Quadros em carrossel'],acoes:['Pausar','Tela cheia'],dados:['mesmos da apuração']},
+ metaresultado:{t:'Meta × resultado',p:'Coordenação',m:'M13',
+  w:desk('Apuração',L(B('Bateu','municípios com votos ≥ meta','k'),B('Não bateu','','k'),B('Sem meta','','k'))+L(B('Mapa','verde, laranja e cinza','mapa'),B('Tabela','município · meta · votos 2026 · diferença em votos · cluster · lideranças','alto'))),
+  mostra:['Situação por município, GRE e cluster'],acoes:['Abrir município','Exportar'],dados:['meta','tse_resultado_secao 2026']},
+ eficacia:{t:'Eficácia por liderança (pós)',p:'Coordenação',m:'M08',
+  w:desk('Lideranças',B('Voto atribuído por liderança','estimativa por seção · faixa de 80%')+B('Tabela','liderança · cadastros com seção · voto atribuído · conversão · IEL final · classe','alto')+L(B('Base pequena','12 lideranças com menos de 30 cadastros com seção'),B('Método','diferença em diferenças · versão 1.0'))),
+  mostra:['Voto atribuído e IEL final'],acoes:['Comparar no município','Exportar'],dados:['indicacao','pessoa (seção)','tse_resultado_secao']},
+ licoes:{t:'Relatório de lições',p:'Coordenação',m:'M14',
+  w:desk('Relatórios',B('Lições do ciclo','o que funcionou por cluster, canal e tipo de liderança','alto')+L(B('Canais','cadastros e conversão por canal'),B('Eventos','custo por cadastro e por presença')),B('Gerar PDF','','acao')),
+  mostra:['Comparação por canal, cluster e liderança'],acoes:['Gerar PDF'],dados:['todos os agregados']},
+ proximo:{t:'Planejamento do próximo ciclo',p:'Coordenação',m:'M06',
+  w:desk('Metas',B('Novo ciclo','copiar a estrutura: lideranças A e B, regiões, metas como ponto de partida')+B('Sugestão de meta','potencial com o resultado de 2026 como "voto anterior"','alto')+B('Criar ciclo','','acao')),
+  mostra:['Estrutura reaproveitada'],acoes:['Criar ciclo'],dados:['campanha','vinculo_lideranca_municipio']}
+};
+
+var FLUXOS=[
+ {id:'captacao',n:'Captação e indicação',d:'Caminho de um apoiador novo, do link da liderança até a entrada na rede. É o fluxo que resolve o rastreio da indicação.',p:['link','landing','sucesso','arvore','avisolider']},
+ {id:'coordenacao',n:'Coordenação no dia a dia',d:'Rotina da coordenação: ver o estado, escolher um recorte, decidir metas e aprovar propostas.',p:['login','comando','municipio','planejamento','propostas','alertas','semanal']},
+ {id:'lideranca',n:'Liderança no celular',d:'Rotina da liderança: ver a própria meta, compartilhar o link, cadastrar sem internet e cumprir tarefas.',p:['minharede','compartilhar','offline','tarefas','checkin','ranking']},
+ {id:'eleicao',n:'Eleição e pós-eleição',d:'Noite da apuração e as semanas seguintes: vaga, resultado, eficácia real das lideranças e o próximo ciclo.',p:['apuracao','projvaga','telao','metaresultado','eficacia','licoes','proximo']}
+];
+var fluxoAtual=FLUXOS[0], passoAtual=0;
+function desenhaAbas(){
+  $('#abas-fluxo').innerHTML=FLUXOS.map(function(f){return '<button type="button" role="tab" aria-selected="'+(f===fluxoAtual)+'" class="'+(f===fluxoAtual?'on':'')+'" data-fx="'+f.id+'">'+esc(f.n)+'</button>'}).join('');
+  $$('#abas-fluxo button').forEach(function(b){b.addEventListener('click',function(){fluxoAtual=FLUXOS.filter(function(f){return f.id===b.dataset.fx})[0];passoAtual=0;desenhaFluxo()})});
+}
+function desenhaFluxo(){
+  desenhaAbas();
+  $('#fluxo-desc').textContent=fluxoAtual.d;
+  $('#passos').innerHTML=fluxoAtual.p.map(function(k,i){var t=TELAS[k];return '<button type="button" class="passo'+(i===passoAtual?' on':'')+'" data-i="'+i+'" aria-pressed="'+(i===passoAtual)+'"><strong>'+esc(t.t)+'</strong><span>'+esc(t.p)+' · '+t.m+'</span></button>'}).join('');
+  $$('#passos .passo').forEach(function(b){b.addEventListener('click',function(){passoAtual=+b.dataset.i;desenhaFluxo()})});
+  var t=TELAS[fluxoAtual.p[passoAtual]];
+  $('#detalhe-tela').innerHTML='<div>'+t.w+'</div><div class="cartao ficha"><div class="rotulo">Passo '+(passoAtual+1)+' de '+fluxoAtual.p.length+' · '+t.m+'</div><h3>'+esc(t.t)+'</h3><dl>'+
+   '<dt>Quem usa</dt><dd>'+esc(t.p)+'</dd>'+
+   '<dt>Mostra</dt><dd>'+t.mostra.map(esc).join('<br>')+'</dd>'+
+   '<dt>Ações</dt><dd>'+t.acoes.map(esc).join('<br>')+'</dd>'+
+   '<dt>Dados</dt><dd>'+t.dados.map(function(d){return '<code>'+esc(d)+'</code>'}).join(' ')+'</dd></dl>'+
+   '<div style="display:flex;gap:8px;margin-top:16px"><button type="button" id="p-ant"'+(passoAtual===0?' disabled':'')+'>Passo anterior</button><button type="button" id="p-prox"'+(passoAtual===fluxoAtual.p.length-1?' disabled':'')+'>Próximo passo</button></div></div>';
+  var a=$('#p-ant'),p=$('#p-prox');
+  if(a) a.addEventListener('click',function(){if(passoAtual>0){passoAtual--;desenhaFluxo()}});
+  if(p) p.addEventListener('click',function(){if(passoAtual<fluxoAtual.p.length-1){passoAtual++;desenhaFluxo()}});
+}
+desenhaFluxo();
+
+/* ---------- matemática ---------- */
+function erf(x){var s=x<0?-1:1;x=Math.abs(x);var t=1/(1+0.3275911*x);var y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y}
+function Phi(z){return 0.5*(1+erf(z/Math.SQRT2))}
+function probMeta(ritmo,dias,falta){ if(falta<=0) return 1; var mu=ritmo*dias; if(mu<=0) return 0; return Phi((mu-falta+0.5)/Math.sqrt(mu)); }
+function num(id){var v=parseFloat(String($(id).value).replace(',','.'));return isNaN(v)?null:v}
+function lim(x,a,b){return Math.max(a,Math.min(b,x))}
+
+/* ---------- IEL ---------- */
+var PESOS_IEL={vol:20,qua:20,ade:15,mul:10,rit:15,con:20};
+var MEDIA_ADESAO=0.65;
+function calcIEL(){
+  var meta=num('#i-meta')||1, tot=num('#i-tot')||0, val=Math.min(num('#i-val')||0,tot), chk=num('#i-chk')||0, apo=Math.min(num('#i-apo')||0,chk), mul=lim(num('#i-mul')||0,0,100), rit=num('#i-rit')||0, dias=num('#i-dias')||0, vat=num('#i-vat'), fe=num('#i-fe')||0.5;
+  var c={};
+  c.vol=Math.min(1.2,val/meta)/1.2*100;
+  c.qua=tot>0?val/tot*100:0;
+  var k=20; c.ade=((apo+MEDIA_ADESAO*k)/(chk+k))*100;
+  c.mul=mul;
+  c.rit=probMeta(rit,dias,meta-val)*100;
+  var pos=(vat!==null&&$('#i-vat').value!=='');
+  c.con=pos?Math.min(1.5,vat/Math.max(1,val*fe))/1.5*100:null;
+  var somaP=0,somaV=0;
+  Object.keys(PESOS_IEL).forEach(function(kk){ if(c[kk]===null) return; somaP+=PESOS_IEL[kk]; somaV+=PESOS_IEL[kk]*c[kk]; });
+  var nota=somaV/somaP;
+  var cls=nota>=75?'A · referência':nota>=55?'B · boa':nota>=35?'C · atenção':'D · crítica';
+  $('#iel-nota').textContent=fmt.format(Math.round(nota));
+  $('#iel-classe').textContent='Classe '+cls;
+  var nomes={vol:'Volume',qua:'Qualidade',ade:'Adesão',mul:'Multiplicação',rit:'Ritmo',con:'Conversão em voto'};
+  var pior=null;
+  $('#iel-comps').innerHTML=Object.keys(nomes).map(function(kk){
+    if(c[kk]===null) return '<div class="comp"><span>'+nomes[kk]+'</span><span class="fraco">fora até a eleição</span><span class="num fraco">-</span></div>';
+    if(pior===null||c[kk]<c[pior]) pior=kk;
+    return '<div class="comp"><span>'+nomes[kk]+' <span class="fraco">('+Math.round(PESOS_IEL[kk]/somaP*100)+'%)</span></span><div class="barra"><i style="width:'+lim(c[kk],0,100)+'%"></i></div><span class="num">'+fmt.format(Math.round(c[kk]))+'</span></div>';
+  }).join('');
+  var acoes={vol:'aumentar os cadastros: a liderança está abaixo da meta',qua:'completar local de votação e corrigir telefones dos cadastros',ade:'checar o apoio real: poucos confirmaram apoio na amostra',mul:'ativar os diretos: poucos trouxeram alguém',rit:'acelerar: no ritmo atual a meta não fecha no prazo',con:'rever a rede: o voto nas seções ficou abaixo do esperado'};
+  $('#iel-obs').textContent='Componente mais fraco: '+nomes[pior]+'. Ação sugerida: '+acoes[pior]+'. Pesos entre parênteses já redistribuídos.';
+}
+$$('#iel-ent input').forEach(function(i){i.addEventListener('input',calcIEL)}); calcIEL();
+
+/* ---------- PU ---------- */
+var PU=[
+ {k:'v',n:'Votos do candidato na eleição anterior',p:30,x:0.82},
+ {k:'a',n:'Votos dos partidos aliados',p:15,x:0.64},
+ {k:'m',n:'Votos válidos do cargo (mercado)',p:15,x:0.71},
+ {k:'b',n:'Base profissional (CONFEA/CREA)',p:15,x:0.77},
+ {k:'l',n:'Inspetores e presidentes de entidade',p:15,x:0.55},
+ {k:'d',n:'Aliados no município (prefeito, vereador, dobrada)',p:10,x:0.40}
+];
+function desenhaPU(){
+  $('#pu-pesos').innerHTML=PU.map(function(c,i){return '<label class="campo" style="margin:8px 0">'+esc(c.n)+': <span class="num" id="pu-pv'+i+'">'+c.p+'</span><input type="range" min="0" max="50" value="'+c.p+'" data-pu="'+i+'" aria-label="Peso de '+esc(c.n)+'"></label>'}).join('');
+  $('#pu-mun').innerHTML=PU.map(function(c,i){return '<label class="campo" style="margin:8px 0">'+esc(c.n)+': <span class="num" id="pu-xv'+i+'">'+fmt1.format(c.x*100)+'</span> (percentil)<input type="range" min="0" max="100" value="'+Math.round(c.x*100)+'" data-pux="'+i+'" aria-label="Posição de '+esc(c.n)+'"></label>'}).join('');
+  $$('[data-pu]').forEach(function(r){r.addEventListener('input',function(){PU[+r.dataset.pu].p=+r.value;$('#pu-pv'+r.dataset.pu).textContent=r.value;calcPU()})});
+  $$('[data-pux]').forEach(function(r){r.addEventListener('input',function(){PU[+r.dataset.pux].x=r.value/100;$('#pu-xv'+r.dataset.pux).textContent=fmt1.format(+r.value);calcPU()})});
+  calcPU();
+}
+function calcPU(){var sp=0,sv=0;PU.forEach(function(c){sp+=c.p;sv+=c.p*c.x});$('#pu-nota').textContent=sp?fmt.format(Math.round(sv/sp*100)):'0'}
+desenhaPU();
+
+/* ---------- cascata ---------- */
+function calcCascata(){
+  var V=num('#c-votos')||0, fe=num('#c-fe')||0.5, fl=num('#c-fl')||1, fm=num('#c-fm')||1, pl=lim((num('#c-pl')||0)/100,0,1), dias=num('#c-dias')||1, hoje=num('#c-hoje')||0, rit=num('#c-rit')||0;
+  var pesoLider=fl*fm*fe, pesoResp=fl*fe;
+  var pesoMedio=pl*pesoLider+(1-pl)*pesoResp;
+  var cad=Math.ceil(V/pesoMedio);
+  var falta=Math.max(0,cad-hoje);
+  var porDia=falta/dias;
+  var prob=probMeta(rit,dias,falta);
+  $('#c-saida').innerHTML=
+   '<div class="grade g2"><div class="kpi"><div class="v">'+fmt.format(cad)+'</div><div class="d">cadastros válidos necessários</div></div>'+
+   '<div class="kpi"><div class="v">'+fmt.format(Math.ceil(porDia))+'</div><div class="d">cadastros por dia para fechar no prazo</div></div>'+
+   '<div class="kpi"><div class="v">'+fmt.format(falta)+'</div><div class="d">cadastros que faltam</div></div>'+
+   '<div class="kpi"><div class="v">'+fmt.format(Math.round(prob*100))+'%</div><div class="d">chance de cumprir no ritmo atual</div></div></div>';
+  $('#c-fx').textContent=
+   'peso do cadastro de liderança = fl × fm × fe = '+pesoLider.toFixed(3).replace('.',',')+' voto\n'+
+   'peso do cadastro de responsável = fl × fe = '+pesoResp.toFixed(3).replace('.',',')+' voto\n'+
+   'peso médio = '+Math.round(pl*100)+'% × liderança + '+Math.round((1-pl)*100)+'% × responsável = '+pesoMedio.toFixed(3).replace('.',',')+' voto\n'+
+   'cadastros = teto(meta de votos ÷ peso médio) = '+fmt.format(cad)+'\n'+
+   'chance = Φ((ritmo × dias − falta + 0,5) ÷ √(ritmo × dias))';
+}
+$$('#calculos input').forEach(function(i){i.addEventListener('input',calcCascata)}); calcCascata();
+
+/* ---------- quociente ---------- */
+var PARTIDOS=[['Partido A',4200000],['Federação B',3600000],['Partido C',2900000],['Partido D',2450000],['Partido E',1900000],['Federação F',1650000],['Partido G',1200000],['Partido H',980000],['Partido I',610000],['Partido J',240000]];
+function desenhaQTab(){
+  $('#q-tab tbody').innerHTML=PARTIDOS.map(function(p,i){return '<tr><td><input type="text" value="'+esc(p[0])+'" data-qn="'+i+'" aria-label="Nome do partido '+(i+1)+'"></td><td class="n"><input type="number" min="0" value="'+p[1]+'" data-qv="'+i+'" aria-label="Votos do partido '+(i+1)+'"></td></tr>'}).join('');
+  var sel=$('#q-meu'); var atual=sel.value||'3';
+  sel.innerHTML=PARTIDOS.map(function(p,i){return '<option value="'+i+'"'+(String(i)===atual?' selected':'')+'>'+esc(p[0])+'</option>'}).join('');
+  $$('[data-qn]').forEach(function(e){e.addEventListener('input',function(){PARTIDOS[+e.dataset.qn][0]=e.value; var o=$('#q-meu option[value="'+e.dataset.qn+'"]'); if(o) o.textContent=e.value; calcQ()})});
+  $$('[data-qv]').forEach(function(e){e.addEventListener('input',function(){PARTIDOS[+e.dataset.qv][1]=Math.max(0,+e.value||0);calcQ()})});
+}
+function calcQ(){
+  var vagas=Math.max(1,Math.round(num('#q-vagas')||1)), meu=+$('#q-meu').value||0, pos=Math.max(1,Math.round(num('#q-pos')||1));
+  var validos=PARTIDOS.reduce(function(s,p){return s+p[1]},0);
+  if(validos<=0){$('#q-saida').innerHTML='<p>Informe os votos dos partidos.</p>';return}
+  var QE=Math.round(validos/vagas);
+  var cad=PARTIDOS.map(function(p){return Math.floor(p[1]/QE)});
+  var porQP=cad.reduce(function(s,c){return s+c},0);
+  var sobras=vagas-porQP;
+  var aptos=PARTIDOS.map(function(p){return p[1]>=0.8*QE});
+  var ultimaMedia=null, ganhou=[];
+  for(var r=0;r<sobras;r++){
+    var best=-1,bm=-1;
+    PARTIDOS.forEach(function(p,i){ if(!aptos[i]) return; var m=p[1]/(cad[i]+1); if(m>bm){bm=m;best=i} });
+    if(best<0){ PARTIDOS.forEach(function(p,i){ var m=p[1]/(cad[i]+1); if(m>bm){bm=m;best=i} }); }
+    cad[best]++; ultimaMedia=bm; ganhou.push(best);
+  }
+  var meuVotos=PARTIDOS[meu][1], meuCad=cad[meu];
+  var faltaMais=null;
+  if(ultimaMedia!==null){ faltaMais=Math.max(0,Math.floor(ultimaMedia*(meuCad+1))-meuVotos+1); }
+  else { faltaMais=Math.max(0,QE*(meuCad+1)-meuVotos); }
+  var eleito=pos<=meuCad;
+  var linhas=PARTIDOS.map(function(p,i){return {n:p[0],v:p[1],c:cad[i],a:aptos[i],i:i}}).sort(function(a,b){return b.c-a.c||b.v-a.v});
+  $('#q-saida').innerHTML=
+   '<div class="grade g2"><div class="kpi"><div class="v">'+fmt.format(QE)+'</div><div class="d">quociente eleitoral (votos válidos '+fmt.format(validos)+' ÷ '+vagas+' vagas)</div></div>'+
+   '<div class="kpi"><div class="v">'+fmt.format(sobras)+'</div><div class="d">vagas distribuídas nas sobras ('+fmt.format(porQP)+' pelo quociente partidário)</div></div></div>'+
+   '<div class="aviso '+(eleito?'ok':'')+'" style="margin:14px 0"><strong>'+esc(PARTIDOS[meu][0])+': '+meuCad+' cadeiras.</strong> Na posição '+pos+' da lista, o candidato '+(eleito?'fica com uma vaga.':'fica fora: faltam '+(pos-meuCad)+' cadeiras para o partido.')+'<br>Para o partido ganhar mais 1 cadeira, faltam cerca de '+fmt.format(faltaMais)+' votos (sobre a última média que ganhou vaga, outros votos iguais).</div>'+
+   '<table><thead><tr><th>Partido</th><th class="n">Cadeiras</th><th>80% do QE</th></tr></thead><tbody>'+
+   linhas.map(function(l){return '<tr'+(l.i===meu?' style="background:var(--acao-suave)"':'')+'><td>'+esc(l.n)+'</td><td class="n">'+l.c+'</td><td>'+(l.a?'<span class="s s-sim">atinge</span>':'<span class="s s-nao">não atinge</span>')+'</td></tr>'}).join('')+'</tbody></table>';
+}
+desenhaQTab(); $('#q-meu').value='3';
+['#q-vagas','#q-meu','#q-pos'].forEach(function(id){$(id).addEventListener('input',calcQ);$(id).addEventListener('change',calcQ)}); calcQ();
+
+/* ---------- relatórios ---------- */
+var REL=[
+ ['Boletim da coordenação','Diário','Coordenação','Cadastros do dia e de 7 dias, ritmo, municípios em risco, alertas abertos, saúde das integrações'],
+ ['Minha rede hoje','Diário','Liderança (celular)','Quem entrou, quem parou, meta da semana, posição no ranking'],
+ ['Relatório de IA do dia','Diário','Coordenação','Leitura em texto das mudanças do dia, com os números citados e a base de cada um'],
+ ['Semanal por GRE','Semanal','Coordenação regional','Meta × realizado por município, lideranças A e D, clusters que mudaram, propostas'],
+ ['Semanal de lideranças','Semanal','Responsáveis','IEL de cada liderança, componente mais fraco, ação sugerida, parados há 7 dias'],
+ ['Canais e links','Semanal','Coordenação e comunicação','Cliques, cadastros e conversão por canal, por UTM e por landing page'],
+ ['Monitoramento digital','Semanal','Comunicação','Menções, sentimento, notícias, pesquisas registradas e agregador'],
+ ['Ficha do município','Sob pedido','Todos com acesso ao município','PU com a conta, cluster, histórico eleitoral, locais de votação, lideranças, aliados'],
+ ['Relatório por escola','Sob pedido','Coordenação regional','Modelo de Mogi Mirim e Mogi Guaçu para qualquer município: locais, setores, bairros, meta rateada'],
+ ['Ficha da liderança','Sob pedido','Responsável e coordenação','Rede, canais, qualidade, IEL por semana, municípios e metas'],
+ ['Evento','Sob pedido','Organizador','Confirmados, presentes, cadastros novos, custo por presença'],
+ ['Financeiro × resultado','Sob pedido','Financeiro','Gasto por região e categoria, ritmo contra o limite legal, custo por cadastro'],
+ ['Meta × resultado','Pós-eleição','Coordenação','Por município, GRE, cluster e liderança, com diferença em votos'],
+ ['Eficácia real das lideranças','Pós-eleição','Coordenação','Voto atribuído por seção, conversão, IEL final, faixa de incerteza'],
+ ['Lições do ciclo','Pós-eleição','Coordenação','O que funcionou por canal, cluster, tipo de liderança e evento; proposta para o próximo ciclo']
+];
+function desenhaRel(f){$('#tab-rel tbody').innerHTML=REL.filter(function(r){return f==='todos'||r[1]===f}).map(function(r){return '<tr><td><strong>'+esc(r[0])+'</strong></td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[3])+'</td></tr>'}).join('')}
+desenhaRel('todos'); grupoFiltro('[data-rf]','rf',desenhaRel);
+})();
+</script>
+</body>
+</html>
