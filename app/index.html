@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comando Integrado · Protótipo</title>
+<meta name="description" content="Protótipo navegável da plataforma de gestão de campanha: painel, território com grupos editáveis, rede de indicações, contatos, lideranças, acordos, cenários, alertas e relatórios.">
+<meta name="theme-color" content="#f5f4f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121314" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css?v=6">
+</head>
+<body>
+<a class="pular" href="#principal">Pular para o conteúdo</a>
+<header class="topo">
+  <button class="bt-menu" id="abrir-menu" aria-label="Abrir menu">Menu</button>
+  <a class="marca" href="#/painel"><span class="marca-sinal" aria-hidden="true"></span><span><b>Comando Integrado</b><small id="cargo-topo"></small></span></a>
+  <label class="topo-campo" id="campo-camp" hidden><span>Candidatura</span><select id="campanha" aria-label="Candidatura"></select></label>
+  <label class="topo-campo"><span>Estado</span><select id="uf-topo" aria-label="Estado em uso"></select></label>
+  <label class="topo-campo"><span>Recorte</span><select id="escopo" aria-label="Recorte do território"></select></label>
+  <label class="topo-campo"><span>Ver como</span><select id="perfil" aria-label="Perfil de visualização"></select></label>
+  <p class="perfil-desc" id="perfil-desc"></p>
+  <a class="bt sec peq" href="#/cadastro">Página do apoiador</a>
+  <button class="bt-tema" id="tema" aria-label="Tema"><span aria-hidden="true"></span></button>
+</header>
+<nav class="menu" id="menu" aria-label="Seções"></nav>
+<main id="principal" tabindex="-1"><p class="carregando">Carregando os municípios do IBGE…</p></main>
+<p class="demo-faixa">Demonstração com pessoas, telefones, contas e valores fictícios. Municípios, mapas e população: IBGE (Censo 2022). <a href="../">Ler a proposta</a></p>
+<div id="gaveta" hidden></div>
+<div id="avisos" class="avisos" aria-live="polite"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="js/nucleo.js?v=6"></script>
+<script src="js/mapa.js?v=6"></script>
+<script src="js/telas.js?v=6"></script>
+<script src="js/telas2.js?v=6"></script>
+<script src="js/telas3.js?v=6"></script>
+<script>
+(async () => {
+  try {
+    await CIC.iniciar();
+    CIC.ligarTopo();
+    addEventListener('hashchange', CIC.render);
+    let t; addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => { if (!['cadastro', 'contatos', 'acordos', 'config', 'auditoria'].includes(CIC.rota().nome) && !document.querySelector('#gaveta:not([hidden])') && !document.querySelector('#modal:not([hidden])') && !(document.querySelector('#sel-pop') && !document.querySelector('#sel-pop').hidden)) CIC.render(); }, 300); });
+    CIC.render();
+    setInterval(CIC.simular, 6500);
+  } catch (e) {
+    document.getElementById('principal').innerHTML = '<section class="bloqueio"><h1>Não carregou os dados.</h1><p>Abra pelo endereço do GitHub Pages ou por um servidor local. Aberto direto do disco, o navegador bloqueia a leitura dos arquivos de dados.</p></section>';
+    console.error(e);
+  }
+})();
+</script>
+</body>
+</html>
