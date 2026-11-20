@@ -21,7 +21,7 @@ T.entrar = (main) => {
   const [k1, c1] = camps[0];
   const VE = { admin: 'Tudo da campanha. Cria usuários e muda o que cada perfil vê.', coord: 'Pessoas, mapa e metas. Não vê dinheiro.', coordreg: 'Só a própria região. Não vê dinheiro.', financeiro: 'Gastos e pagamentos: para onde foi o dinheiro. Não vê o telefone das pessoas.', analista: 'Números, mapas e simulações. Não vê nome nem telefone.', lideranca: 'Só a própria rede e o link de convite.' };
   main.innerHTML = `<div class="entrar">
-    <header class="entrar-cab"><p class="selo-demo">Versão de exemplo</p><h1>Escolha um perfil para ver o sistema como essa pessoa vê</h1>
+    <header class="entrar-cab"><div class="marca-cad">${CIC.SIMBOLO}<b>multiplica</b></div><p class="selo-demo">Versão de exemplo</p><h1>Escolha um perfil para ver o sistema como essa pessoa vê</h1>
       <p>Cada cartão abaixo é uma pessoa de exemplo. Toque em um cartão para entrar com o perfil dela. Para trocar de perfil, toque em <b>Trocar perfil</b>, no alto de qualquer tela.</p></header>
     <section class="perfis-demo" aria-label="Perfis de exemplo da ${esc(c1.nome)}">
       <h2>${esc(c1.nome)} <small>${esc(CIC.CARGOS[c1.cargo].nome)} · equipe completa</small></h2>

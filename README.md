@@ -1,29 +1,28 @@
-# Comando Integrado de Campanha
+# Multiplica
 
-Proposta de produto e protótipo navegável de uma plataforma de gestão de campanha eleitoral. A plataforma serve a qualquer cargo, em qualquer estado.
+Proposta de produto e protótipo navegável da Multiplica (multipliqueai.com.br), a plataforma de rede de apoiadores para campanhas eleitorais. A plataforma serve a qualquer cargo, em qualquer estado, e a qualquer partido.
+
+Conceito: uma boa ideia, multiplicada por muita gente. Cada apoiador recebe um link próprio ("Multiplique aí"), chama quem conhece, e cada pessoa que entra tem um caminho até a fonte inicial.
 
 - Proposta: `index.html`
 - Protótipo: `app/index.html`
 
 ## O que o protótipo mostra
 
-1. **Painel do partido:** o partido vê e abre todas as candidaturas. Cada candidato vê só a própria.
-2. **Estados de atuação:** a candidatura escolhe os estados em Configurações. Só esses estados aparecem nas telas.
-3. **Painel da campanha:**
-   - contatos engajados, ritmo e meta;
-   - mapa, origem do cadastro e nível na rede;
-   - entradas ao vivo e alertas.
-4. **Território:**
-   - grupos, subgrupos e sub-subgrupos com nome livre;
-   - lista de municípios com busca, que pergunta em qual grupo incluir;
-   - confirmação antes de tirar um município;
-   - aviso quando um subgrupo sai do grupo-pai.
-5. **Rede:** link e QR próprios para cada pessoa, com o caminho de cada cadastro até a candidatura.
-6. **Contatos:** redes sociais gravadas num formato padrão, autorizações e histórico de contato.
-7. **Lideranças:** Índice de Eficácia da Liderança, com pesos ajustáveis.
-8. **Acordos e pagamentos:** lista fechada de objetos, dupla aprovação e alertas de conformidade.
-9. **Cenários:** quociente e sobras, alianças, dobradinha e meta de votos.
-10. **Alertas, relatórios em CSV, registro de atividades e 7 perfis de acesso.**
+1. **Entrar:** um cartão por perfil de exemplo, com o que cada perfil vê. "Trocar perfil", no alto, volta para a escolha.
+2. **Partido:** vê só os números de cada campanha e não muda nada. Cria o primeiro administrador de cada campanha.
+3. **Equipe e acessos:** o administrador da campanha dá acesso, cria perfis e outros administradores, e marca as telas e as regras de cada perfil.
+4. **Início:**
+   - saudação e a frase do dia;
+   - o link de convite da pessoa, com o botão "Multiplique aí";
+   - "O que fazer agora", com até 3 avisos.
+5. **Pessoas:** lista de pessoas, quem trouxe quem e melhores lideranças. Cada pessoa mostra a fonte inicial.
+6. **Mapa e regiões:** regiões com nome livre, lista de cidades com busca e aviso quando uma cidade sai da região de cima.
+7. **Gastos e pagamentos:** para onde foi o dinheiro, por tipo de gasto e por cidade. Contrato e comprovante são opcionais.
+8. **Simular votos, Avisos, Baixar planilhas, Histórico de ações e Ajustes da campanha.**
+9. **Convite do apoiador:** "Paula te chamou", cadastro em 1 minuto e o próprio link no fim.
+
+Toda tela cabe na janela, do celular à tela grande. O que não cabe vira partes, com abas no alto, e as tabelas mostram as linhas que cabem.
 
 ## Dados
 

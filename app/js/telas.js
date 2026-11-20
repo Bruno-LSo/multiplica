@@ -152,6 +152,10 @@ CIC.cabecalho = (rotulo, titulo, texto, extra = '') => `<header class="cab"><div
 CIC.mun = (cod) => CIC.demo.mun.get(cod);
 CIC.nomeMun = (cod) => CIC.mun(cod)?.nome || 'Município';
 CIC.linkPessoal = (p) => `${location.origin}${location.pathname}#/cadastro?ref=${p.cod}`;
+CIC.linkMarca = (p) => `multipliqueai.com.br/${String(p.cod).toLowerCase()}`;
+CIC.SIMBOLO = '<svg class="marca-simbolo" viewBox="0 0 64 64" aria-hidden="true"><path d="M15 53 L40 28" stroke="#14b8a6" stroke-width="10" stroke-linecap="round" fill="none"/><circle cx="50" cy="16" r="7.5" fill="#14b8a6"/><path d="M49 53 L24 28" stroke="#ff7a59" stroke-width="10" stroke-linecap="round" fill="none"/><circle cx="14" cy="16" r="7.5" fill="#ff7a59"/></svg>';
+CIC.textoConvite = (link) => `Uma boa ideia precisa de gente. Entre na rede pelo meu link e multiplique aí: ${link}`;
+CIC.multiplicacao = () => '<div class="multiplicacao" aria-hidden="true">' + [[1, 20], [2, 14], [4, 10], [8, 6]].map(([n, d], k) => '<div class="col">' + Array.from({ length: n }, (_, j) => `<i style="--d:${d}px;--t:${k * 380 + j * 40}ms;--c:${k ? 'var(--vivo)' : 'var(--coral)'}"></i>`).join('') + '</div>').join('') + '</div>';
 CIC.qr = (texto, cel = 4) => { try { const q = qrcode(0, 'M'); q.addData(texto); q.make(); return q.createSvgTag({ cellSize: cel, margin: 2, scalable: true }); } catch { return ''; } };
 const SEV = { critico: ['Crítico', '!'], grave: ['Grave', '!'], alerta: ['Atenção', '›'], info: ['Informação', 'i'] };
 CIC.selo = (sev) => `<span class="sev sev-${sev}"><i aria-hidden="true">${SEV[sev][1]}</i>${SEV[sev][0]}</span>`;
@@ -242,7 +246,7 @@ T.painel = (main) => {
     ? [{ sev: 'info', regra: 'Convide mais gente', texto: `Mande o seu link para 5 pessoas hoje. Faltam ${fN.format(falta)} pessoas para a meta da sua rede.`, rota: null }]
     : ehPartido ? [] : CIC.alertas().filter((a) => CIC.pode(a.rota.split('?')[0])).slice(0, 3);
   main.innerHTML = `
-  ${CIC.cabecalho(ehPartido ? 'Números da campanha' : 'Início', titulo, `Hoje entraram <b>${fN.format(m.d1)}</b> pessoas ${onde}. Nos últimos 7 dias, <b>${fN.format(m.d7)}</b>.${falta ? ` Faltam <b>${fN.format(falta)}</b> pessoas para a meta.` : ' A meta foi batida.'}`,
+  ${CIC.cabecalho(ehPartido ? 'Números da campanha' : 'Início', titulo, `Hoje ${m.d1 === 1 ? 'entrou' : 'entraram'} <b>${fN.format(m.d1)}</b> ${m.d1 === 1 ? 'pessoa' : 'pessoas'} ${onde}. Nos últimos 7 dias, <b>${fN.format(m.d7)}</b>.${falta ? ` ${falta === 1 ? 'Falta' : 'Faltam'} <b>${fN.format(falta)}</b> ${falta === 1 ? 'pessoa' : 'pessoas'} para a meta.` : ' A meta foi batida.'}`,
     `<div class="cab-acoes"><label class="chave"><input type="checkbox" id="sim" ${s.sim ? 'checked' : ''}><span>Simular entradas ao vivo</span></label></div>`)}
   ${ehPartido ? `<p class="faixa-partido">O partido vê só os números de <b>${esc(CIC.campAtual().nome)}</b>, sem mudar nada. <a href="#/partido">Voltar às campanhas do partido</a></p>` : ''}
   ${ehPartido ? '' : T.blocoMeuLink(eu)}
@@ -270,7 +274,7 @@ T.painel = (main) => {
   </section>
   <section class="grade-3l">
     <article class="cartao"><header><h2>Fontes iniciais que mais cresceram</h2><p>Quem mandou o 1º link de cada ramo da rede, por cadastros novos em 7 dias no ramo inteiros.</p></header><div id="t-cresc"></div></article>
-    <article class="cartao"><header><h2>Ao vivo</h2><p>Últimas entradas, com quem indicou.</p></header><ol class="feed" id="feed"></ol></article>
+    <article class="cartao"><header><h2>Quem entrou agora<span class="vivo">ao vivo</span></h2><p>Últimas entradas, com quem chamou.</p></header><ol class="feed" id="feed"></ol></article>
     <article class="cartao"><header><h2>Alertas abertos</h2><p>Regras que dispararam neste recorte.</p></header><div id="t-alertas"></div></article>
   </section>`;
   // crescimento
@@ -299,6 +303,7 @@ T.painel = (main) => {
   // mapa
   T.miniMapa($('#g-mapa'), v, $('#g-legenda'));
   $('#sim').addEventListener('change', (e) => { s.sim = e.target.checked; CIC.gravar(); });
+  const kt = $('#k-total'); if (kt && !matchMedia('(prefers-reduced-motion: reduce)').matches && !T._contou) { T._contou = true; const fim = m.total; let t0 = null; const passo = (t) => { t0 = t0 || t; const k = Math.min(1, (t - t0) / 700); kt.textContent = fN.format(Math.round(fim * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(passo); }; requestAnimationFrame(passo); }
 };
 T.itemFeed = (p) => {
   const pai = p.pai != null ? CIC.idx.porId.get(p.pai) : null;
@@ -328,8 +333,8 @@ T.blocoPartido = (m) => {
   <table class="tab"><thead><tr><th>Conta</th><th>Cargo</th><th class="n">Contatos</th><th class="n">Parte do total do partido</th></tr></thead><tbody>${contas.map((c) => `<tr><td><b>${esc(c[0])}</b></td><td>${esc(c[1])}</td><td class="n">${fN.format(c[2])}</td><td class="n">${fP.format((c[2] / tot) * 100)}%</td></tr>`).join('')}</tbody>
   <tfoot><tr><td colspan="2">Total do partido</td><td class="n">${fN.format(tot)}</td><td class="n">100,0%</td></tr></tfoot></table></section>`;
 };
-T.blocoMeuLink = (eu) => { const link = CIC.linkPessoal(eu); return `<section class="cartao link-pessoal compacto"><div class="lp-txt"><h2>Seu link de convite</h2><p>Quem entrar por este link fica na sua rede. Quem essa pessoa convidar também conta para você. Hoje: <b>${fN.format(eu.diretos)}</b> pessoas convidadas por você e <b>${fN.format(eu.rede)}</b> na sua rede inteira.</p></div>
-  <div class="lp-acoes"><code title="${esc(link)}">${esc(link)}</code><div class="pilha-h"><button class="bt peq" data-copiar="${esc(link)}">Copiar link</button><a class="bt peq sec" href="https://wa.me/?text=${encodeURIComponent('Entre na rede da campanha pelo meu link: ' + link)}" target="_blank" rel="noopener">Enviar no WhatsApp</a><button class="bt peq sec" data-qr="${esc(link)}">Mostrar QR</button>${CIC.pode('rede') ? `<a class="bt peq sec" href="#/rede?p=${eu.id}">Ver minha rede</a>` : ''}</div></div></section>`; };
+T.blocoMeuLink = (eu) => { const link = CIC.linkPessoal(eu); return `<section class="cartao link-pessoal compacto"><div class="lp-txt"><h2>Seu link de convite</h2><p>Quem entrar por este link fica na sua rede. Quem essa pessoa chamar também conta para você. Hoje: <b>${fN.format(eu.diretos)}</b> pessoas convidadas por você e <b>${fN.format(eu.rede)}</b> na sua rede inteira.</p></div>
+  <div class="lp-acoes"><span class="link-marca" title="Endereço na versão real">${esc(CIC.linkMarca(eu))}</span><div class="pilha-h"><a class="bt peq chamada" href="https://wa.me/?text=${encodeURIComponent(CIC.textoConvite(link))}" target="_blank" rel="noopener"><span class="x">×</span>Multiplique aí</a><button class="bt peq sec" data-copiar="${esc(link)}">Copiar link</button><button class="bt peq sec" data-qr="${esc(link)}">Mostrar QR</button>${CIC.pode('rede') ? `<a class="bt peq sec" href="#/rede?p=${eu.id}">Ver minha rede</a>` : ''}</div></div></section>`; };
 
 /* entradas simuladas ao vivo */
 CIC.simular = () => {
@@ -687,7 +692,7 @@ T.rede = async (main, r) => {
         <div><dt>Níveis abaixo</dt><dd>${fN.format(p.prof)}</dd></div><div><dt>Municípios alcançados</dt><dd>${fN.format(p.munSet.size)}</dd></div>
         <div><dt>Confirmados</dt><dd>${p.rede ? fP.format((p.conf / p.rede) * 100) + '%' : '-'}</dd></div><div><dt>Novos em 14 dias</dt><dd>${fN.format(p.n14)}</dd></div></dl>
       ${p.papel !== 'candidato' ? `<p class="sub">Entrou em ${fDA.format(p.entrada)}${p.canal ? ` · canal: ${esc(p.canal)}` : ''}${p.pai != null ? ` · indicado por ${esc(CIC.nomeVisivel(CIC.idx.porId.get(p.pai)))}` : ''}</p><p class="fonte-ini">Fonte inicial: <b>${esc(CIC.rotuloFonte(p))}</b> · ${fN.format(Math.max(0, p.gen - 1))} ${p.gen - 1 === 1 ? 'pessoa' : 'pessoas'} entre a fonte e esta pessoa</p>` : ''}
-      <div class="link-mini"><div><p class="rotulo">Link personalizado</p><code>${esc(CIC.linkPessoal(p))}</code><div class="pilha-h"><button class="bt peq" data-copiar="${esc(CIC.linkPessoal(p))}">Copiar</button><a class="bt peq sec" href="#/cadastro?ref=${p.cod}">Abrir a página de cadastro</a></div></div><div class="qr">${CIC.qr(CIC.linkPessoal(p), 3)}</div></div>
+      <div class="link-mini"><div><p class="rotulo">Link de convite</p><code>${esc(CIC.linkMarca(p))}</code><div class="pilha-h"><button class="bt peq" data-copiar="${esc(CIC.linkPessoal(p))}">Copiar</button><a class="bt peq sec" href="#/cadastro?ref=${p.cod}">Abrir a página de cadastro</a></div></div><div class="qr">${CIC.qr(CIC.linkPessoal(p), 3)}</div></div>
     </article>
     <article class="cartao"><header><h2>Onde esta rede está</h2><p>Pessoas da rede abaixo de ${esc(p.papel === 'candidato' ? 'toda a candidatura' : CIC.nomeVisivel(p))}, por município.</p></header><div class="mini-mapa" id="mapa-rede"></div><div class="legenda" id="leg-rede"></div></article>
   </section>
@@ -716,6 +721,8 @@ T.rede = async (main, r) => {
   if (cont.size && cont.size < 60) mapa.enquadrar([...cont.keys()]);
 };
 
+/* ondas da chamada "Multiplique aí" (delegado) */
+document.addEventListener('click', (e) => { const b = e.target.closest('.chamada'); if (!b || matchMedia('(prefers-reduced-motion: reduce)').matches) return; ['a', 'b'].forEach((k) => { const o = document.createElement('span'); o.className = 'onda ' + k; b.appendChild(o); setTimeout(() => o.remove(), 1200); }); });
 /* QR do link em diálogo (delegado) */
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-qr]'); if (!b) return; CIC.dialogo(`<p class="rotulo">Seu link em QR</p><h2>Aponte a câmera do celular</h2><div class="qr grande">${CIC.qr(b.dataset.qr, 6)}</div><p class="ajuda">Imprima ou mostre na tela em eventos. Quem ler entra na sua rede.</p><div class="acoes-dl"><button class="bt sec" data-fechar>Fechar</button></div>`); });
 /* copiar link (delegado) */

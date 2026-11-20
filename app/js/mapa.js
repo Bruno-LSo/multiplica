@@ -110,8 +110,8 @@ CIC.Mapa = class {
 };
 
 /* rampa sequencial (azul), um passo por classe; clara para escura no tema claro */
-CIC.RAMPA = ['#cde2fb', '#9ec5f4', '#6da7ec', '#3987e5', '#256abf', '#184f95', '#0d366b'];
-CIC.RAMPA_ESCURO = ['#173153', '#184f95', '#1c5cab', '#2a78d6', '#3987e5', '#6da7ec', '#9ec5f4'];
+CIC.RAMPA = ['#d4f3ee', '#a3e6dc', '#6fd3c5', '#38bcaa', '#14998a', '#0d766b', '#08524b'];
+CIC.RAMPA_ESCURO = ['#0f3330', '#11504a', '#137066', '#169384', '#2db8a5', '#5ed6c5', '#9eeade'];
 CIC.escuro = () => document.documentElement.dataset.theme === 'dark' || (document.documentElement.dataset.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
 CIC.classes = (valores, n = 7) => {
   const v = valores.filter((x) => x > 0).sort((a, b) => a - b);

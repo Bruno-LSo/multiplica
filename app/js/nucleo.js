@@ -1,4 +1,4 @@
-/* Comando Integrado de Campanha, protótipo navegável.
+/* Multiplica (multipliqueai.com.br), protótipo navegável.
    nucleo.js: formatos, estado, dados de demonstração, rede, índices, regras de alerta e perfis.
    Todos os nomes de pessoas, telefones, contas e valores são fictícios.
    Geografia e população: IBGE (malhas municipais e Censo 2022). */
@@ -27,7 +27,7 @@ function fmtTel(d) { return d.length === 11 ? `(${d.slice(0, 2)}) ${d.slice(2, 7
 Object.assign(CIC, { fN, fP, fR, fD, fDA, fDH, DIA, esc, clamp, rngDe, hashStr, iniciais, fmtTel });
 
 /* ---------- armazenamento local (só conveniência do protótipo) ---------- */
-const CHAVE = 'cic.prototipo.v5';
+const CHAVE = 'cic.prototipo.v6';
 CIC.ler = () => { try { return JSON.parse(localStorage.getItem(CHAVE) || 'null'); } catch { return null; } };
 CIC.gravar = () => {
   try {
@@ -149,7 +149,7 @@ CIC.usuarioAtual = () => {
 };
 /* equipe inicial de cada campanha (nomes fictícios). As campanhas D e E esperam o partido criar o 1º administrador. */
 CIC.EQUIPE_BASE = {
-  c1: [['Titular da candidatura', 'admin'], ['Paula Ferraz', 'coord'], ['Rui Campos', 'coordreg'], ['Lia Moraes', 'financeiro'], ['Caio Duarte', 'analista'], ['Liderança de exemplo', 'lideranca']],
+  c1: [['Titular da candidatura', 'admin'], ['Paula Ferraz', 'coord'], ['Rui Campos', 'coordreg'], ['Lia Moraes', 'financeiro'], ['Caio Duarte', 'analista'], ['Joana Prado', 'lideranca']],
   c2: [['Titular da candidatura B', 'admin'], ['Vera Leme', 'coord']],
   c3: [['Titular da candidatura C', 'admin']],
   c4: [], c5: [],

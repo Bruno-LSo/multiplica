@@ -3,46 +3,53 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Comando Integrado de Campanha</title>
-<meta name="description" content="Proposta da plataforma de gestão de campanha eleitoral para qualquer cargo e qualquer estado: painel do partido, rede de indicações rastreada, território em grupos editáveis, cenários, acordos com conformidade, perfis e registro de atividades.">
+<title>Multiplica</title>
+<meta name="description" content="Proposta da Multiplica (multipliqueai.com.br): rede de apoiadores com link próprio e rastreio até a fonte inicial, para campanhas de qualquer cargo e estado.">
 <meta name="theme-color" content="#f5f4f0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121314" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
   color-scheme: light;
-  --fundo: #f5f4f0; --sup: #fcfcfb; --sup-2: #efeee9; --sup-3: #e6e5df;
-  --tinta: #121314; --tinta-2: #52514e; --tinta-3: #77766f;
-  --linha: rgb(18 19 20 / 0.1); --linha-forte: rgb(18 19 20 / 0.18);
-  --sinal: #2a78d6; --sinal-fundo: #e5effb; --sinal-tinta: #1c5cab;
+  --fundo: #f6f7f6; --sup: #ffffff; --sup-2: #ebefee; --sup-3: #dfe6e4;
+  --tinta: #10201e; --tinta-2: #3f5350; --tinta-3: #5a6e6a;
+  --linha: rgb(16 32 30 / 0.1); --linha-forte: rgb(16 32 30 / 0.2);
+  --sinal: #0f9e8e; --sinal-fundo: #dcf5f1; --sinal-tinta: #0a7d70; --vivo: #14b8a6; --na-vivo: #052b26; --coral: #ff7a59;
   --atencao: #fab219; --critico: #d03b3b;
   --sombra: 0 0 0 1px rgb(18 19 20 / 0.07), 0 1px 2px -1px rgb(18 19 20 / 0.07), 0 2px 6px 0 rgb(18 19 20 / 0.04);
   --mono: 'Geist Mono', ui-monospace, Menlo, monospace;
   --sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --display: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --fundo: #121314; --sup: #1a1a19; --sup-2: #232321; --sup-3: #2c2c2a;
-    --tinta: #f0efec; --tinta-2: #c3c2b7; --tinta-3: #95948c;
+    --fundo: #0a1413; --sup: #101d1b; --sup-2: #172725; --sup-3: #1f322f;
+    --tinta: #e9f2f0; --tinta-2: #a8bbb7; --tinta-3: #869a96;
     --linha: rgb(255 255 255 / 0.09); --linha-forte: rgb(255 255 255 / 0.16);
-    --sinal: #3987e5; --sinal-fundo: #17273d; --sinal-tinta: #86b6ef;
+    --sinal: #2dd4bf; --sinal-fundo: #0d2e2a; --sinal-tinta: #5eead4; --vivo: #2dd4bf; --na-vivo: #052b26; --coral: #ff8f73;
     --sombra: 0 0 0 1px rgb(255 255 255 / 0.07);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --fundo: #121314; --sup: #1a1a19; --sup-2: #232321; --sup-3: #2c2c2a;
-  --tinta: #f0efec; --tinta-2: #c3c2b7; --tinta-3: #95948c;
+  --fundo: #0a1413; --sup: #101d1b; --sup-2: #172725; --sup-3: #1f322f;
+  --tinta: #e9f2f0; --tinta-2: #a8bbb7; --tinta-3: #869a96;
   --linha: rgb(255 255 255 / 0.09); --linha-forte: rgb(255 255 255 / 0.16);
-  --sinal: #3987e5; --sinal-fundo: #17273d; --sinal-tinta: #86b6ef;
+  --sinal: #2dd4bf; --sinal-fundo: #0d2e2a; --sinal-tinta: #5eead4; --vivo: #2dd4bf; --na-vivo: #052b26; --coral: #ff8f73;
   --sombra: 0 0 0 1px rgb(255 255 255 / 0.07);
 }
 *, *::before, *::after { box-sizing: border-box; }
 body { margin: 0; background: var(--fundo); color: var(--tinta); font: 400 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
 h1, h2, h3 { text-wrap: balance; margin: 0; letter-spacing: -0.02em; }
+h1, h2 { font-family: var(--display); font-weight: 700; letter-spacing: -0.03em; }
+.marca svg { width: 26px; height: 26px; flex: none; }
+.marca b { font: 700 18px/1 var(--display); letter-spacing: -0.02em; }
+.bt:not(.sec) { background: var(--vivo) !important; color: var(--na-vivo) !important; }
+.conceito { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin-top: 18px; font-size: 14px; color: var(--tinta-2); }
+.conceito code { font: 600 13px var(--mono); padding: 5px 10px; border-radius: 999px; background: var(--sinal-fundo); color: var(--sinal-tinta); }
 p { margin: 0 0 12px; text-wrap: pretty; }
 a { color: var(--sinal-tinta); text-underline-offset: 3px; }
 :focus-visible { outline: 2px solid var(--sinal); outline-offset: 2px; border-radius: 4px; }
@@ -160,7 +167,7 @@ tbody tr:last-child td { border-bottom: 0; }
 </head>
 <body>
 <header class="topo">
-  <a class="marca" href="#"><i aria-hidden="true"></i><span>Comando Integrado de Campanha</span></a>
+  <a class="marca" href="#"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M15 53 L40 28" stroke="#14b8a6" stroke-width="10" stroke-linecap="round" fill="none"/><circle cx="50" cy="16" r="7.5" fill="#14b8a6"/><path d="M49 53 L24 28" stroke="#ff7a59" stroke-width="10" stroke-linecap="round" fill="none"/><circle cx="14" cy="16" r="7.5" fill="#ff7a59"/></svg><b>multiplica</b></a>
   <a class="bt sec" href="https://github.com/Bruno-LSo/comando-integrado-campanha" target="_blank" rel="noopener">Código no GitHub</a>
   <a class="bt" href="app/">Abrir o protótipo</a>
   <button class="tema" id="tema" aria-label="Trocar o tema"><span aria-hidden="true"></span></button>
@@ -168,9 +175,10 @@ tbody tr:last-child td { border-bottom: 0; }
 
 <div class="capa">
   <div>
-    <p class="rotulo">Proposta de produto · versão 2 · novembro de 2026</p>
-    <h1>Toda a campanha num só lugar. <em>Cada voto com origem.</em></h1>
-    <p class="lead">Plataforma para campanha de qualquer cargo, em qualquer estado. O partido contrata, abre contas para os candidatos e acompanha cada um num painel próprio. O candidato escolhe os estados onde atua, divide o território do jeito que quiser e convida lideranças. Cada apoiador recebe um link próprio. Assim a campanha sabe quem trouxe cada pessoa, onde a rede cresce e quais lideranças entregam resultado.</p>
+    <p class="rotulo">Proposta de produto · versão 3 · novembro de 2026</p>
+    <h1>Uma boa ideia, multiplicada por muita gente. <em>Cada apoio com origem.</em></h1>
+    <p class="lead">A Multiplica é a plataforma de rede de apoiadores para campanhas de qualquer cargo, em qualquer estado. Cada apoiador recebe um link próprio, chama quem conhece e cada pessoa que entra tem um caminho até a fonte inicial. O partido contrata, cria o primeiro administrador de cada campanha e acompanha os números. Cada campanha monta a própria equipe, divide o território e vê para onde foi o dinheiro.</p>
+    <div class="conceito"><code>multipliqueai.com.br/maria</code><span>O link do apoiador já é o convite: "Multiplique aí".</span></div>
     <div class="acoes"><a class="bt" href="app/">Abrir o protótipo navegável</a><a class="bt sec" href="#passo-a-passo">Ver como funciona</a></div>
   </div>
   <div class="numeros" aria-label="Escopo da plataforma">
@@ -185,9 +193,9 @@ tbody tr:last-child td { border-bottom: 0; }
   <nav class="indice" aria-label="Índice"><p class="rotulo">Nesta proposta</p><ol>
     <li><a href="#mudou">O que mudou</a></li><li><a href="#cargos">Para quem serve</a></li><li><a href="#comercial">Partido e candidatos</a></li>
     <li><a href="#passo-a-passo">Passo a passo</a></li><li><a href="#telas">Telas</a></li><li><a href="#estados">Estados de atuação</a></li><li><a href="#territorio">Território</a></li>
-    <li><a href="#rede">Rede e indicação</a></li><li><a href="#redes-sociais">Redes sociais</a></li><li><a href="#acordos">Acordos e pagamentos</a></li>
+    <li><a href="#rede">Rede e indicação</a></li><li><a href="#redes-sociais">Redes sociais</a></li><li><a href="#acordos">Gastos e pagamentos</a></li>
     <li><a href="#cenarios">Cenários</a></li><li><a href="#iel">Eficácia das lideranças</a></li><li><a href="#painel">Painel, alertas e relatórios</a></li>
-    <li><a href="#registro">Registro de atividades</a></li><li><a href="#perfis">Perfis e segurança</a></li><li><a href="#lei">Regras eleitorais e LGPD</a></li>
+    <li><a href="#registro">Histórico de ações</a></li><li><a href="#perfis">Perfis e segurança</a></li><li><a href="#lei">Regras eleitorais e LGPD</a></li>
     <li><a href="#arquitetura">Arquitetura</a></li><li><a href="#dados">Modelo de dados</a></li><li><a href="#roteiro">Roteiro e riscos</a></li><li><a href="#prototipo">O que o protótipo mostra</a></li>
   </ol></nav>
 
@@ -197,17 +205,17 @@ tbody tr:last-child td { border-bottom: 0; }
     <h2>De uma ferramenta de uma campanha para um produto que qualquer campanha contrata</h2>
     <p>A versão 1 juntava as ideias de três ferramentas: um CRM de apoiadores, uma ferramenta de inteligência eleitoral e um painel territorial feito para uma campanha de Deputado Federal. Esta versão tira tudo o que era fixo no código e transforma em configuração.</p>
     <div class="tab-rolagem"><table><thead><tr><th>Tema</th><th>Antes</th><th>Agora</th></tr></thead><tbody>
-      <tr><td>Cliente</td><td>Uma campanha</td><td>Partido, federação, entidade ou candidatura avulsa. O partido abre contas para os candidatos e acompanha todos num painel.</td></tr>
-      <tr><td>Visibilidade</td><td>Uma conta só</td><td>O partido vê e abre todas as candidaturas. Cada candidato vê só a própria.</td></tr>
-      <tr><td>Estados</td><td>São Paulo, fixo</td><td>O candidato escolhe 1 ou mais estados em Configurações. Só esses estados aparecem nas telas.</td></tr>
+      <tr><td>Cliente</td><td>Uma campanha</td><td>Partido, federação, entidade ou candidatura avulsa. O partido cria o primeiro administrador de cada campanha e acompanha os números de todas.</td></tr>
+      <tr><td>Visibilidade</td><td>Uma conta só</td><td>O partido vê só os números de cada campanha e não muda nada. Cada campanha vê só a própria e cria a própria equipe.</td></tr>
+      <tr><td>Estados</td><td>São Paulo, fixo</td><td>A campanha escolhe 1 ou mais estados em Ajustes da campanha. Só esses estados aparecem nas telas.</td></tr>
       <tr><td>Território</td><td>Divisão regional escrita no código</td><td>Grupos, subgrupos e sub-subgrupos com o nome que a campanha quiser, montados por lista com busca ou no mapa.</td></tr>
       <tr><td>Contenção</td><td>Não existia</td><td>Subgrupo fora do grupo-pai gera aviso. A pessoa decide: incluir no pai, tirar ou manter como exceção.</td></tr>
       <tr><td>Cargo</td><td>Deputado Federal</td><td>9 tipos de eleição, cada um com a própria regra de cálculo e a própria menor unidade territorial.</td></tr>
-      <tr><td>Rede</td><td>Indicação por campo de texto</td><td>Link e QR próprios para cada pessoa. A rede vira uma árvore rastreável até a candidatura.</td></tr>
+      <tr><td>Rede</td><td>Indicação por campo de texto</td><td>Link e QR próprios para cada pessoa, inclusive a equipe. Cada apoiador tem um caminho até a fonte inicial.</td></tr>
       <tr><td>Redes sociais</td><td>Texto livre</td><td>10 redes, com orientação ao apoiador e gravação num formato único.</td></tr>
-      <tr><td>Dinheiro</td><td>Fora do sistema</td><td>Acordos e pagamentos com lista fechada de objetos, dupla aprovação, comprovante e alertas de conformidade.</td></tr>
+      <tr><td>Dinheiro</td><td>Fora do sistema</td><td>Gastos e pagamentos: para onde foi o dinheiro, por tipo de gasto e por cidade. Contrato e comprovante opcionais.</td></tr>
       <tr><td>Registro</td><td>Não existia</td><td>Toda ação fica gravada com usuário, perfil, candidatura, estado e horário.</td></tr>
-      <tr><td>Página inicial</td><td>Lista de módulos</td><td>Painel com o total de contatos engajados, o ritmo, o mapa, a origem e os alertas.</td></tr>
+      <tr><td>Página inicial</td><td>Lista de módulos</td><td>Início com saudação, o número do dia, o link de convite e "O que fazer agora". Toda tela cabe na janela, do celular à tela grande.</td></tr>
     </tbody></table></div>
   </section>
 
@@ -232,19 +240,19 @@ tbody tr:last-child td { border-bottom: 0; }
     <p class="rotulo">03 · Partido e candidatos</p>
     <h2>O partido contrata e acompanha. O candidato opera a própria campanha.</h2>
     <div class="arvore-hier" aria-label="Hierarquia da conta">
-      <div><b>Contratante</b><span>Partido, federação, entidade de classe ou candidatura avulsa. Assina o contrato, paga e abre as contas de candidatura.</span></div>
+      <div><b>Contratante</b><span>Partido, federação, entidade de classe ou candidatura avulsa. Assina o contrato, paga e cria o primeiro administrador de cada campanha.</span></div>
       <div><b>Conta de candidatura</b><span>Um candidato, um cargo, uma eleição e os estados de atuação. Tem território, metas, equipe e base próprios.</span></div>
-      <div><b>Equipe</b><span>Coordenação geral, coordenação de cada grupo do território, financeiro, jurídico e analistas.</span></div>
+      <div><b>Equipe</b><span>O administrador da campanha dá acesso às pessoas, cria perfis (por exemplo, Jurídico) e escolhe as telas de cada perfil.</span></div>
       <div><b>Lideranças</b><span>Recebem link e QR próprios. Veem a própria rede no celular.</span></div>
       <div><b>Apoiadores</b><span>Entram por um link, ganham o próprio link e trazem outros. Cada entrada guarda quem indicou.</span></div>
     </div>
     <h3>Quem vê o quê</h3>
     <div class="tab-rolagem"><table><thead><tr><th>Quem</th><th>Vê</th><th>Não vê</th></tr></thead><tbody>
-      <tr><td>Partido</td><td>Painel do partido com todas as candidaturas. Abre qualquer candidatura para ler painel, território, rede, contatos, lideranças, cenários, alertas e relatórios.</td><td>Acordos e pagamentos das candidaturas. Nome e contato de apoiador que não autorizou o partido. O partido não edita a candidatura.</td></tr>
-      <tr><td>Candidato e equipe</td><td>Só a própria candidatura, nos estados de atuação escolhidos.</td><td>Qualquer dado de outra candidatura, inclusive do mesmo partido. A troca de candidatura no alto da tela só existe para o partido.</td></tr>
+      <tr><td>Partido</td><td>Os números de todas as campanhas, lado a lado, só para leitura. Cria o primeiro administrador de cada campanha.</td><td>Nomes, telefones, gastos, pagamentos e a equipe de cada campanha. O partido não muda nada.</td></tr>
+      <tr><td>Candidato e equipe</td><td>Só a própria campanha, nos estados escolhidos, e só as telas do próprio perfil.</td><td>Qualquer dado de outra campanha, inclusive do mesmo partido.</td></tr>
     </tbody></table></div>
-    <h3>Painel do partido</h3>
-    <p>Uma linha por candidatura: cargo, estados, contatos, novos em 7 dias, ritmo contra os 7 dias anteriores, lideranças ativas, parte dos municípios com rede, parte da meta e a curva dos últimos 60 dias. Queda de ritmo acima de 20% fica em vermelho. O botão "Abrir" entra na candidatura em modo de leitura, e a abertura fica no registro. O relatório de desempenho sai em CSV na hora.</p>
+    <h3>Campanhas do partido</h3>
+    <p>Uma linha por candidatura: cargo, estados, contatos, novos em 7 dias, ritmo contra os 7 dias anteriores, lideranças ativas, parte dos municípios com rede, parte da meta e a curva dos últimos 60 dias. Queda de ritmo acima de 20% fica em vermelho. O botão "Ver números" abre o Início da campanha só para leitura, e a consulta fica no histórico. O relatório de desempenho sai em CSV na hora.</p>
     <h3>Planos</h3>
     <div class="cartoes">
       <div class="cartao"><p class="rotulo">Candidatura</p><h4>Uma conta, todos os módulos</h4><p>Para candidatura avulsa ou de partido sem contrato central.</p></div>
@@ -265,28 +273,31 @@ tbody tr:last-child td { border-bottom: 0; }
       <li><div><b>Convidar as lideranças</b><p>Cada liderança recebe link e QR. A coordenação de cada grupo vê só o próprio grupo.</p></div><a href="app/#/rede">Rede</a></li>
       <li><div><b>A rede cresce</b><p>O apoiador abre o link, se cadastra em 1 minuto, registra as redes sociais e ganha o próprio link. A plataforma grava o caminho inteiro.</p></div><a href="app/#/cadastro">Página do apoiador</a></li>
       <li><div><b>Acompanhar</b><p>O candidato vê o painel da campanha. O partido vê o painel do partido. Cada número abre a lista que o compõe.</p></div><a href="app/#/painel">Painel</a></li>
-      <li><div><b>Decidir</b><p>Simular cadeiras, alianças, dobradinhas e metas. Registrar os acordos com dupla aprovação. Cobrar as lideranças paradas.</p></div><a href="app/#/cenarios">Cenários</a></li>
+      <li><div><b>Decidir</b><p>Simular cadeiras, alianças, dobradinhas e metas. Registrar os gastos e ver para onde foi o dinheiro. Cobrar as lideranças paradas.</p></div><a href="app/#/cenarios">Simular votos</a></li>
     </ol>
   </section>
 
   <section id="telas">
     <p class="rotulo">05 · Telas</p>
-    <h2>Treze telas, todas abertas no protótipo</h2>
-    <p>Clique numa tela para abrir no protótipo. O seletor "Ver como", no alto do protótipo, troca o perfil e mostra o que cada pessoa vê. O "Painel do partido" aparece com o perfil Partido contratante.</p>
+    <h2>Dezesseis telas, todas abertas no protótipo</h2>
+    <p>O protótipo abre numa tela de entrada com um cartão por perfil. Toque em um cartão para ver o sistema como essa pessoa vê. "Trocar perfil", no alto, volta para a escolha. Ao clicar numa tela abaixo, entre antes com um perfil que abre essa tela.</p>
     <div class="esboco">
-      <a class="tela" href="app/#/partido"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i class="s"></i><i></i><i></i><i></i></div><div class="txt"><h4>Painel do partido</h4><p>Todas as candidaturas lado a lado, com ritmo, lideranças, cobertura, meta e curva de 60 dias. Botão para abrir cada uma.</p><span class="ir">abrir com o perfil Partido</span></div></a>
-      <a class="tela" href="app/#/painel"><div class="moldura m1" aria-hidden="true"><i class="t"></i><i></i><i></i><i class="s"></i><i></i></div><div class="txt"><h4>Painel da campanha</h4><p>Contatos engajados, novos em 24 horas e 7 dias, meta, lideranças ativas, cobertura, mapa, origem, nível na rede, redes sociais, feed ao vivo e alertas.</p><span class="ir">abrir</span></div></a>
-      <a class="tela" href="app/#/territorio"><div class="moldura m2" aria-hidden="true"><i></i><i class="s"></i><i></i></div><div class="txt"><h4>Território</h4><p>Níveis com nome livre, árvore de grupos, lista de municípios com busca, mapa editável, verificação de contenção, dados de cada grupo.</p><span class="ir">abrir</span></div></a>
-      <a class="tela" href="app/#/rede"><div class="moldura m3" aria-hidden="true"><i></i><i class="t"></i><i class="s"></i><i></i></div><div class="txt"><h4>Rede</h4><p>Caminho de cada pessoa até a candidatura, indicações diretas, rede total, níveis abaixo, municípios alcançados, link e QR.</p><span class="ir">abrir</span></div></a>
-      <a class="tela" href="app/#/contatos"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i></i></div><div class="txt"><h4>Contatos</h4><p>Lista com filtros na URL. Ficha com quem indicou, autorizações, redes sociais e histórico de contato.</p><span class="ir">abrir</span></div></a>
-      <a class="tela" href="app/#/liderancas"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i class="s"></i><i></i><i class="s"></i><i></i></div><div class="txt"><h4>Lideranças</h4><p>Índice de Eficácia da Liderança, com pesos ajustáveis, classes A a D e componentes de cada nota.</p><span class="ir">abrir</span></div></a>
-      <a class="tela" href="app/#/acordos"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i></i></div><div class="txt"><h4>Acordos e pagamentos</h4><p>Negociado, pago e a pagar. Contrato, comprovante, aprovação por outra pessoa, limite de contratação.</p><span class="ir">abrir</span></div></a>
-      <a class="tela" href="app/#/cenarios/quociente"><div class="moldura m3" aria-hidden="true"><i></i><i class="s"></i><i></i><i></i></div><div class="txt"><h4>Cenários</h4><p>Quociente e sobras, alianças, dobradinha e meta de votos em cascata.</p><span class="ir">abrir</span></div></a>
-      <a class="tela" href="app/#/alertas"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i class="s"></i><i></i><i></i><i></i></div><div class="txt"><h4>Alertas</h4><p>Alertas abertos por gravidade e as 12 regras ativas, com o limite de cada uma.</p><span class="ir">abrir</span></div></a>
-      <a class="tela" href="app/#/relatorios"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i></i></div><div class="txt"><h4>Relatórios</h4><p>Exportação do recorte atual em CSV, com a máscara do perfil e registro da exportação.</p><span class="ir">abrir</span></div></a>
-      <a class="tela" href="app/#/auditoria"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i></i></div><div class="txt"><h4>Registro de atividades</h4><p>Quem fez o quê, quando, em qual candidatura e estado. Busca, filtro por perfil e exportação.</p><span class="ir">abrir</span></div></a>
-      <a class="tela" href="app/#/config"><div class="moldura m3" aria-hidden="true"><i></i><i></i><i></i><i class="t"></i></div><div class="txt"><h4>Configurações</h4><p>Estrutura da conta, cargo, estados de atuação, matriz de perfis, redes aceitas e controles de segurança.</p><span class="ir">abrir</span></div></a>
-      <a class="tela" href="app/#/cadastro"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i class="s"></i></div><div class="txt"><h4>Página do apoiador</h4><p>Cadastro em 1 minuto pelo celular. No fim, o apoiador recebe o próprio link e QR para trazer outros.</p><span class="ir">abrir</span></div></a>
+      <a class="tela" href="app/#/partido"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i class="s"></i><i></i><i></i><i></i></div><div class="txt"><h4>Campanhas do partido</h4><p>Os números de todas as campanhas lado a lado: ritmo, lideranças, cobertura, meta e curva de 60 dias.</p><span class="ir">abrir com o perfil Partido</span></div></a>
+      <a class="tela" href="app/#/painel"><div class="moldura m1" aria-hidden="true"><i class="t"></i><i></i><i></i><i class="s"></i><i></i></div><div class="txt"><h4>Início</h4><p>Saudação, o número do dia, o link de convite, "O que fazer agora", meta, mapa, fontes iniciais que mais cresceram e quem entrou ao vivo.</p><span class="ir">abrir</span></div></a>
+      <a class="tela" href="app/#/territorio"><div class="moldura m2" aria-hidden="true"><i></i><i class="s"></i><i></i></div><div class="txt"><h4>Mapa e regiões</h4><p>Níveis com nome livre, árvore de grupos, lista de municípios com busca, mapa editável, verificação de contenção, dados de cada grupo.</p><span class="ir">abrir</span></div></a>
+      <a class="tela" href="app/#/rede"><div class="moldura m3" aria-hidden="true"><i></i><i class="t"></i><i class="s"></i><i></i></div><div class="txt"><h4>Quem trouxe quem</h4><p>Caminho de cada pessoa até a fonte inicial, indicações diretas, rede total, níveis abaixo, municípios alcançados, link e QR.</p><span class="ir">abrir</span></div></a>
+      <a class="tela" href="app/#/contatos"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i></i></div><div class="txt"><h4>Lista de pessoas</h4><p>Lista com filtros e a fonte inicial de cada pessoa. Ficha com quem convidou, autorizações, redes sociais e histórico de contato.</p><span class="ir">abrir</span></div></a>
+      <a class="tela" href="app/#/liderancas"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i class="s"></i><i></i><i class="s"></i><i></i></div><div class="txt"><h4>Melhores lideranças</h4><p>Índice de Eficácia da Liderança, com pesos ajustáveis, classes A a D e componentes de cada nota.</p><span class="ir">abrir</span></div></a>
+      <a class="tela" href="app/#/acordos"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i></i></div><div class="txt"><h4>Gastos e pagamentos</h4><p>Para onde foi o dinheiro: combinado, pago e a pagar, por tipo de gasto e por cidade. Contrato e comprovante opcionais.</p><span class="ir">abrir</span></div></a>
+      <a class="tela" href="app/#/cenarios/quociente"><div class="moldura m3" aria-hidden="true"><i></i><i class="s"></i><i></i><i></i></div><div class="txt"><h4>Simular votos</h4><p>Quociente e sobras, alianças, dobradinha e meta de votos em cascata.</p><span class="ir">abrir</span></div></a>
+      <a class="tela" href="app/#/alertas"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i class="s"></i><i></i><i></i><i></i></div><div class="txt"><h4>Avisos</h4><p>Avisos abertos por gravidade e as 12 regras ativas, com o limite de cada uma.</p><span class="ir">abrir</span></div></a>
+      <a class="tela" href="app/#/relatorios"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i></i></div><div class="txt"><h4>Baixar planilhas</h4><p>Planilhas da região escolhida, com as regras do perfil, a fonte inicial de cada pessoa e o registro do download.</p><span class="ir">abrir</span></div></a>
+      <a class="tela" href="app/#/auditoria"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i></i></div><div class="txt"><h4>Histórico de ações</h4><p>Quem fez o quê, quando e em qual estado, só da própria campanha. Busca, filtro por perfil e exportação.</p><span class="ir">abrir</span></div></a>
+      <a class="tela" href="app/#/config"><div class="moldura m3" aria-hidden="true"><i></i><i></i><i></i><i class="t"></i></div><div class="txt"><h4>Ajustes da campanha</h4><p>Cargo, estados de atuação, redes aceitas e controles de segurança.</p><span class="ir">abrir</span></div></a>
+      <a class="tela" href="app/#/cadastro"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i class="s"></i></div><div class="txt"><h4>Convite do apoiador</h4><p>"Paula te chamou": cadastro em 1 minuto pelo celular. No fim, o apoiador recebe o próprio link e o botão "Multiplique aí".</p><span class="ir">abrir</span></div></a>
+      <a class="tela" href="app/#/equipe"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i class="s"></i><i></i></div><div class="txt"><h4>Equipe e acessos</h4><p>O administrador dá acesso, cria perfis e marca as telas e regras de cada perfil, um perfil por vez.</p><span class="ir">abrir com o Administrador</span></div></a>
+      <a class="tela" href="app/#/acessos"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i></i></div><div class="txt"><h4>Acessos das campanhas</h4><p>O partido cria o primeiro administrador de cada campanha e entrega o login e a senha provisória.</p><span class="ir">abrir com o perfil Partido</span></div></a>
+      <a class="tela" href="app/#/entrar"><div class="moldura m2" aria-hidden="true"><i></i><i class="s"></i><i></i></div><div class="txt"><h4>Entrar</h4><p>Um cartão por perfil de exemplo, com o que cada um vê. Login e senha ficam em segundo plano.</p><span class="ir">abrir</span></div></a>
     </div>
   </section>
 
@@ -381,23 +392,23 @@ tbody tr:last-child td { border-bottom: 0; }
   </section>
 
   <section id="acordos">
-    <p class="rotulo">10 · Acordos e pagamentos</p>
-    <h2>Quem negociou o quê, quanto foi pago e quem aprovou</h2>
-    <p>O tomador de decisão registra cada acordo: com quem, objeto, valor negociado, o que foi combinado, contrato e lançamento na prestação de contas. Cada pagamento tem data, valor, forma e comprovante. A tela abre só para os perfis Candidato, Coordenação geral (só leitura) e Financeiro. O partido não vê os acordos das candidaturas.</p>
+    <p class="rotulo">10 · Gastos e pagamentos</p>
+    <h2>Para onde foi o dinheiro</h2>
+    <p>A campanha registra cada gasto: com quem, o tipo de gasto, o valor combinado e cada pagamento, com data e forma. Contrato e comprovante são opcionais: a tela serve para gerenciar a campanha e saber para onde foi o dinheiro. O resumo mostra o valor pago por tipo de gasto e por cidade. A tela abre só para os perfis com acesso a ela (por padrão, Administrador e Financeiro). O partido não vê os gastos das campanhas.</p>
     <div class="cartoes">
-      <div class="cartao"><h4>Lista fechada de objetos</h4><p>Coordenação e mobilização contratadas, espaço, transporte, material, estrutura de evento e apoio político sem valor. Não existe campo para voto.</p></div>
-      <div class="cartao"><h4>Dupla aprovação</h4><p>Quem registra não aprova. O acordo fica "aguardando" até outra pessoa do Financeiro aprovar.</p></div>
+      <div class="cartao"><h4>Lista fechada de tipos de gasto</h4><p>Coordenação e mobilização contratadas, espaço, transporte, material, estrutura de evento e apoio político sem valor. Não existe campo para voto.</p></div>
+      <div class="cartao"><h4>Aprovação por outra pessoa</h4><p>Se a campanha quiser, quem registra não aprova. O gasto fica "aguardando" até outra pessoa com acesso ao dinheiro aprovar.</p></div>
       <div class="cartao"><h4>Sem passar do combinado</h4><p>O pagamento não passa o valor negociado. Valor maior pede um aditivo registrado.</p></div>
       <div class="cartao"><h4>Tudo no registro</h4><p>Quem registrou, aprovou, pagou, viu ou exportou, com horário.</p></div>
     </div>
     <h3>Alertas de conformidade</h3>
     <ul class="lista">
-      <li><b>Pagamento sem contrato</b> e <b>aprovação pela mesma pessoa</b>: gravidade crítica.</li>
-      <li><b>Pagamento em espécie</b> e <b>pagamento sem comprovante</b>: gravidade grave.</li>
+      <li><b>Gasto sem documento</b> e <b>pagamento sem comprovante</b>: só informação. O documento é opcional.</li>
+      <li><b>Pagamento em dinheiro vivo</b> e <b>aprovação pela mesma pessoa</b>: atenção. Fica mais difícil saber para onde foi o dinheiro.</li>
       <li><b>Contratação acima do limite</b>: pessoal de militância contratado no município contra o limite da Lei 9.504/1997, art. 100-A. Até 30 mil eleitores, 1% do eleitorado. Acima, 300 mais 1 contratação a cada mil eleitores que passam de 30 mil. Para cargos estaduais e federais, a plataforma carrega a tabela que o TSE publica a cada eleição (em 2026, a Portaria TSE nº 444/2026).</li>
-      <li><b>Falta lançar na prestação de contas</b>: acordo pago e não lançado no SPCE.</li>
+      <li><b>Falta lançar na prestação de contas</b>: gasto pago e não lançado no SPCE.</li>
     </ul>
-    <div class="nota"><b>Por que a lista é fechada.</b> Oferecer ou dar vantagem a eleitor em troca de voto é crime e causa cassação (Lei 9.504/1997, art. 41-A). A lista fechada protege a campanha e o cliente da plataforma. O registro também dá o custo por voto esperado de cada aliança.</div>
+    <div class="nota"><b>Por que a lista é fechada.</b> Oferecer ou dar vantagem a eleitor em troca de voto é crime e causa cassação (Lei 9.504/1997, art. 41-A). A lista fechada protege a campanha e o cliente da plataforma. </div>
   </section>
 
   <section id="cenarios">
@@ -442,11 +453,11 @@ lideranças necessárias = contatos necessários ÷ contatos por liderança</div
 
   <section id="painel">
     <p class="rotulo">13 · Painel, alertas e relatórios</p>
-    <h2>A página inicial responde "como estamos hoje" em 5 segundos</h2>
-    <p>O painel mostra o total de contatos engajados em destaque, com os novos em 24 horas e em 7 dias e a parte da meta. Ao lado: lideranças ativas, municípios com rede, alcance da rede e contatos com rede social. Abaixo: crescimento acumulado, mapa de contatos por 1.000 habitantes, origem do cadastro, nível na rede, redes sociais, redes que mais cresceram, entradas ao vivo e alertas.</p>
-    <p>O seletor "Recorte", no alto, filtra tudo pelo grupo do território. O perfil Liderança vê a própria rede e o próprio link. O perfil Partido começa no Painel do partido.</p>
-    <h3>Alertas</h3>
-    <p>12 regras no protótipo, em 4 gravidades: crítica, grave, atenção e informação. A cor da gravidade sempre vem com ícone e nome. Exemplos: liderança parada, queda de ritmo, cadastro suspeito, município grande sem rede, subgrupo fora do grupo-pai, pagamento sem contrato. Na versão completa, cada alerta vai por e-mail ou notificação ao responsável do grupo.</p>
+    <h2>O Início responde "como estamos hoje" em 5 segundos</h2>
+    <p>O Início abre com uma saudação e a frase do dia: quantas pessoas entraram hoje e em 7 dias, e quantas faltam para a meta. Logo abaixo: o link de convite da pessoa, com o botão "Multiplique aí", e "O que fazer agora", com até 3 avisos e o botão que resolve cada um. Depois vêm os números, o mapa, as fontes iniciais que mais cresceram e quem entrou ao vivo. O que não cabe na tela vira partes, com abas no alto.</p>
+    <p>O seletor "Ver números de", no alto, filtra tudo pela região. O perfil Liderança vê a própria rede e o próprio link. O perfil Partido começa em Campanhas do partido.</p>
+    <h3>Avisos</h3>
+    <p>12 regras no protótipo, em 4 gravidades: crítica, grave, atenção e informação. A cor da gravidade sempre vem com ícone e nome. Exemplos: liderança parada, queda de ritmo, cadastro suspeito, município grande sem rede, subgrupo fora do grupo-pai, gasto sem documento. Na versão completa, cada alerta vai por e-mail ou notificação ao responsável do grupo.</p>
     <h3>Relatórios em tempo real</h3>
     <p>Todo relatório sai da mesma base, na hora, com o recorte e o perfil atuais. O protótipo já exporta em CSV: contatos, indicadores por município, grupos do território, lideranças, acordos, desempenho das candidaturas (só partido) e registro de atividades. A versão completa soma o boletim diário em PDF, a meta contra o resultado por seção e as despesas no formato da prestação de contas. Toda exportação leva marca d'água e entra no registro.</p>
   </section>
@@ -468,14 +479,15 @@ lideranças necessárias = contatos necessários ÷ contatos por liderança</div
   <section id="perfis">
     <p class="rotulo">15 · Perfis e segurança</p>
     <h2>Cada pessoa vê só o que precisa ver</h2>
+    <p>Os perfis abaixo vêm prontos. O administrador de cada campanha muda as telas e as regras de qualquer perfil, menos do Administrador, e cria perfis novos. Todo perfil da campanha tem um link de convite.</p>
     <div class="tab-rolagem"><table><thead><tr><th>Perfil</th><th>Vê</th><th>Dado pessoal</th></tr></thead><tbody>
-      <tr><td>Partido contratante</td><td>Painel do partido e todas as candidaturas, só leitura, sem acordos</td><td>Só de quem autorizou o partido</td></tr>
-      <tr><td>Candidato</td><td>Tudo da própria candidatura, inclusive acordos</td><td>Completo</td></tr>
-      <tr><td>Coordenação geral</td><td>Tudo da própria candidatura; acordos só em leitura</td><td>Completo</td></tr>
-      <tr><td>Coordenação territorial</td><td>Só o próprio grupo do território; sem acordos</td><td>Completo, só do grupo</td></tr>
-      <tr><td>Financeiro e conformidade</td><td>Acordos, pagamentos, alertas e relatórios</td><td>Mascarado</td></tr>
-      <tr><td>Liderança</td><td>A própria rede e o próprio link</td><td>Da própria rede</td></tr>
-      <tr><td>Analista</td><td>Números, mapas e cenários</td><td>Nenhum</td></tr>
+      <tr><td>Partido</td><td>Os números de todas as campanhas, só leitura. Cria o 1º administrador de cada campanha.</td><td>Nenhum</td></tr>
+      <tr><td>Administrador</td><td>Tudo da campanha. Dá acesso, cria perfis e escolhe as telas de cada perfil. Pode criar outros administradores.</td><td>Completo</td></tr>
+      <tr><td>Coordenação</td><td>Pessoas, mapa, simulações, planilhas e histórico. Sem dinheiro.</td><td>Completo</td></tr>
+      <tr><td>Coordenação de região</td><td>Só a própria região. Sem dinheiro.</td><td>Completo, só da região</td></tr>
+      <tr><td>Financeiro</td><td>Gastos e pagamentos, avisos e planilhas.</td><td>Mascarado</td></tr>
+      <tr><td>Analista de dados</td><td>Números, mapas e simulações.</td><td>Nenhum</td></tr>
+      <tr><td>Liderança</td><td>A própria rede e o próprio link.</td><td>Da própria rede</td></tr>
     </tbody></table></div>
     <h3>Controles</h3>
     <ul class="lista">
@@ -546,7 +558,7 @@ lideranças necessárias = contatos necessários ÷ contatos por liderança</div
       <tr><td>0 · Validação</td><td>Protótipo com 3 a 5 clientes (partido, candidatura, entidade)</td><td>Lista de ajustes aprovada e preço testado</td></tr>
       <tr><td>1 · Rede</td><td>Contratante, contas, estados de atuação, perfis, cadastro por link, redes sociais, consentimento, painel, registro</td><td>Uma campanha real cadastra a rede pelo link</td></tr>
       <tr><td>2 · Território e partido</td><td>Editor de grupos no banco, escopo por grupo, mapa em PMTiles, eleição municipal, painel do partido</td><td>O partido acompanha as candidaturas e a coordenação trabalha só no próprio grupo</td></tr>
-      <tr><td>3 · Decisão</td><td>IEL, alertas, cenários, acordos e pagamentos, relatórios</td><td>Financeiro opera com dupla aprovação e registro</td></tr>
+      <tr><td>3 · Decisão</td><td>IEL, avisos, simulações, gastos e pagamentos, planilhas</td><td>Financeiro registra os gastos e vê para onde foi o dinheiro</td></tr>
       <tr><td>4 · Eleição</td><td>Apuração ao vivo, meta contra resultado por seção, conversão em voto</td><td>IEL completo com conversão e meta do ciclo seguinte</td></tr>
     </tbody></table></div>
     <h3>Riscos</h3>
@@ -562,21 +574,21 @@ lideranças necessárias = contatos necessários ÷ contatos por liderança</div
   <section id="prototipo">
     <p class="rotulo">20 · O que o protótipo mostra</p>
     <h2>Use, mude e quebre: nada vai para servidor</h2>
-    <p>O protótipo roda no navegador. Estados, municípios, códigos, mapas e população são reais (IBGE). Pessoas, telefones, contas de redes sociais, acordos, aliados, partidos e as 5 candidaturas são fictícios. Os telefones usam o DDD 00, que não existe.</p>
+    <p>O protótipo roda no navegador. Estados, municípios, códigos, mapas e população são reais (IBGE). Pessoas, telefones, contas de redes sociais, gastos, aliados, partidos e as 5 candidaturas são fictícios. Os telefones usam o DDD 00, que não existe.</p>
     <ul class="lista">
-      <li><b>Entre como partido</b> em "Ver como" e abra cada candidatura pelo Painel do partido.</li>
-      <li><b>Volte como candidato</b> e veja que a troca de candidatura some.</li>
-      <li><b>Marque um segundo estado</b> em Configurações e troque o estado no alto.</li>
+      <li><b>Entre como Partido</b> na tela de entrada, veja os números de cada campanha e crie o 1º administrador da Candidatura D.</li>
+      <li><b>Entre como Administrador</b>, abra Equipe e acessos, crie um perfil e tire uma tela dele. Entre com esse perfil e veja o menu mudar.</li>
+      <li><b>Marque um segundo estado</b> em Ajustes da campanha e troque o estado no alto.</li>
       <li><b>Monte uma divisão</b> pelo botão "Escolher municípios": marque, desmarque, crie grupos e tente pôr um município fora do grupo-pai.</li>
-      <li><b>Cadastre-se pela Página do apoiador</b> e veja o seu cadastro na Rede, com o caminho até a candidatura.</li>
-      <li><b>Abra o Registro de atividades</b> e veja cada ação que você fez.</li>
+      <li><b>Toque em "Multiplique aí"</b> no Início, abra o seu link e cadastre-se como apoiador. Depois, veja a fonte inicial na Lista de pessoas.</li>
+      <li><b>Abra o Histórico de ações</b> e veja cada ação que você fez.</li>
     </ul>
-    <p>As mudanças ficam gravadas só no seu navegador. Em Configurações, "Apagar as mudanças e recomeçar" volta ao início.</p>
+    <p>As mudanças ficam gravadas só no seu navegador. Em Ajustes da campanha, "Apagar as mudanças e recomeçar" volta ao início.</p>
     <p><a class="bt" href="app/">Abrir o protótipo</a></p>
   </section>
   </main>
 </div>
-<footer class="rodape"><span>Comando Integrado de Campanha · proposta de produto, versão 2 · Bruno-LSO</span><span>Estados, municípios, mapas e população: <a href="https://servicodados.ibge.gov.br/api/docs" target="_blank" rel="noopener">API de serviços do IBGE</a>. Pessoas e candidaturas: fictícias.</span></footer>
+<footer class="rodape"><span>Multiplica (multipliqueai.com.br) · proposta de produto, versão 3 · Bruno-LSO</span><span>Estados, municípios, mapas e população: <a href="https://servicodados.ibge.gov.br/api/docs" target="_blank" rel="noopener">API de serviços do IBGE</a>. Pessoas e candidaturas: fictícias.</span></footer>
 <script>
 (() => {
   const temas = ['auto', 'light', 'dark']; let t = 'auto';
