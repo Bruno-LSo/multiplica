@@ -6,7 +6,7 @@ const { $, $$, fN, fP, fR, fD, fDA, fDH, DIA, esc, T, G } = CIC;
 /* ---------- CONTATOS ---------- */
 T.contatos = (main, r) => {
   const st = { q: r.p.q || '', papel: r.p.papel || '', status: r.p.status || '', rede: r.p.rede || '', pag: 0 };
-  main.innerHTML = `${CIC.cabecalho('Contatos', 'Pessoas cadastradas', 'Cada contato tem quem indicou, de onde veio, as redes sociais em formato padrão e o que autorizou. Sem autorização, a plataforma não deixa enviar mensagem.')}
+  main.innerHTML = `${CIC.cabecalho('Pessoas', 'Lista de pessoas', 'Todas as pessoas que entraram na rede. Toque em um nome para ver a ficha. Quem não autorizou mensagem não recebe mensagem.')}
   <div class="filtros">
     <input id="f-q" type="search" placeholder="Nome ou município" value="${esc(st.q)}">
     <select id="f-papel"><option value="">Todos os papéis</option><option value="lideranca">Lideranças</option><option value="apoiador">Apoiadores</option></select>
@@ -14,7 +14,7 @@ T.contatos = (main, r) => {
     <select id="f-rede"><option value="">Qualquer rede social</option>${Object.entries(CIC.REDES).map(([k, v]) => `<option value="${k}">Tem ${esc(v.nome)}</option>`).join('')}</select>
     <span class="contagem" id="f-n"></span>
   </div>
-  ${CIC.PERFIS[CIC.s.perfil].mascara ? '<p class="faixa">Este perfil vê nomes abreviados e telefone mascarado.</p>' : ''}
+  ${CIC.PERFIS[CIC.s.perfil].mascara ? '<p class="faixa">O seu perfil vê o nome abreviado e o telefone escondido.</p>' : ''}
   <div class="tab-rolagem"><table class="tab clicavel"><thead><tr><th>Pessoa</th><th>Município</th><th>Indicado por</th><th>Redes</th><th>Entrada</th><th>Situação</th></tr></thead><tbody id="t-cont"></tbody></table></div>
   <div class="paginas" id="paginas"></div>`;
   $('#f-papel').value = st.papel; $('#f-status').value = st.status; $('#f-rede').value = st.rede;
@@ -85,7 +85,7 @@ T.fichaContato = (p, depois) => {
 T.liderancas = (main) => {
   const st = { classe: '', ord: 'iel' };
   const NOMES = { vol: 'Volume', qua: 'Qualidade', ade: 'Adesão', mul: 'Multiplicação', rit: 'Ritmo', con: 'Conversão em voto' };
-  main.innerHTML = `${CIC.cabecalho('Lideranças', 'Índice de Eficácia da Liderança (IEL)', 'Nota de 0 a 100 para cada liderança com 3 indicações ou mais. Cada componente é a posição da liderança entre as outras (percentil). Antes da eleição, a conversão em voto fica de fora e o peso dela se divide entre os outros.')}
+  main.innerHTML = `${CIC.cabecalho('Pessoas', 'Melhores lideranças', 'Nota de 0 a 100 para cada liderança com 3 indicações ou mais. Quanto maior a nota, mais a liderança traz gente boa e constante. A nota se chama IEL (Índice de Eficácia da Liderança).')}
   <section class="grade-iel">
     <article class="cartao"><header><h2>Componentes e pesos</h2><p>Mude o peso e veja a classificação mudar.</p></header>
       <ul class="pesos">${Object.entries(CIC.PESOS_IEL).map(([k, w]) => `<li><label for="w-${k}">${NOMES[k]}</label><input type="range" id="w-${k}" min="0" max="40" value="${w}" ${k === 'con' ? 'disabled' : ''}><output>${k === 'con' ? 'após a eleição' : w}</output></li>`).join('')}</ul>
@@ -116,15 +116,15 @@ const pago = (a) => a.pagamentos.reduce((s, p) => s + p.valor, 0);
 const situacao = (a) => (!a.negociado ? 'sem valor' : pago(a) >= a.negociado ? 'quitado' : pago(a) ? 'parcial' : 'a pagar');
 T.acordos = (main) => {
   const perfil = CIC.PERFIS[CIC.s.perfil]; const escreve = perfil.financeiro === true;
-  const usuario = CIC.s.perfil === 'financeiro' ? 'Financeiro 1' : perfil.nome;
+  const usuario = CIC.usuarioAtual();
   const ms = CIC.munisEscopo();
   const lista = () => CIC.s.acordos.filter((a) => { const p = CIC.idx.porId.get(a.pessoa); return p && (!ms || ms.has(p.mun)); });
   const desenhar = () => {
     const A = lista(); const neg = A.reduce((s, a) => s + a.negociado, 0), pg = A.reduce((s, a) => s + pago(a), 0);
     const semC = A.filter((a) => a.negociado && !a.contrato).length;
     const porMun = d3.rollups(A.filter((a) => ['coordenacao', 'mobilizacao'].includes(a.objeto)), (x) => x.length, (a) => CIC.idx.porId.get(a.pessoa).mun).sort((a, b) => b[1] - a[1]).slice(0, 8);
-    main.innerHTML = `${CIC.cabecalho('Acordos e pagamentos', 'O que foi negociado, com quem e quanto foi pago', `Área restrita: só os perfis Candidato, Coordenação geral (leitura) e Financeiro abrem esta tela. Quem registra um pagamento não pode aprová-lo. Toda mudança fica na trilha de auditoria.`,
-      escreve ? '<div class="cab-acoes"><button class="bt" id="novo-acordo">Novo acordo…</button></div>' : '<div class="cab-acoes"><span class="faixa">Somente leitura neste perfil</span></div>')}
+    main.innerHTML = `${CIC.cabecalho('Contratos e pagamentos', 'O que foi combinado, com quem e quanto foi pago', `Só quem tem esta tela no perfil abre esta página. Quem registra um pagamento não pode aprovar o mesmo pagamento. Toda mudança fica no histórico.`,
+      escreve ? '<div class="cab-acoes"><button class="bt" id="novo-acordo">Novo contrato…</button></div>' : '<div class="cab-acoes"><span class="faixa">O seu perfil só vê, sem mudar</span></div>')}
     <section class="grade-kpi cinco">
       <article class="kpi"><p class="rotulo">Negociado</p><p class="numero">${fR.format(neg)}</p><p class="sub">${fN.format(A.length)} acordos no recorte.</p></article>
       <article class="kpi"><p class="rotulo">Pago</p><p class="numero">${fR.format(pg)}</p><p class="sub">${fP.format(neg ? (pg / neg) * 100 : 0)}% do valor negociado.</p></article>
@@ -206,7 +206,7 @@ CIC.distribuir = (partidos, vagas) => {
 T.cenarios = (main, r) => {
   const aba = r.sub || 'quociente';
   const abas = [['quociente', 'Quociente e sobras'], ['aliancas', 'Alianças'], ['dobradinha', 'Dobradinha'], ['meta', 'Meta de votos']];
-  main.innerHTML = `${CIC.cabecalho('Cenários', 'Simular antes de decidir', 'Cada simulação mostra a conta inteira. Mude um número e veja o efeito. Os partidos, aliados e parceiros desta demonstração são fictícios.')}
+  main.innerHTML = `${CIC.cabecalho('Simular votos', 'Faça a conta antes de decidir', 'Cada simulação mostra a conta inteira. Mude um número e veja o efeito. Os partidos, aliados e parceiros desta demonstração são fictícios.')}
     <nav class="abas" role="tablist">${abas.map(([k, v]) => `<a role="tab" href="#/cenarios/${k}" aria-selected="${k === aba}">${v}</a>`).join('')}</nav><div id="cen"></div>`;
   ({ quociente: T.cenQuociente, aliancas: T.cenAliancas, dobradinha: T.cenDobradinha, meta: T.cenMeta })[aba]($('#cen'));
 };
@@ -225,8 +225,8 @@ T.cenQuociente = (el) => {
       <div class="grade-kpi tres"><article class="kpi"><p class="rotulo">Votos válidos</p><p class="numero">${fN.format(d.validos)}</p><p class="sub">Soma dos votos dos partidos e federações da tabela.</p></article>
       <article class="kpi"><p class="rotulo">Quociente eleitoral</p><p class="numero">${fN.format(d.qe)}</p><p class="sub">Votos válidos ÷ ${fN.format(st.vagas)} vagas. Partido com 80% do quociente (${fN.format(Math.ceil(d.qe * 0.8))} votos) entra nas sobras.</p></article>
       <article class="kpi heroi-p"><p class="rotulo">${esc(nosso.nome)}</p><p class="numero">${fN.format(nosso.total)}<small> cadeiras</small></p><p class="sub">${falta != null ? `Faltam <b>${fN.format(falta)} votos</b> para a ${fN.format(nosso.total + 1)}ª cadeira.` : 'Mais uma cadeira pede mais de 2 quocientes de votos.'}</p></article></div>
-      <table class="tab"><thead><tr><th>Partido ou federação</th><th class="n">Votos</th><th class="n">Parte dos votos válidos</th><th class="n">Pelo quociente</th><th class="n">Pelas sobras</th><th class="n">Cadeiras</th></tr></thead>
-      <tbody>${d.res.map((p, i) => `<tr class="${i === st.nosso ? 'nosso' : ''}"><td>${esc(p.nome)}${p.votos < 0.8 * d.qe ? ' <small>abaixo de 80% do quociente</small>' : ''}</td><td class="n">${fN.format(p.votos)}</td><td class="n">${fP.format((p.votos / d.validos) * 100)}%</td><td class="n">${p.qp}</td><td class="n">${p.sobra}</td><td class="n"><b>${p.total}</b></td></tr>`).join('')}</tbody></table>
+      <div class="tab-rolagem"><table class="tab"><thead><tr><th>Partido ou federação</th><th class="n">Votos</th><th class="n">Parte dos votos válidos</th><th class="n">Pelo quociente</th><th class="n">Pelas sobras</th><th class="n">Cadeiras</th></tr></thead>
+      <tbody>${d.res.map((p, i) => `<tr class="${i === st.nosso ? 'nosso' : ''}"><td>${esc(p.nome)}${p.votos < 0.8 * d.qe ? ' <small>abaixo de 80% do quociente</small>' : ''}</td><td class="n">${fN.format(p.votos)}</td><td class="n">${fP.format((p.votos / d.validos) * 100)}%</td><td class="n">${p.qp}</td><td class="n">${p.sobra}</td><td class="n"><b>${p.total}</b></td></tr>`).join('')}</tbody></table></div>
       <p class="ajuda">Regra simulada: cadeiras pelo quociente partidário; depois, sobras pela maior média entre quem tem 80% do quociente; se ainda sobrar vaga, maior média entre todos (decisão do STF de 2024). A versão completa também aplica o mínimo de votos de cada candidato (10% e 20% do quociente).</p>`;
   };
   el.innerHTML = `<div class="cen-grade"><aside class="cartao"><h2>Entradas</h2>
@@ -318,7 +318,7 @@ T.cenMeta = (el) => {
 /* ---------- ALERTAS ---------- */
 T.alertas = (main) => {
   const A = CIC.alertas();
-  main.innerHTML = `${CIC.cabecalho('Alertas', 'O que precisa de decisão agora', `${fN.format(A.length)} alertas abertos em ${esc(CIC.nomeEscopo())}. A ordem é pela gravidade. Na versão completa, cada alerta vai por e-mail ou notificação para o responsável do grupo.`)}
+  main.innerHTML = `${CIC.cabecalho('Avisos', 'O que precisa de decisão agora', `${fN.format(A.length)} alertas abertos em ${esc(CIC.nomeEscopo())}. A ordem é pela gravidade. Na versão completa, cada alerta vai por e-mail ou notificação para o responsável do grupo.`)}
   <ul class="lista-alertas grande">${A.map((a) => `<li>${CIC.selo(a.sev)}<div><b>${esc(a.regra)}</b><p>${esc(a.texto)}</p></div>${CIC.pode(a.rota.split('?')[0]) ? `<a class="bt sec peq" href="#/${a.rota}">Abrir</a>` : ''}</li>`).join('') || '<li class="vazio">Nenhum alerta aberto.</li>'}</ul>
   <section class="cartao"><header><h2>Regras ativas</h2><p>Cada regra tem limite, responsável e canal. O coordenador ajusta o limite do próprio grupo.</p></header>
   <table class="tab"><thead><tr><th>Regra</th><th>Dispara quando</th><th>Gravidade</th></tr></thead><tbody>
@@ -339,15 +339,14 @@ T.relatorios = (main) => {
     ['municipios', 'Indicadores por município', 'População, eleitorado estimado, contatos, contatos por 1.000 habitantes, lideranças e cadastros em 7 dias.', true],
     ['grupos', 'Território: grupos e municípios', 'Cada grupo com nível, grupo-pai e municípios. Serve para conferir a divisão.', true],
     ['liderancas', 'Lideranças e IEL', 'Rede, indicações diretas, componentes e nota do IEL.', true],
-    ['acordos', 'Acordos e pagamentos', 'Negociado, pago, contrato, aprovação. Só para perfis com acesso financeiro.', !!fin],
-    ...(CIC.s.perfil === 'partido' ? [['partido', 'Desempenho das candidaturas', 'Uma linha por candidatura: contatos, ritmo, lideranças ativas, cobertura e meta. Só para o partido.', true]] : []),
-    ['auditoria', 'Registro de atividades', 'Quem fez o quê e quando, com perfil, candidatura e estado.', CIC.pode('auditoria')],
+    ['acordos', 'Contratos e pagamentos', 'Combinado, pago, contrato e aprovação. Só para quem tem a tela Contratos e pagamentos.', CIC.pode('acordos')],
+    ['auditoria', 'Histórico de ações', 'Quem fez o quê e quando, com perfil e estado.', CIC.pode('auditoria')],
     ['', 'Boletim diário em PDF', 'Resumo do dia para o candidato: números, alertas e as 10 redes que mais cresceram. Sai às 7h.', false],
     ['', 'Meta × resultado por seção', 'Depois da apuração: votos por seção contra a meta e o voto atribuído a cada liderança.', false],
     ['', 'Prestação de contas', 'Despesas com pessoal e serviços, no formato de lançamento do SPCE.', false],
   ];
-  main.innerHTML = `${CIC.cabecalho('Relatórios', 'Tudo sai da mesma base, na hora', 'Os relatórios usam o recorte e o perfil atuais. Cada exportação fica na trilha de auditoria com o nome de quem baixou.')}
-  <ul class="relatorios">${R.map(([k, t, d, ok]) => `<li><div><b>${t}</b><p>${d}</p></div>${k && ok ? `<button class="bt sec peq" data-r="${k}">Baixar CSV</button>` : `<span class="pend">${k ? 'sem acesso neste perfil' : 'na versão completa'}</span>`}</li>`).join('')}</ul>`;
+  main.innerHTML = `${CIC.cabecalho('Baixar planilhas', 'Os dados da campanha em planilha', 'Cada planilha usa a região escolhida no alto e as regras do seu perfil. Cada download fica no histórico com o nome de quem baixou.')}
+  <ul class="relatorios">${R.map(([k, t, d, ok]) => `<li><div><b>${t}</b><p>${d}</p></div>${k && ok ? `<button class="bt sec peq" data-r="${k}">Baixar CSV</button>` : `<span class="pend">${k ? 'fora do seu perfil' : 'na versão completa'}</span>`}</li>`).join('')}</ul>`;
   main.querySelector('.relatorios').addEventListener('click', (e) => {
     const b = e.target.closest('[data-r]'); if (!b) return; const v = CIC.noEscopo(); const uf = CIC.s.uf;
     if (b.dataset.r === 'partido') { CIC.ir('partido'); return; }
@@ -363,8 +362,7 @@ T.relatorios = (main) => {
 /* ---------- CONFIGURAÇÕES ---------- */
 T.config = (main) => {
   const s = CIC.s; const ehPartido = s.perfil === 'partido';
-  const rotas = ['partido', 'painel', 'territorio', 'rede', 'contatos', 'liderancas', 'acordos', 'cenarios', 'alertas', 'relatorios', 'config'];
-  main.innerHTML = `${CIC.cabecalho('Configurações', 'Conta, eleição e acesso', 'Um partido contrata a plataforma e abre contas para os candidatos. Cada candidato monta a própria equipe e a própria rede. Os dados de uma conta nunca aparecem em outra.')}
+  main.innerHTML = `${CIC.cabecalho('Ajustes da campanha', 'Cargo, estados e regras', 'Os dados desta campanha nunca aparecem em outra. O partido vê só os números.')}
   <section class="grade-2">
     <article class="cartao"><header><h2>Estrutura da conta</h2><p>Quem contrata, quem usa, quem vê.</p></header>
       <ol class="hierarquia"><li><b>Contratante</b><span>Partido, federação, entidade ou candidatura avulsa. Paga, abre contas e vê o consolidado.</span></li>
@@ -372,25 +370,22 @@ T.config = (main) => {
       <li><b>Equipe</b><span>Coordenação geral, coordenação territorial (por grupo), financeiro, jurídico, analistas.</span></li>
       <li><b>Lideranças</b><span>Recebem link e QR próprios. Veem só a própria rede.</span></li>
       <li><b>Apoiadores</b><span>Entram por um link, ganham o próprio link e trazem outros.</span></li></ol>
-      ${ehPartido ? '<button class="bt sec mt" id="nova-conta">Abrir conta de candidato…</button>' : ''}</article>
+      <a class="bt sec mt" href="#/equipe">Abrir Equipe e acessos</a></article>
     <article class="cartao"><header><h2>Eleição desta conta</h2><p>O cargo decide a regra de cálculo e a menor unidade do território.</p></header>
       <label>Cargo<select id="cargo" ${CIC.editaConfig() ? '' : 'disabled'}>${Object.entries(CIC.CARGOS).map(([k, v]) => `<option value="${k}" ${k === s.cargo ? 'selected' : ''}>${esc(v.nome)}</option>`).join('')}</select></label>
       <dl class="dados" id="cargo-info"></dl></article>
   </section>
   <section class="cartao"><header><h2>Estados de atuação</h2><p>A candidatura escolhe onde atua. Só os estados marcados aparecem no painel, no território, na rede, nos cenários e nos relatórios. Nomes e municípios: IBGE.</p></header>
-    ${CIC.editaConfig() ? '' : '<p class="faixa">Só o candidato e a coordenação geral mudam os estados.</p>'}
+    ${CIC.editaConfig() ? '' : '<p class="faixa">O seu perfil não muda os estados. Peça ao administrador.</p>'}
     <div class="filtros"><input type="search" id="uf-busca" placeholder="Buscar estado">${CIC.editaConfig() ? '<button class="bt sec peq" id="uf-todos">Marcar todos…</button>' : ''}<span class="contagem" id="uf-n"></span></div>
     <div class="ufs" id="ufs"></div>
     <p class="ajuda">Cargo estadual (Deputado, Senador, Governador) disputa um estado. Marque mais de um para acompanhar redes de fora, como em eleição de conselho federal ou de Presidente.</p></section>
-  <section class="cartao"><header><h2>Perfis e permissões</h2><p>Troque o perfil no alto da página para ver cada um por dentro.</p></header>
-    <div class="tab-rolagem"><table class="tab matriz"><thead><tr><th>Perfil</th>${rotas.map((r) => `<th>${esc(CIC.MENU.find((m) => m[0] === r)[1])}</th>`).join('')}<th>Dado pessoal</th></tr></thead><tbody>
-    ${Object.entries(CIC.PERFIS).map(([k, p]) => `<tr><td><b>${esc(p.nome)}</b><small>${esc(p.desc)}</small></td>${rotas.map((r) => `<td class="c">${r === 'partido' ? (k === 'partido' ? 'sim' : '-') : p.rotas === '*' || p.rotas.includes(r) ? (r === 'acordos' && p.financeiro === 'leitura' ? 'leitura' : k === 'partido' ? 'leitura' : 'sim') : '-'}</td>`).join('')}<td class="c">${p.mascara ? 'mascarado' : 'completo'}</td></tr>`).join('')}</tbody></table></div></section>
   <section class="grade-2">
     <article class="cartao"><header><h2>Redes sociais aceitas</h2><p>O apoiador escolhe a rede e digita a conta. A plataforma grava sempre no mesmo formato.</p></header>
       <table class="tab"><thead><tr><th>Rede</th><th>Orientação ao apoiador</th><th>Grava como</th></tr></thead><tbody>${Object.values(CIC.REDES).map((r) => `<tr><td><b>${esc(r.nome)}</b></td><td>${esc(r.dica)}</td><td><code>${esc((r.norm(r.exemplo).rotulo || r.norm(r.exemplo).id) || '')}</code></td></tr>`).join('')}</tbody></table>
       <p class="rotulo mt">Teste a normalização</p><div id="teste-rede"></div></article>
     <article class="cartao"><header><h2>Segurança</h2><p>Controles que valem para todas as contas.</p></header>
-      <ul class="controles"><li><b>Login com segundo fator</b> obrigatório para candidato, coordenação e financeiro.</li><li><b>Isolamento por conta</b> no banco (regra por linha): uma campanha nunca lê a base de outra.</li><li><b>Escopo por território</b>: a coordenação territorial só lê o próprio grupo.</li><li><b>Dado financeiro e CPF cifrados</b> no banco, com chave fora da aplicação.</li><li><b>Dupla aprovação</b> de pagamento: quem registra não aprova.</li><li><b>Trilha de auditoria</b> sem apagar: quem viu, mudou ou exportou o quê.</li><li><b>Marca d'água</b> com nome e horário em toda exportação.</li><li><b>Sessão curta</b> e saída remota de aparelho perdido.</li><li><b>Consentimento</b> gravado com texto, versão e horário. O apoiador pede a exclusão pelo próprio link.</li></ul></article>
+      <ul class="controles"><li><b>Login com segundo fator</b> obrigatório para candidato, coordenação e financeiro.</li><li><b>Isolamento por conta</b> no banco (regra por linha): uma campanha nunca lê a base de outra.</li><li><b>Região por usuário</b>: a coordenação de região só lê a própria região.</li><li><b>Dado financeiro e CPF cifrados</b> no banco, com chave fora da aplicação.</li><li><b>Dupla aprovação</b> de pagamento: quem registra não aprova.</li><li><b>Trilha de auditoria</b> sem apagar: quem viu, mudou ou exportou o quê.</li><li><b>Marca d'água</b> com nome e horário em toda exportação.</li><li><b>Sessão curta</b> e saída remota de aparelho perdido.</li><li><b>Consentimento</b> gravado com texto, versão e horário. O apoiador pede a exclusão pelo próprio link.</li></ul></article>
   </section>
   <section class="cartao"><header><h2>Dados desta demonstração</h2><p>O protótipo grava as suas mudanças neste navegador. Nada vai para servidor.</p></header><button class="bt perigo" id="reset">Apagar as mudanças e recomeçar…</button></section>`;
   const desUF = () => {
@@ -442,7 +437,7 @@ T.cadastro = (main, r) => {
       <p class="erro" id="cad-erro" role="alert"></p>
       <button class="bt grande">Entrar na rede</button>
       <p class="ajuda">Demonstração: o cadastro fica só neste navegador. Na versão completa, um código por SMS confirma o celular.</p>
-    </form><a class="ligacao" href="#/painel">Voltar ao painel da campanha</a></div>`;
+    </form>${CIC.s.usuario ? '<a class="ligacao" href="#/painel">Voltar ao início</a>' : ''}</div>`;
   const listar = () => { $('#cad-redes').innerHTML = redes.map((x, i) => `<li><abbr>${CIC.REDES[x.rede].sigla}</abbr><span><b>${esc(CIC.REDES[x.rede].nome)}</b><code>${esc(x.id)}</code></span><button type="button" class="bt peq sec" data-i="${i}">Remover</button></li>`).join(''); };
   $('#cad-redes').addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b) { redes.splice(+b.dataset.i, 1); listar(); } });
   const f = T.formRede((n) => { if (n.rede === 'whatsapp') { CIC.aviso('O WhatsApp sai do celular informado acima.'); return; } if (redes.some((x) => x.rede === n.rede)) { CIC.aviso('Esta rede já está na lista.'); return; } redes.push(n); listar(); });
@@ -464,9 +459,9 @@ T.cadastro = (main, r) => {
     const link = CIC.linkPessoal(p);
     main.innerHTML = `<div class="cad"><header class="cad-topo"><p class="rotulo">Cadastro feito</p><h1>Bem-vindo, ${esc(nome.split(' ')[0])}</h1><p>Você entrou na rede pelo convite de ${esc(quem)}. Agora você tem o seu link. Quem entrar por ele fica na sua rede.</p></header>
       <div class="cartao link-pessoal"><div><p class="rotulo">Seu link</p><div class="copiar"><code>${esc(link)}</code><button class="bt" data-copiar="${esc(link)}">Copiar link</button></div>
-      <div class="pilha-h"><a class="bt sec" href="https://wa.me/?text=${encodeURIComponent('Entre na rede da campanha pelo meu link: ' + link)}" target="_blank" rel="noopener">Enviar pelo WhatsApp</a><a class="bt sec" href="#/rede?p=${p.id}">Ver na rede da campanha</a></div></div><div class="qr">${CIC.qr(link)}</div></div>
+      <div class="pilha-h"><a class="bt sec" href="https://wa.me/?text=${encodeURIComponent('Entre na rede da campanha pelo meu link: ' + link)}" target="_blank" rel="noopener">Enviar pelo WhatsApp</a></div></div><div class="qr">${CIC.qr(link)}</div></div>
       <p class="ajuda">Caminho gravado: ${CIC.caminho(p.id).map((x) => esc(x.papel === 'candidato' ? x.nome : x.nome.split(' ')[0])).join(' › ')}</p>
-      <a class="ligacao" href="#/painel">Ver o painel da campanha</a></div>`;
+      </div>`;
   });
 };
 })();

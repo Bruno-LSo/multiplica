@@ -16,7 +16,7 @@ T.partido = (main) => {
   const tot = R.reduce((a, r) => a + r.total, 0), d7 = R.reduce((a, r) => a + r.d7, 0), p7 = R.reduce((a, r) => a + r.p7, 0);
   const ativos = R.reduce((a, r) => a + r.ativos, 0), lid = R.reduce((a, r) => a + r.lid, 0);
   const ufs = new Set(R.flatMap((r) => r.ufs));
-  main.innerHTML = `${CIC.cabecalho('Painel do partido', esc(CIC.PARTIDO), 'O partido vê e abre todas as candidaturas que contratou. Cada candidato vê só a própria. Dado pessoal aparece para o partido só quando o apoiador autorizou.',
+  main.innerHTML = `${CIC.cabecalho('Campanhas do partido', esc(CIC.PARTIDO), 'Os números de cada campanha, lado a lado. O partido só vê números: não vê nomes, telefones, contratos nem pagamentos, e não muda nada.',
     '<div class="cab-acoes"><button class="bt sec" id="csv-partido">Baixar desempenho (CSV)</button></div>')}
   <section class="grade-kpi">
     <article class="kpi heroi"><p class="rotulo">Contatos de todas as candidaturas</p><p class="numero">${fN.format(tot)}</p><p class="sub"><b>+${fN.format(d7)}</b> em 7 dias · ${p7 ? `${d7 >= p7 ? '+' : ''}${fP.format((d7 / p7 - 1) * 100)}% sobre os 7 dias anteriores` : ''}</p></article>
@@ -25,19 +25,19 @@ T.partido = (main) => {
     <article class="kpi"><p class="rotulo">Cadastros suspeitos</p><p class="numero">${fN.format(R.reduce((a, r) => a + r.susp, 0))}</p><p class="sub">Somados em todas as candidaturas.</p></article>
     <article class="kpi"><p class="rotulo">Meta somada</p><p class="numero">${fP.format((tot / R.reduce((a, r) => a + r.meta, 0)) * 100)}%</p><p class="sub">Dos ${fN.format(R.reduce((a, r) => a + r.meta, 0))} contatos de meta das candidaturas.</p></article>
   </section>
-  <section class="cartao"><header><h2>Desempenho por candidatura</h2><p>Clique em "Abrir" para entrar na candidatura com acesso de leitura. Tudo o que o partido abre fica no registro de atividades.</p></header>
+  <section class="cartao"><header><h2>Desempenho por campanha</h2><p>Toque em "Ver números" para abrir o início da campanha, só para leitura.</p></header>
   <div class="tab-rolagem"><table class="tab"><thead><tr><th>Candidatura</th><th>Estados</th><th class="n">Contatos</th><th class="n">+7 dias</th><th class="n">Ritmo</th><th class="n">Lideranças ativas</th><th class="n">Municípios com rede</th><th class="n">Meta</th><th>Últimos 60 dias</th><th></th></tr></thead><tbody>
   ${R.sort((a, b) => b.total - a.total).map((r) => `<tr><td><b>${esc(r.nome)}</b><small>${esc(CIC.CARGOS[r.cargo].nome)}</small></td><td>${r.ufs.map(esc).join(', ')}</td><td class="n">${fN.format(r.total)}</td><td class="n">+${fN.format(r.d7)}</td>
     <td class="n">${r.p7 ? `<span class="${r.d7 < r.p7 * 0.8 ? 'ruim' : ''}">${r.d7 >= r.p7 ? '+' : ''}${fP.format((r.d7 / r.p7 - 1) * 100)}%</span>` : '-'}</td><td class="n">${fN.format(r.ativos)} / ${fN.format(r.lid)}</td>
-    <td class="n">${fP.format((r.munRede / r.munTotal) * 100)}%</td><td class="n">${fP.format((r.total / r.meta) * 100)}%</td><td data-serie="${r.id}">${linhaMini(r.serie)}</td><td><button class="bt peq" data-abrir="${r.id}">Abrir</button></td></tr>`).join('')}</tbody></table></div>
+    <td class="n">${fP.format((r.munRede / r.munTotal) * 100)}%</td><td class="n">${fP.format((r.total / r.meta) * 100)}%</td><td data-serie="${r.id}">${linhaMini(r.serie)}</td><td><button class="bt peq" data-abrir="${r.id}">Ver números</button></td></tr>`).join('')}</tbody></table></div>
   <p class="ajuda">Ritmo: cadastros dos últimos 7 dias sobre os 7 dias anteriores. Em vermelho: queda de mais de 20%. Municípios com rede: parte dos municípios dos estados da candidatura com 1 contato ou mais.</p></section>
   <section class="grade-2 mt">
     <article class="cartao"><header><h2>Contatos por candidatura</h2><p>Parte de cada candidatura no total do partido.</p></header><div id="g-camp"></div></article>
     <article class="cartao"><header><h2>Quem vê o quê</h2><p>Regra de acesso entre o partido e as candidaturas.</p></header>
-      <ul class="controles"><li><b>Partido</b>: vê o painel, a rede, o território, os cenários e os relatórios de todas as candidaturas. Não edita nada e não vê acordos nem pagamentos.</li>
-      <li><b>Candidato e equipe</b>: veem só a própria candidatura. A troca de candidatura no alto da tela só aparece para o partido.</li>
-      <li><b>Dado pessoal</b>: o partido vê nome e contato só de quem marcou "Autorizo o partido" no cadastro.</li>
-      <li><b>Registro</b>: cada abertura de candidatura pelo partido fica gravada com usuário e horário.</li></ul></article>
+      <ul class="controles"><li><b>Partido</b>: vê os números de todas as campanhas. Não muda nada. Não vê nomes, telefones, contratos nem pagamentos.</li>
+      <li><b>Primeiro acesso</b>: o partido cria o primeiro administrador de cada campanha, em <a href="#/acessos">Acessos das campanhas</a>.</li>
+      <li><b>Campanha</b>: cada uma vê só os próprios dados. O administrador cria a equipe e escolhe o que cada perfil vê.</li>
+      <li><b>Histórico</b>: cada consulta do partido fica gravada com usuário e horário.</li></ul></article>
   </section>`;
   G.barrasH($('#g-camp'), R.map((r) => ({ rotulo: r.nome, valor: r.total })), { base: 'dos contatos do partido' });
   main.querySelectorAll('[data-serie]').forEach((td) => { const r = R.find((x) => x.id === td.dataset.serie);
@@ -45,7 +45,7 @@ T.partido = (main) => {
     td.addEventListener('pointerleave', () => CIC.dica.esconder()); });
   main.addEventListener('click', (e) => {
     const b = e.target.closest('[data-abrir]'); if (!b) return;
-    CIC.ativar(b.dataset.abrir); T._terr = null; CIC.audit('Partido abriu a candidatura', CIC.campAtual().nome); CIC.ir('painel');
+    CIC.ativar(b.dataset.abrir); T._terr = null; CIC.audit('Partido abriu os números da campanha', CIC.campAtual().nome); CIC.ir('painel');
   });
   $('#csv-partido').addEventListener('click', () => {
     CIC.baixarCSV(`desempenho-candidaturas.csv`, ['candidatura', 'cargo', 'estados', 'contatos', 'novos_7d', 'novos_7d_anteriores', 'liderancas_ativas', 'liderancas', 'municipios_com_rede', 'municipios', 'meta_contatos', 'suspeitos'],
@@ -56,9 +56,9 @@ T.partido = (main) => {
 /* ---------- REGISTRO DE ATIVIDADES ---------- */
 T.auditoria = (main) => {
   const s = CIC.s; const ehPartido = s.perfil === 'partido';
-  const st = { q: '', perfil: '', camp: ehPartido ? '' : 'c1' };
-  const base = () => s.auditoria.filter((a) => (ehPartido || a.camp === 'c1'));
-  main.innerHTML = `${CIC.cabecalho('Registro de atividades', 'Quem fez o quê, quando e onde', `Toda ação fica gravada: grupos e municípios do território, perfis, cadastros, redes sociais, contatos, acordos, pagamentos, aprovações e exportações. ${ehPartido ? 'O partido vê o registro de todas as candidaturas.' : 'Você vê o registro da sua candidatura.'} Ninguém apaga o registro.`,
+  const st = { q: '', perfil: '', camp: ehPartido ? '' : s.camp };
+  const base = () => s.auditoria.filter((a) => (ehPartido || a.camp === s.camp));
+  main.innerHTML = `${CIC.cabecalho('Histórico de ações', 'Quem fez o quê e quando', `Toda ação fica gravada: grupos e municípios do território, perfis, cadastros, redes sociais, contatos, acordos, pagamentos, aprovações e exportações. Você vê só o histórico desta campanha. Ninguém apaga o histórico.`,
     '<div class="cab-acoes"><button class="bt sec" id="csv-aud">Baixar registro (CSV)</button></div>')}
   <div class="filtros"><input type="search" id="a-q" placeholder="Buscar ação, grupo ou município">
     <select id="a-perfil"><option value="">Todos os perfis</option>${[...new Set(base().map((a) => a.perfil))].map((p) => `<option>${esc(p)}</option>`).join('')}</select>

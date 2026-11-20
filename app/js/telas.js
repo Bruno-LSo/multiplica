@@ -15,38 +15,61 @@ CIC.rota = () => {
   return { nome: nome.split('/')[0], sub: nome.split('/')[1] || '', p: Object.fromEntries(new URLSearchParams(q || '')) };
 };
 CIC.ir = (h) => { location.hash = '#/' + h; };
+/* Menu em 4 grupos, com nomes do dia a dia. "Pessoas" junta 3 telas em abas: lista, quem trouxe quem e lideranças. */
 CIC.MENU = [
-  ['partido', 'Painel do partido'], ['painel', 'Painel'], ['territorio', 'Território'], ['rede', 'Rede'], ['contatos', 'Contatos'], ['liderancas', 'Lideranças'],
-  ['acordos', 'Acordos e pagamentos'], ['cenarios', 'Cenários'], ['alertas', 'Alertas'], ['relatorios', 'Relatórios'], ['auditoria', 'Registro de atividades'], ['config', 'Configurações'],
+  ['partido', 'Campanhas do partido', 'Partido'], ['acessos', 'Acessos das campanhas', 'Partido'],
+  ['painel', 'Início', 'Dia a dia'], ['alertas', 'Avisos', 'Dia a dia'], ['pessoas', 'Pessoas', 'Dia a dia'],
+  ['territorio', 'Mapa e regiões', 'Planejar'], ['cenarios', 'Simular votos', 'Planejar'],
+  ['acordos', 'Contratos e pagamentos', 'Administrar'], ['relatorios', 'Baixar planilhas', 'Administrar'], ['auditoria', 'Histórico de ações', 'Administrar'],
+  ['equipe', 'Equipe e acessos', 'Administrar'], ['config', 'Ajustes da campanha', 'Administrar'],
 ];
+CIC.PESSOAS = [['contatos', 'Lista de pessoas'], ['rede', 'Quem trouxe quem'], ['liderancas', 'Melhores lideranças']];
+CIC.rotaPessoas = () => CIC.PESSOAS.map((x) => x[0]).find((k) => CIC.pode(k));
+CIC.abasPessoas = (atual) => {
+  const L = CIC.PESSOAS.filter(([k]) => CIC.pode(k));
+  if (L.length < 2) return '';
+  return `<nav class="abas" aria-label="Pessoas">${L.map(([k, v]) => `<a href="#/${k}" ${k === atual ? 'aria-selected="true"' : ''}>${v}</a>`).join('')}</nav>`;
+};
 
 CIC.render = () => {
   const r = CIC.rota();
   const main = $('#principal');
-  document.body.classList.toggle('modo-cadastro', r.nome === 'cadastro');
+  const s = CIC.s;
+  if (!s.usuario && !['entrar', 'cadastro'].includes(r.nome)) { CIC.ir('entrar'); return; }
+  document.body.classList.toggle('modo-cadastro', r.nome === 'cadastro' || r.nome === 'entrar');
   CIC.dica.esconder();
-  if (r.nome !== 'cadastro') CIC.montarTopo();
+  if (!['cadastro', 'entrar'].includes(r.nome)) CIC.montarTopo();
+  const emPessoas = CIC.PESSOAS.some(([k]) => k === r.nome);
   $$('#menu a').forEach((a) => {
     const nome = a.dataset.rota;
-    a.toggleAttribute('aria-current', nome === r.nome);
-    a.hidden = !CIC.pode(nome);
+    if (nome === 'pessoas') {
+      const alvo = CIC.rotaPessoas();
+      a.hidden = !alvo; if (alvo) a.href = '#/' + alvo;
+      a.querySelector('span').textContent = CIC.PERFIS[s.perfil]?.soPropriaRede ? 'Minha rede' : 'Pessoas';
+      a.toggleAttribute('aria-current', emPessoas);
+    } else {
+      a.toggleAttribute('aria-current', nome === r.nome);
+      a.hidden = !CIC.pode(nome);
+    }
   });
-  if (!T[r.nome]) { CIC.ir('painel'); return; }
+  $$('#menu .menu-grupo').forEach((g) => { g.hidden = !g.querySelector('a:not([hidden])'); });
+  if (!T[r.nome]) { CIC.ir(s.perfil === 'partido' ? 'partido' : 'painel'); return; }
   if (!CIC.pode(r.nome)) {
-    main.innerHTML = `<section class="bloqueio"><p class="rotulo">Acesso restrito</p><h1>O perfil ${esc(CIC.PERFIS[CIC.s.perfil].nome)} não abre esta tela.</h1><p>${esc(CIC.PERFIS[CIC.s.perfil].desc)} Troque o perfil no alto da página para ver a diferença.</p><a class="bt" href="#/painel">Voltar ao painel</a></section>`;
+    main.innerHTML = `<section class="bloqueio"><p class="rotulo">Sem acesso</p><h1>O seu perfil não abre esta tela.</h1><p>Perfil ${esc(CIC.PERFIS[s.perfil].nome)}: ${esc(CIC.PERFIS[s.perfil].desc)} Se precisar desta tela, peça ao administrador da campanha.</p><a class="bt" href="#/${s.perfil === 'partido' ? 'partido' : 'painel'}">Voltar ao início</a></section>`;
     return;
   }
   main.innerHTML = '';
   main.scrollTop = 0; scrollTo(0, 0);
   T[r.nome](main, r);
+  if (emPessoas) { const cab = main.querySelector('.cab'); const abas = CIC.abasPessoas(r.nome); if (cab && abas) cab.insertAdjacentHTML('afterend', abas); }
   const alvo = main.querySelector('h1'); if (alvo) alvo.setAttribute('tabindex', '-1');
 };
 
-/* ---------- topo: escopo, perfil, tema ---------- */
+/* ---------- topo: usuário, campanha, região, tema ---------- */
 CIC.opcoesEscopo = (sel) => {
   const s = CIC.s; const out = [`<option value="">${esc(CIC.base.estados.find((e) => e.sigla === s.uf).nome)} (estado inteiro)</option>`];
   const desc = (pai, nv) => s.grupos.filter((g) => (g.pai || null) === pai && g.nivel === nv).sort((a, b) => a.nome.localeCompare(b.nome)).forEach((g) => {
-    out.push(`<option value="${g.id}" ${sel === g.id ? 'selected' : ''}>${' '.repeat(nv)}${esc(g.nome)} · ${esc(s.niveis[nv])}</option>`);
+    out.push(`<option value="${g.id}" ${sel === g.id ? 'selected' : ''}>${' '.repeat(nv)}${esc(g.nome)} · ${esc(s.niveis[g.nivel])}</option>`);
     if (nv + 1 < s.niveis.length) desc(g.id, nv + 1);
   });
   desc(null, 0);
@@ -58,37 +81,32 @@ CIC.montarTopo = () => {
   const esc0 = $('#escopo');
   esc0.innerHTML = CIC.opcoesEscopo(s.escopo);
   esc0.disabled = !!p.travaEscopo;
+  $('#campo-escopo').hidden = !!p.soPropriaRede || s.perfil === 'partido';
   const c = CIC.campAtual();
   $('#campo-camp').hidden = s.perfil !== 'partido';
   $('#campanha').innerHTML = Object.keys(CIC.CAMPANHAS_BASE).map((k) => { const x = s.store[k] || CIC.CAMPANHAS_BASE[k]; return `<option value="${k}" ${k === s.camp ? 'selected' : ''}>${esc(x.nome)} · ${esc(CIC.CARGOS[x.cargo].nome)}</option>`; }).join('');
   $('#uf-topo').innerHTML = c.ufs.map((u) => `<option value="${u}" ${u === s.uf ? 'selected' : ''}>${esc(CIC.nomeUF(u))}</option>`).join('');
-  $('#uf-topo').disabled = c.ufs.length < 2;
-  $('#perfil').value = s.perfil;
-  $('#perfil-desc').textContent = p.desc;
-  const n = CIC.alertas().filter((a) => a.sev === 'critico' || a.sev === 'grave').length;
+  $('#campo-uf').hidden = c.ufs.length < 2;
+  $('#usuario-nome').textContent = CIC.usuarioAtual();
+  $('#usuario-perfil').textContent = p.nome;
+  const n = CIC.pode('alertas') ? CIC.alertas().filter((a) => a.sev === 'critico' || a.sev === 'grave').length : 0;
   const b = $('#menu a[data-rota="alertas"] .contador'); if (b) { b.textContent = n || ''; b.hidden = !n; }
-  $('#cargo-topo').textContent = `${c.nome} · ${CIC.CARGOS[s.cargo].nome} · 2026`;
+  const sino = $('#sino'); sino.hidden = !CIC.pode('alertas'); sino.querySelector('b').textContent = n || ''; sino.querySelector('b').hidden = !n;
+  sino.setAttribute('aria-label', n ? `Avisos: ${n} urgentes` : 'Avisos');
+  $('#cargo-topo').textContent = s.perfil === 'partido' ? CIC.PARTIDO : `${c.nome} · ${CIC.CARGOS[s.cargo].nome} · 2026`;
 };
 CIC.ligarTopo = () => {
   $('#escopo').addEventListener('change', (e) => { CIC.s.escopo = e.target.value || null; CIC.gravar(); CIC.render(); });
-  $('#perfil').innerHTML = Object.entries(CIC.PERFIS).map(([k, v]) => `<option value="${k}">${esc(v.nome)}</option>`).join('');
-  $('#campanha').addEventListener('change', (e) => { CIC.ativar(e.target.value); CIC.audit('Partido abriu a candidatura', CIC.campAtual().nome); T._terr = null; CIC.ir('painel'); CIC.render(); });
+  $('#campanha').addEventListener('change', (e) => { CIC.ativar(e.target.value); CIC.audit('Partido abriu os números da campanha', CIC.campAtual().nome); T._terr = null; CIC.ir('painel'); CIC.render(); });
   $('#uf-topo').addEventListener('change', (e) => { CIC.ativar(CIC.s.camp, e.target.value); CIC.audit('Trocou o estado em uso', CIC.nomeUF(e.target.value)); CIC.render(); });
-  $('#perfil').addEventListener('change', (e) => {
-    const s = CIC.s; s.perfil = e.target.value;
-    if (s.perfil !== 'partido' && s.camp !== 'c1') CIC.ativar('c1');
-    if (CIC.PERFIS[s.perfil].travaEscopo) { const g = s.grupos.filter((x) => x.nivel === 0).sort((a, b) => b.munis.length - a.munis.length)[0]; s.escopo = g ? g.id : null; }
-    else if (CIC.PERFIS[s.perfil].soPropriaRede) s.escopo = null;
-    CIC.audit('Entrou com o perfil', CIC.PERFIS[s.perfil].nome);
-    if (s.perfil === 'partido') CIC.ir('partido'); else if (!CIC.pode(CIC.rota().nome)) CIC.ir('painel');
-    CIC.render();
-  });
+  $('#sair').addEventListener('click', () => CIC.sair());
   const temas = ['auto', 'light', 'dark']; const nomes = { auto: 'Tema do sistema', light: 'Tema claro', dark: 'Tema escuro' };
   let t = 'auto'; try { t = localStorage.getItem('cic.tema') || 'auto'; } catch {}
   const aplicar = () => { if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t; $('#tema').setAttribute('aria-label', nomes[t]); $('#tema').title = nomes[t]; };
   aplicar();
   $('#tema').addEventListener('click', () => { t = temas[(temas.indexOf(t) + 1) % 3]; try { localStorage.setItem('cic.tema', t); } catch {} aplicar(); CIC.render(); });
-  $('#menu').innerHTML = CIC.MENU.map(([k, v]) => `<a href="#/${k}" data-rota="${k}"><span>${v}</span>${k === 'alertas' ? '<b class="contador" hidden></b>' : ''}</a>`).join('');
+  const grupos = [...new Set(CIC.MENU.map((m) => m[2]))];
+  $('#menu').innerHTML = grupos.map((g) => `<div class="menu-grupo"><p class="menu-titulo">${esc(g)}</p>${CIC.MENU.filter((m) => m[2] === g).map(([k, v]) => `<a href="#/${k}" data-rota="${k}"><span>${v}</span>${k === 'alertas' ? '<b class="contador" hidden></b>' : ''}</a>`).join('')}</div>`).join('');
   $('#abrir-menu').addEventListener('click', () => document.body.classList.toggle('menu-aberto'));
   $('#menu').addEventListener('click', () => document.body.classList.remove('menu-aberto'));
 };
@@ -211,24 +229,34 @@ T.painel = (main) => {
   const meta = perfil.soPropriaRede ? Math.max(50, Math.ceil((CIC.eu().rede * 1.4) / 10) * 10) : Math.round((CIC.metaContatos() * (m.pop / CIC.demo.lista.reduce((a, x) => a + x.pop, 0))) / 10) * 10;
   const pm = Math.min(100, (m.total / meta) * 100);
   const eu = CIC.eu();
-  const titulo = perfil.soPropriaRede ? `Sua rede, ${esc(eu.nome.split(' ')[0])}` : esc(CIC.nomeEscopo());
+  const ehPartido = s.perfil === 'partido';
+  const primeiro = (perfil.soPropriaRede ? eu.nome : CIC.usuarioAtual()).split(' ')[0];
+  const h = new Date().getHours(); const saud = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+  const titulo = ehPartido ? esc(CIC.campAtual().nome) : `${saud}, ${esc(primeiro)}`;
+  const onde = perfil.soPropriaRede ? 'da sua rede' : `de ${esc(CIC.nomeEscopo())}`;
+  const falta = Math.max(0, meta - m.total);
+  // o que fazer agora: os 3 avisos mais graves que o perfil consegue resolver
+  const fazer = perfil.soPropriaRede
+    ? [{ sev: 'info', regra: 'Convide mais gente', texto: `Mande o seu link para 5 pessoas hoje. Faltam ${fN.format(falta)} pessoas para a meta da sua rede.`, rota: null }]
+    : ehPartido ? [] : CIC.alertas().filter((a) => CIC.pode(a.rota.split('?')[0])).slice(0, 3);
   main.innerHTML = `
-  ${CIC.cabecalho('Painel', titulo, perfil.soPropriaRede ? 'Cada pessoa que entrou pelo seu link, ou pelo link de quem você trouxe, aparece aqui.' : `Números de ${esc(CIC.nomeEscopo())}. Troque o recorte no seletor do alto: grupo, subgrupo ou estado inteiro.`,
+  ${CIC.cabecalho(ehPartido ? 'Números da campanha' : 'Início', titulo, `Hoje entraram <b>${fN.format(m.d1)}</b> pessoas ${onde}. Nos últimos 7 dias, <b>${fN.format(m.d7)}</b>.${falta ? ` Faltam <b>${fN.format(falta)}</b> pessoas para a meta.` : ' A meta foi batida.'}`,
     `<div class="cab-acoes"><label class="chave"><input type="checkbox" id="sim" ${s.sim ? 'checked' : ''}><span>Simular entradas ao vivo</span></label></div>`)}
+  ${ehPartido ? `<p class="faixa-partido">O partido vê só os números de <b>${esc(CIC.campAtual().nome)}</b>, sem mudar nada. <a href="#/partido">Voltar às campanhas do partido</a></p>` : ''}
+  ${perfil.soPropriaRede ? T.blocoMeuLink(eu) : ''}
+  ${ehPartido ? '' : `<section class="fazer"><h2>O que fazer agora</h2>${fazer.length ? `<ol>${fazer.map((a) => `<li>${CIC.selo(a.sev)}<div><b>${esc(a.regra)}</b><p>${esc(a.texto)}</p></div>${a.rota ? `<a class="bt peq" href="#/${a.rota}">Resolver</a>` : `<button class="bt peq" data-copiar="${esc(CIC.linkPessoal(eu))}">Copiar meu link</button>`}</li>`).join('')}</ol>` : '<p class="vazio">Nada urgente agora. Bom trabalho.</p>'}</section>`}
   <section class="grade-kpi">
     <article class="kpi heroi">
-      <p class="rotulo">Contatos engajados</p>
+      <p class="rotulo">Pessoas na rede</p>
       <p class="numero" id="k-total">${fN.format(m.total)}</p>
-      <p class="sub"><b id="k-d1">+${fN.format(m.d1)}</b> nas últimas 24 horas · <b id="k-d7">+${fN.format(m.d7)}</b> em 7 dias</p>
-      <div class="meta"><div class="meta-trilha"><span style="width:${pm}%"></span></div><p><span id="k-pm">${fP.format(pm)}%</span> da meta de ${fN.format(meta)} contatos ${perfil.soPropriaRede ? 'da sua rede' : 'para este recorte'}</p></div>
+      <p class="sub"><b id="k-d1">+${fN.format(m.d1)}</b> hoje · <b id="k-d7">+${fN.format(m.d7)}</b> em 7 dias</p>
+      <div class="meta"><div class="meta-trilha"><span style="width:${pm}%"></span></div><p><span id="k-pm">${fP.format(pm)}%</span> da meta de ${fN.format(meta)} pessoas ${perfil.soPropriaRede ? 'da sua rede' : 'desta região'}</p></div>
     </article>
-    <article class="kpi"><p class="rotulo">Lideranças ativas</p><p class="numero">${fN.format(m.ativos)}<small> de ${fN.format(m.lid)}</small></p><p class="sub">Com 1 cadastro ou mais nos últimos 14 dias.</p></article>
-    <article class="kpi"><p class="rotulo">Municípios com rede</p><p class="numero">${fN.format(m.munRede)}<small> de ${fN.format(m.munTotal)}</small></p><p class="sub">${fP.format(m.munTotal ? (m.munRede / m.munTotal) * 100 : 0)}% dos municípios do recorte têm 1 contato ou mais.</p></article>
-    <article class="kpi"><p class="rotulo">Alcance da rede</p><p class="numero">${fN.format(m.prof)}<small> níveis</small></p><p class="sub">${fP.format(m.total ? (m.g2 / m.total) * 100 : 0)}% dos contatos vieram pela rede, do 2º nível em diante.</p></article>
-    <article class="kpi"><p class="rotulo">Com rede social além do WhatsApp</p><p class="numero">${fP.format(m.total ? (m.comOutra / m.total) * 100 : 0)}%</p><p class="sub">${fN.format(m.comOutra)} dos ${fN.format(m.total)} contatos do recorte.</p></article>
+    <article class="kpi"><p class="rotulo">Lideranças trazendo gente</p><p class="numero">${fN.format(m.ativos)}<small> de ${fN.format(m.lid)}</small></p><p class="sub">Trouxeram 1 pessoa ou mais nos últimos 14 dias.</p></article>
+    <article class="kpi"><p class="rotulo">Cidades com apoiadores</p><p class="numero">${fN.format(m.munRede)}<small> de ${fN.format(m.munTotal)}</small></p><p class="sub">${fP.format(m.munTotal ? (m.munRede / m.munTotal) * 100 : 0)}% das cidades desta região têm 1 pessoa ou mais.</p></article>
+    <article class="kpi"><p class="rotulo">Vieram por indicação</p><p class="numero">${fP.format(m.total ? (m.g2 / m.total) * 100 : 0)}%</p><p class="sub">${fN.format(m.g2)} das ${fN.format(m.total)} pessoas entraram pelo link de quem já estava na rede.</p></article>
+    <article class="kpi"><p class="rotulo">Com outra rede social</p><p class="numero">${fP.format(m.total ? (m.comOutra / m.total) * 100 : 0)}%</p><p class="sub">${fN.format(m.comOutra)} das ${fN.format(m.total)} pessoas têm rede social além do WhatsApp.</p></article>
   </section>
-  ${s.perfil === 'partido' ? `<p class="faixa-partido">Você vê <b>${esc(CIC.campAtual().nome)}</b> como partido, só para leitura. <a href="#/partido">Voltar ao painel do partido</a></p>` : ''}
-  ${perfil.soPropriaRede ? T.blocoMeuLink(eu) : ''}
   <section class="grade-2">
     <article class="cartao"><header><h2>Crescimento da base</h2><p>Contatos acumulados por dia, nos últimos 120 dias.</p></header><div id="g-cresc"></div></article>
     <article class="cartao"><header><h2>Onde a base está</h2><p>Contatos por 1.000 habitantes (Censo 2022). Clique no mapa para abrir o território.</p></header><div class="mini-mapa" id="g-mapa"></div><div id="g-legenda" class="legenda"></div></article>
@@ -265,7 +293,7 @@ T.painel = (main) => {
   $('#feed').innerHTML = feed.map(T.itemFeed).join('');
   // alertas
   const al = CIC.alertas().slice(0, 4);
-  $('#t-alertas').innerHTML = al.length ? `<ul class="lista-alertas">${al.map((a) => `<li>${CIC.selo(a.sev)}<div><b>${esc(a.regra)}</b><p>${esc(a.texto)}</p></div></li>`).join('')}</ul><a class="ligacao" href="#/alertas">Ver os ${fN.format(CIC.alertas().length)} alertas</a>` : '<p class="vazio">Nenhum alerta aberto.</p>';
+  $('#t-alertas').innerHTML = al.length ? `<ul class="lista-alertas">${al.map((a) => `<li>${CIC.selo(a.sev)}<div><b>${esc(a.regra)}</b><p>${esc(a.texto)}</p></div></li>`).join('')}</ul>${CIC.pode("alertas") ? `<a class="ligacao" href="#/alertas">Ver os ${fN.format(CIC.alertas().length)} avisos</a>` : ""}` : '<p class="vazio">Nenhum alerta aberto.</p>';
   // mapa
   T.miniMapa($('#g-mapa'), v, $('#g-legenda'));
   $('#sim').addEventListener('change', (e) => { s.sim = e.target.checked; CIC.gravar(); });
@@ -327,9 +355,9 @@ T.territorio = async (main, r) => {
   const st = (T._terr = T._terr && T._terr.chave === s.camp + s.uf ? T._terr : { chave: s.camp + s.uf, nivelVer: 0, modo: 'grupos', indicador: 'taxa', sel: null, editando: false, busca: '', filtro: 'todos' });
   if (r.p.g && CIC.grupo(r.p.g)) st.sel = r.p.g;
   if (st.sel && !CIC.grupo(st.sel)) st.sel = null;
-  const podeEditar = !['analista', 'partido'].includes(s.perfil) && !CIC.PERFIS[s.perfil].travaEscopo;
+  const podeEditar = CIC.editaConfig() && !CIC.PERFIS[s.perfil].travaEscopo;
   main.innerHTML = `
-  ${CIC.cabecalho('Território · ' + CIC.nomeUF(s.uf), 'Grupos, subgrupos e municípios', `Monte a divisão da campanha em até ${s.niveis.length} níveis, com os nomes que quiser. Cada nível fica dentro do anterior. Se um subgrupo sair do grupo-pai, a plataforma avisa e deixa você decidir. Nomes dos municípios: IBGE.`,
+  ${CIC.cabecalho('Mapa e regiões · ' + CIC.nomeUF(s.uf), 'Regiões e cidades da campanha', `Divida o estado em até ${s.niveis.length} níveis, com os nomes que quiser. Cada nível fica dentro do anterior. Se uma cidade ficar fora da região de cima, a plataforma avisa. Nomes das cidades: IBGE.`,
     s.store[s.camp].ufs.length > 1 ? `<div class="cab-acoes"><span class="faixa">Estado em uso: troque no seletor "Estado", no alto.</span></div>` : '')}
   <div class="terr">
     <aside class="terr-lado">
@@ -647,7 +675,7 @@ T.rede = async (main, r) => {
   const filhos = (CIC.idx.filhos.get(p.id) || []).map((id) => CIC.idx.porId.get(id)).sort((a, b) => b.rede - a.rede);
   const ag = Date.now();
   main.innerHTML = `
-  ${CIC.cabecalho('Rede', 'Quem trouxe quem', 'Cada cadastro guarda o link de quem indicou. Assim a rede inteira vira uma árvore: da candidatura até a última pessoa que entrou.')}
+  ${CIC.cabecalho(perfil.soPropriaRede ? 'Minha rede' : 'Pessoas', 'Quem trouxe quem', perfil.soPropriaRede ? 'Cada pessoa que entrou pelo seu link, e quem ela trouxe depois. Toque em um nome para ver a rede dela.' : 'Cada cadastro guarda quem convidou. Toque em um nome para descer na rede, da candidatura até a última pessoa que entrou.')}
   <div class="busca-rede"><input id="busca-p" type="search" placeholder="Buscar pessoa pelo nome ou pelo código do link" autocomplete="off"><ul id="res-p" class="resultados" hidden></ul></div>
   <nav class="trilha" aria-label="Caminho até a candidatura">${camVis.map((x, i) => `${i ? '<span aria-hidden="true">›</span>' : ''}<a href="#/rede?p=${x.id}" ${x === p ? 'aria-current="page"' : ''}>${esc(x.papel === 'candidato' ? x.nome : CIC.nomeVisivel(x))}</a>`).join('')}</nav>
   <section class="grade-2 rede-topo">

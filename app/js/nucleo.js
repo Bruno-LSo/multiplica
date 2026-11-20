@@ -27,13 +27,13 @@ function fmtTel(d) { return d.length === 11 ? `(${d.slice(0, 2)}) ${d.slice(2, 7
 Object.assign(CIC, { fN, fP, fR, fD, fDA, fDH, DIA, esc, clamp, rngDe, hashStr, iniciais, fmtTel });
 
 /* ---------- armazenamento local (só conveniência do protótipo) ---------- */
-const CHAVE = 'cic.prototipo.v3';
+const CHAVE = 'cic.prototipo.v4';
 CIC.ler = () => { try { return JSON.parse(localStorage.getItem(CHAVE) || 'null'); } catch { return null; } };
 CIC.gravar = () => {
   try {
     const s = CIC.s;
     CIC.guardarAtual();
-    localStorage.setItem(CHAVE, JSON.stringify({ perfil: s.perfil, camp: s.camp, uf: s.uf, sim: s.sim, store: s.store, auditoria: s.auditoria.slice(0, 2000) }));
+    localStorage.setItem(CHAVE, JSON.stringify({ perfil: s.perfil, usuario: s.usuario, camp: s.camp, uf: s.uf, sim: s.sim, store: s.store, auditoria: s.auditoria.slice(0, 2000) }));
   } catch { /* navegador sem armazenamento: o protótipo segue sem gravar */ }
 };
 CIC.apagarTudo = () => { try { localStorage.removeItem(CHAVE); } catch {} };
@@ -92,29 +92,73 @@ CIC.CARGOS = {
   interna: { nome: 'Eleição interna (partido, sindicato, associação)', sistema: 'regra do estatuto', unidade: 'Diretório, núcleo ou município', abrangencia: 'livre', fonte: 'lista de filiados' },
 };
 
-/* ---------- perfis de acesso ---------- */
-CIC.PERFIS = {
-  candidato: { nome: 'Candidato', desc: 'Vê tudo da própria campanha.', rotas: '*', mascara: false, financeiro: true },
-  coordgeral: { nome: 'Coordenação geral', desc: 'Vê tudo, exceto a aprovação de pagamentos.', rotas: '*', mascara: false, financeiro: 'leitura' },
-  coordterr: { nome: 'Coordenação territorial', desc: 'Vê só o grupo do território que coordena. Não vê acordos nem pagamentos.', rotas: ['painel', 'territorio', 'rede', 'contatos', 'liderancas', 'alertas', 'relatorios', 'cadastro'], mascara: false, financeiro: false, travaEscopo: true },
-  financeiro: { nome: 'Financeiro e conformidade', desc: 'Registra e aprova acordos e pagamentos. Vê contatos sem dados pessoais.', rotas: ['painel', 'acordos', 'alertas', 'relatorios', 'cadastro'], mascara: true, financeiro: true },
-  partido: { nome: 'Partido contratante', desc: 'Vê e abre todas as candidaturas do partido, só para leitura. Dado pessoal só de quem autorizou o partido. Não vê acordos.', rotas: ['painel', 'territorio', 'rede', 'contatos', 'liderancas', 'cenarios', 'alertas', 'relatorios', 'config', 'cadastro'], mascara: true, financeiro: false },
-  lideranca: { nome: 'Liderança', desc: 'Vê só a própria rede e o próprio link.', rotas: ['painel', 'rede', 'cadastro'], mascara: false, financeiro: false, soPropriaRede: true },
-  analista: { nome: 'Analista', desc: 'Vê números, mapas e cenários. Não vê nenhum dado pessoal.', rotas: ['painel', 'territorio', 'liderancas', 'cenarios', 'alertas', 'relatorios', 'cadastro'], mascara: true, financeiro: false },
+/* ---------- perfis de acesso ----------
+   Cada campanha tem os próprios perfis e a própria equipe. O administrador da campanha muda as permissões,
+   cria perfis novos e dá acesso a outras pessoas, inclusive a outros administradores.
+   O partido não entra em nenhuma campanha: vê só os números de cada uma e cria o primeiro administrador. */
+CIC.AREAS = [
+  ['painel', 'Início', 'Resumo do dia e o que fazer agora. Todo perfil vê.'],
+  ['alertas', 'Avisos', 'Problemas que pedem decisão.'],
+  ['contatos', 'Lista de pessoas', 'Nome, cidade, redes sociais e quem indicou.'],
+  ['rede', 'Quem trouxe quem', 'A árvore de indicações e o link de cada pessoa.'],
+  ['liderancas', 'Melhores lideranças', 'Nota de 0 a 100 de cada liderança.'],
+  ['territorio', 'Mapa e regiões', 'Divisão do estado em regiões e cidades.'],
+  ['cenarios', 'Simular votos', 'Contas de quociente, alianças e metas.'],
+  ['acordos', 'Contratos e pagamentos', 'Dinheiro da campanha.'],
+  ['relatorios', 'Baixar planilhas', 'Exporta os dados em planilha.'],
+  ['auditoria', 'Histórico de ações', 'Quem fez o quê e quando.'],
+  ['equipe', 'Equipe e acessos', 'Cria usuários e muda permissões.'],
+  ['config', 'Ajustes da campanha', 'Cargo e estados da campanha.'],
+];
+CIC.OPCOES_PERFIL = [
+  ['verDados', 'Vê nome e telefone das pessoas', 'Sem esta opção, o nome aparece abreviado e o telefone fica escondido.'],
+  ['edita', 'Pode mudar o mapa e os ajustes', 'Cria regiões, muda cidades de região, muda cargo e estados.'],
+  ['financeiro', 'Registra e aprova pagamentos', 'Vale só com a área Contratos e pagamentos marcada.'],
+  ['travaEscopo', 'Vê só a própria região', 'O administrador escolhe a região de cada usuário.'],
+  ['soPropriaRede', 'Vê só a própria rede', 'Para lideranças: só quem entrou pelo link dela.'],
+];
+CIC.PERFIS_PADRAO = {
+  admin: { nome: 'Administrador', desc: 'Vê e muda tudo da campanha. Cria usuários e muda permissões.', rotas: CIC.AREAS.map((a) => a[0]), verDados: true, edita: true, financeiro: true, fixo: true },
+  coord: { nome: 'Coordenação', desc: 'Cuida das pessoas, do mapa e das metas. Não vê dinheiro.', rotas: ['painel', 'alertas', 'contatos', 'rede', 'liderancas', 'territorio', 'cenarios', 'relatorios', 'auditoria'], verDados: true, edita: true },
+  coordreg: { nome: 'Coordenação de região', desc: 'Cuida só da própria região. Não vê dinheiro.', rotas: ['painel', 'alertas', 'contatos', 'rede', 'liderancas', 'territorio', 'relatorios'], verDados: true, travaEscopo: true },
+  financeiro: { nome: 'Financeiro', desc: 'Registra e aprova contratos e pagamentos. Não vê telefone das pessoas.', rotas: ['painel', 'alertas', 'acordos', 'relatorios'], financeiro: true },
+  analista: { nome: 'Analista de dados', desc: 'Vê números, mapas e simulações. Não vê nome nem telefone.', rotas: ['painel', 'alertas', 'liderancas', 'territorio', 'cenarios', 'relatorios'] },
+  lideranca: { nome: 'Liderança', desc: 'Vê só a própria rede e o próprio link de convite.', rotas: ['painel', 'rede'], verDados: true, soPropriaRede: true },
+};
+CIC.PERFIL_PARTIDO = { nome: 'Partido', desc: 'Vê os números de todas as campanhas, sem mudar nada. Cria o primeiro administrador de cada campanha.', rotas: ['painel'], partido: true };
+CIC.normPerfil = (p) => ({ ...p, mascara: !p.verDados });
+CIC.PERFIS = {};
+CIC.aplicarPerfis = () => {
+  const c = CIC.campAtual(); const out = {};
+  Object.entries(c?.perfis || CIC.PERFIS_PADRAO).forEach(([k, p]) => (out[k] = CIC.normPerfil(p)));
+  out.partido = CIC.normPerfil(CIC.PERFIL_PARTIDO);
+  CIC.PERFIS = out;
 };
 CIC.pode = (rota) => {
   const s = CIC.s; const p = CIC.PERFIS[s.perfil];
-  if (rota === 'partido') return s.perfil === 'partido';
-  if (rota === 'auditoria') return ['candidato', 'coordgeral', 'partido'].includes(s.perfil);
-  return p.rotas === '*' || p.rotas.includes(rota);
+  if (rota === 'entrar' || rota === 'cadastro') return true;
+  if (!p) return false;
+  if (rota === 'partido' || rota === 'acessos') return s.perfil === 'partido';
+  if (rota === 'painel') return true;
+  return p.rotas.includes(rota);
 };
-CIC.editaConfig = () => ['candidato', 'coordgeral'].includes(CIC.s.perfil);
-CIC.USUARIOS = { candidato: 'Titular da candidatura', coordgeral: 'Coordenação geral · usuário 01', coordterr: 'Coordenação territorial · usuário 07', financeiro: 'Financeiro · usuário 03', partido: 'Secretaria do partido · usuário 01', analista: 'Analista · usuário 05' };
-CIC.usuarioAtual = () => (CIC.s.perfil === 'lideranca' && CIC.lideres ? 'Liderança ' + CIC.eu().nome : CIC.USUARIOS[CIC.s.perfil]);
+CIC.editaConfig = () => !!CIC.PERFIS[CIC.s.perfil]?.edita;
+CIC.usuarioAtual = () => {
+  const s = CIC.s; if (!s.usuario) return 'Sem usuário';
+  return s.perfil === 'lideranca' && CIC.lideres ? 'Liderança ' + CIC.eu().nome : s.usuario.nome;
+};
+/* equipe inicial de cada campanha (nomes fictícios). As campanhas D e E esperam o partido criar o 1º administrador. */
+CIC.EQUIPE_BASE = {
+  c1: [['Titular da candidatura', 'admin'], ['Paula Ferraz', 'coord'], ['Rui Campos', 'coordreg'], ['Lia Moraes', 'financeiro'], ['Caio Duarte', 'analista'], ['Liderança de exemplo', 'lideranca']],
+  c2: [['Titular da candidatura B', 'admin'], ['Vera Leme', 'coord']],
+  c3: [['Titular da candidatura C', 'admin']],
+  c4: [], c5: [],
+};
+CIC.loginDe = (nome, camp) => nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/g, '').trim().split(/\s+/).slice(0, 2).join('.') + '@' + camp + '.exemplo';
+CIC.novaEquipe = (camp) => (CIC.EQUIPE_BASE[camp] || []).map(([nome, perfil], i) => ({ id: camp + 'u' + (i + 1), nome, perfil, login: CIC.loginDe(nome, camp), criadoPor: i ? 'Administrador' : 'Partido' }));
 CIC.nomeVisivel = (pe) => {
   const p = CIC.PERFIS[CIC.s.perfil];
-  if (!p.mascara) return pe.nome;
-  if (CIC.s.perfil === 'partido' && pe.consPartido) return pe.nome;
+  if (p && !p.mascara) return pe.nome;
   const partes = pe.nome.split(' ');
   return partes[0][0] + '. ' + partes[partes.length - 1][0] + '.';
 };
@@ -269,12 +313,12 @@ CIC.CAMPANHAS_BASE = {
   c4: { nome: 'Candidatura D', cargo: 'depfed', ufs: ['RJ'], escala: 0.45 },
   c5: { nome: 'Candidatura E', cargo: 'governador', ufs: ['BA'], escala: 0.7 },
 };
-CIC.s = { perfil: 'candidato', camp: 'c1', uf: 'SP', cargo: 'depfed', niveis: ['Região', 'Sub-região', 'Polo'], grupos: [], extras: [], acordos: null, aliados: null, escopo: null, auditoria: [], sim: true, store: {} };
+CIC.s = { perfil: null, usuario: null, camp: 'c1', uf: 'SP', cargo: 'depfed', niveis: ['Região', 'Sub-região', 'Polo'], grupos: [], extras: [], acordos: null, aliados: null, escopo: null, auditoria: [], sim: true, store: {} };
 CIC.campAtual = () => CIC.s.store[CIC.s.camp];
 CIC.nomeUF = (uf) => CIC.base.estados.find((e) => e.sigla === uf)?.nome || uf;
 CIC.audit = (acao, alvo, detalhe) => {
   const s = CIC.s;
-  s.auditoria.unshift({ quando: Date.now(), quem: CIC.usuarioAtual(), perfil: CIC.PERFIS[s.perfil].nome, camp: s.camp, campNome: CIC.campAtual()?.nome || '', uf: s.uf, acao, alvo: alvo ?? '', detalhe: detalhe ?? '' });
+  s.auditoria.unshift({ quando: Date.now(), quem: CIC.usuarioAtual(), perfil: CIC.PERFIS[s.perfil]?.nome || '-', camp: s.camp, campNome: CIC.campAtual()?.nome || '', uf: s.uf, acao, alvo: alvo ?? '', detalhe: detalhe ?? '' });
   CIC.gravar();
 };
 CIC.auditSistema = (acao, alvo) => { const s = CIC.s; s.auditoria.unshift({ quando: Date.now(), quem: 'Plataforma (automático)', perfil: 'Sistema', camp: s.camp, campNome: CIC.campAtual()?.nome || '', uf: s.uf, acao, alvo: alvo ?? '', detalhe: '' }); };
@@ -405,6 +449,7 @@ CIC.eu = () => CIC.lideres.slice().sort((a, b) => b.rede - a.rede)[2] || CIC.dem
 CIC.limiteContratacao = (eleitores) => (eleitores <= 30000 ? Math.floor(eleitores * 0.01) : 300 + Math.floor((eleitores - 30000) / 1000));
 
 /* ---------- regras de alerta ---------- */
+const qt = (n, um, varios) => `${fN.format(n)} ${n === 1 ? um : varios}`;
 CIC.alertas = () => {
   const out = [];
   const v = CIC.noEscopo();
@@ -428,13 +473,13 @@ CIC.alertas = () => {
   if (CIC.PERFIS[CIC.s.perfil].financeiro) {
     const ac = CIC.s.acordos || [];
     const semContrato = ac.filter((a) => !a.contrato && a.pagamentos.length);
-    if (semContrato.length) add('critico', 'Pagamento sem contrato', `${fN.format(semContrato.length)} acordos têm pagamento registrado e nenhum contrato anexado.`, 'acordos', semContrato.length);
+    if (semContrato.length) add('critico', 'Pagamento sem contrato', `${qt(semContrato.length, "contrato tem", "contratos têm")} pagamento registrado e nenhum documento assinado anexado.`, 'acordos', semContrato.length);
     const mesmo = ac.filter((a) => a.aprovou && a.aprovou === a.registrou);
-    if (mesmo.length) add('critico', 'Aprovação pela mesma pessoa', `${fN.format(mesmo.length)} acordos foram registrados e aprovados pelo mesmo usuário.`, 'acordos', mesmo.length);
+    if (mesmo.length) add('critico', 'Aprovação pela mesma pessoa', `${qt(mesmo.length, "contrato foi registrado e aprovado", "contratos foram registrados e aprovados")} pelo mesmo usuário.`, 'acordos', mesmo.length);
     const especie = ac.filter((a) => a.pagamentos.some((p) => p.forma === 'Espécie'));
-    if (especie.length) add('grave', 'Pagamento em espécie', `${fN.format(especie.length)} acordos têm pagamento em espécie. Prefira PIX ou transferência identificada.`, 'acordos', especie.length);
+    if (especie.length) add('grave', 'Pagamento em espécie', `${qt(especie.length, "contrato tem", "contratos têm")} pagamento em dinheiro vivo. Prefira PIX ou transferência identificada.`, 'acordos', especie.length);
     const semComp = ac.filter((a) => a.pagamentos.some((p) => !p.comprovante));
-    if (semComp.length) add('grave', 'Pagamento sem comprovante', `${fN.format(semComp.length)} acordos têm pagamento sem comprovante anexado.`, 'acordos', semComp.length);
+    if (semComp.length) add('grave', 'Pagamento sem comprovante', `${qt(semComp.length, "contrato tem", "contratos têm")} pagamento sem comprovante anexado.`, 'acordos', semComp.length);
   }
   const ordem = { critico: 0, grave: 1, alerta: 2, info: 3 };
   return out.sort((a, b) => ordem[a.sev] - ordem[b.sev]);
@@ -449,14 +494,15 @@ CIC.guardarAtual = () => {
   c.cargo = s.cargo; c.niveis = s.niveis; c.uf = s.uf;
   c.porUF[s.uf] = { grupos: s.grupos, extras: s.extras, acordos: s.acordos, aliados: s.aliados };
 };
+CIC.novaCamp = (campId) => { const b = CIC.CAMPANHAS_BASE[campId]; return { nome: b.nome, cargo: b.cargo, ufs: b.ufs.slice(), uf: b.ufs[0], niveis: ['Região', 'Sub-região', 'Polo'], porUF: {}, perfis: JSON.parse(JSON.stringify(CIC.PERFIS_PADRAO)), equipe: CIC.novaEquipe(campId) }; };
 CIC.ativar = (campId, uf) => {
   const s = CIC.s;
   CIC.guardarAtual();
-  if (!s.store[campId]) { const b = CIC.CAMPANHAS_BASE[campId]; s.store[campId] = { nome: b.nome, cargo: b.cargo, ufs: b.ufs.slice(), uf: b.ufs[0], niveis: ['Região', 'Sub-região', 'Polo'], porUF: {} }; }
+  if (!s.store[campId]) s.store[campId] = CIC.novaCamp(campId);
   const c = s.store[campId];
   if (!uf || !c.ufs.includes(uf)) uf = c.ufs.includes(c.uf) ? c.uf : c.ufs[0];
   const mudou = campId !== s.camp || uf !== s.uf;
-  s.camp = campId; s.uf = uf; s.cargo = c.cargo; s.niveis = c.niveis;
+  s.camp = campId; s.uf = uf; s.cargo = c.cargo; s.niveis = c.niveis; CIC.aplicarPerfis();
   CIC.demo = CIC.demoDe(campId, uf);
   const d = c.porUF[uf];
   if (d) { s.grupos = d.grupos; s.extras = d.extras; s.acordos = d.acordos; s.aliados = d.aliados; }
@@ -467,6 +513,24 @@ CIC.ativar = (campId, uf) => {
   if (!s.aliados) s.aliados = CIC.demo.aliados;
   CIC.gravar();
 };
+
+/* ---------- entrada e saída ---------- */
+/* Cada usuário pertence a uma só campanha. Ao entrar, a plataforma abre a campanha dele e nenhuma outra. */
+CIC.entrar = (camp, userId) => {
+  const s = CIC.s; if (CIC.T) CIC.T._terr = null;
+  if (camp === 'partido') {
+    s.usuario = { partido: true, id: 'partido', nome: 'Secretaria do partido' }; s.perfil = 'partido';
+    CIC.ativar(s.camp || 'c1'); CIC.audit('Entrou no sistema', 'Partido'); location.hash = '#/partido'; return;
+  }
+  CIC.ativar(camp);
+  const u = CIC.campAtual().equipe.find((x) => x.id === userId); if (!u) return;
+  s.usuario = { id: u.id, nome: u.nome, camp }; s.perfil = u.perfil;
+  if (CIC.PERFIS[u.perfil].travaEscopo) { const g = (u.regiao && CIC.grupo(u.regiao)) || s.grupos.filter((x) => x.nivel === 0).sort((a, b) => b.munis.length - a.munis.length)[0]; s.escopo = g ? g.id : null; }
+  else s.escopo = null;
+  CIC.audit('Entrou no sistema', u.login);
+  location.hash = '#/painel';
+};
+CIC.sair = () => { const s = CIC.s; if (s.usuario) CIC.audit('Saiu do sistema', s.usuario.nome); s.usuario = null; s.perfil = null; s.escopo = null; CIC.gravar(); location.hash = '#/entrar'; };
 
 /* resumo de uma candidatura, para o painel do partido */
 CIC.resumoCamp = (campId) => {
@@ -498,8 +562,9 @@ CIC.iniciar = async () => {
   await CIC.carregarBase();
   const salvo = CIC.ler();
   const s = CIC.s;
-  if (salvo && salvo.store) { s.store = salvo.store; s.perfil = salvo.perfil || 'candidato'; s.auditoria = salvo.auditoria || []; s.sim = salvo.sim !== false; }
+  if (salvo && salvo.store) { s.store = salvo.store; s.perfil = salvo.perfil || null; s.usuario = salvo.usuario || null; s.auditoria = salvo.auditoria || []; s.sim = salvo.sim !== false; }
   const camp = salvo?.camp || 'c1'; const uf = salvo?.uf;
   s.camp = null;
-  CIC.ativar(s.perfil === 'partido' ? camp : 'c1', uf);
+  CIC.ativar(camp, uf);
+  if (s.usuario && !s.usuario.partido && !CIC.campAtual().equipe.some((u) => u.id === s.usuario.id)) { s.usuario = null; s.perfil = null; }
 };
