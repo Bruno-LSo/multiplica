@@ -668,3 +668,6 @@ body.modo-entrar main { max-width: 1240px; padding: clamp(16px, 4vh, 40px) 16px;
   .cen-grade > * { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
   .cen-grade > aside { position: static; }
 }
+.ic-menu { width: 16px; height: 2px; background: currentColor; border-radius: 2px; position: relative; display: inline-block; }
+.ic-menu::before, .ic-menu::after { content: ""; position: absolute; left: 0; width: 16px; height: 2px; background: currentColor; border-radius: 2px; }
+.ic-menu::before { top: -5px; } .ic-menu::after { top: 5px; }
