@@ -274,7 +274,7 @@ T.painel = (main) => {
   </section>
   <section class="grade-3l">
     <article class="cartao"><header><h2>Fontes iniciais que mais cresceram</h2><p>Quem mandou o 1º link de cada ramo da rede, por cadastros novos em 7 dias no ramo inteiros.</p></header><div id="t-cresc"></div></article>
-    <article class="cartao"><header><h2>Quem entrou agora<span class="vivo">ao vivo</span></h2><p>Últimas entradas, com quem chamou.</p></header><ol class="feed" id="feed"></ol></article>
+    <article class="cartao"><header><h2>Quem entrou agora</h2><p>Últimas entradas, com quem chamou.</p></header><ol class="feed" id="feed"></ol></article>
     <article class="cartao"><header><h2>Alertas abertos</h2><p>Regras que dispararam neste recorte.</p></header><div id="t-alertas"></div></article>
   </section>`;
   // crescimento
@@ -334,7 +334,7 @@ T.blocoPartido = (m) => {
   <tfoot><tr><td colspan="2">Total do partido</td><td class="n">${fN.format(tot)}</td><td class="n">100,0%</td></tr></tfoot></table></section>`;
 };
 T.blocoMeuLink = (eu) => { const link = CIC.linkPessoal(eu); return `<section class="cartao link-pessoal compacto"><div class="lp-txt"><h2>Seu link de convite</h2><p>Quem entrar por este link fica na sua rede. Quem essa pessoa chamar também conta para você. Hoje: <b>${fN.format(eu.diretos)}</b> pessoas convidadas por você e <b>${fN.format(eu.rede)}</b> na sua rede inteira.</p></div>
-  <div class="lp-acoes"><span class="link-marca" title="Endereço na versão real">${esc(CIC.linkMarca(eu))}</span><div class="pilha-h"><a class="bt peq chamada" href="https://wa.me/?text=${encodeURIComponent(CIC.textoConvite(link))}" target="_blank" rel="noopener"><span class="x">×</span>Multiplique aí</a><button class="bt peq sec" data-copiar="${esc(link)}">Copiar link</button><button class="bt peq sec" data-qr="${esc(link)}">Mostrar QR</button>${CIC.pode('rede') ? `<a class="bt peq sec" href="#/rede?p=${eu.id}">Ver minha rede</a>` : ''}</div></div></section>`; };
+  <div class="lp-acoes"><span class="link-marca" title="Endereço na versão real">${esc(CIC.linkMarca(eu))}</span><div class="pilha-h"><a class="bt peq" href="https://wa.me/?text=${encodeURIComponent(CIC.textoConvite(link))}" target="_blank" rel="noopener">Multiplique aí</a><button class="bt peq sec" data-copiar="${esc(link)}">Copiar link</button><button class="bt peq sec" data-qr="${esc(link)}">Mostrar QR</button>${CIC.pode('rede') ? `<a class="bt peq sec" href="#/rede?p=${eu.id}">Ver minha rede</a>` : ''}</div></div></section>`; };
 
 /* entradas simuladas ao vivo */
 CIC.simular = () => {
@@ -721,8 +721,6 @@ T.rede = async (main, r) => {
   if (cont.size && cont.size < 60) mapa.enquadrar([...cont.keys()]);
 };
 
-/* ondas da chamada "Multiplique aí" (delegado) */
-document.addEventListener('click', (e) => { const b = e.target.closest('.chamada'); if (!b || matchMedia('(prefers-reduced-motion: reduce)').matches) return; ['a', 'b'].forEach((k) => { const o = document.createElement('span'); o.className = 'onda ' + k; b.appendChild(o); setTimeout(() => o.remove(), 1200); }); });
 /* QR do link em diálogo (delegado) */
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-qr]'); if (!b) return; CIC.dialogo(`<p class="rotulo">Seu link em QR</p><h2>Aponte a câmera do celular</h2><div class="qr grande">${CIC.qr(b.dataset.qr, 6)}</div><p class="ajuda">Imprima ou mostre na tela em eventos. Quem ler entra na sua rede.</p><div class="acoes-dl"><button class="bt sec" data-fechar>Fechar</button></div>`); });
 /* copiar link (delegado) */

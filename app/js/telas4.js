@@ -19,29 +19,50 @@ T.entrar = (main) => {
   const s = CIC.s;
   const camps = Object.keys(CIC.CAMPANHAS_BASE).map((k) => { if (!s.store[k]) s.store[k] = CIC.novaCamp(k); return [k, s.store[k]]; });
   const [k1, c1] = camps[0];
-  const VE = { admin: 'Tudo da campanha. Cria usuários e muda o que cada perfil vê.', coord: 'Pessoas, mapa e metas. Não vê dinheiro.', coordreg: 'Só a própria região. Não vê dinheiro.', financeiro: 'Gastos e pagamentos: para onde foi o dinheiro. Não vê o telefone das pessoas.', analista: 'Números, mapas e simulações. Não vê nome nem telefone.', lideranca: 'Só a própria rede e o link de convite.' };
-  main.innerHTML = `<div class="entrar">
-    <header class="entrar-cab"><div class="marca-cad">${CIC.SIMBOLO}<b>multiplica</b></div><p class="selo-demo">Versão de exemplo</p><h1>Escolha um perfil para ver o sistema como essa pessoa vê</h1>
-      <p>Cada cartão abaixo é uma pessoa de exemplo. Toque em um cartão para entrar com o perfil dela. Para trocar de perfil, toque em <b>Trocar perfil</b>, no alto de qualquer tela.</p></header>
-    <section class="perfis-demo" aria-label="Perfis de exemplo da ${esc(c1.nome)}">
-      <h2>${esc(c1.nome)} <small>${esc(CIC.CARGOS[c1.cargo].nome)} · equipe completa</small></h2>
-      <div class="perfis-demo-grade">${c1.equipe.map((u) => `<button class="usu-cartao" data-camp="${k1}" data-id="${u.id}"><span class="usu-perfil">${esc(c1.perfis[u.perfil]?.nome || u.perfil)}</span><b>${esc(u.nome)}</b><small>Vê: ${esc(VE[u.perfil] || c1.perfis[u.perfil]?.desc || '')}</small></button>`).join('')}
-        <button class="usu-cartao partido" data-camp="partido" data-id="partido"><span class="usu-perfil">Partido</span><b>Secretaria do partido</b><small>Vê: só os números de todas as campanhas. Cria o 1º administrador de cada uma.</small></button></div>
+  const VE = { admin: 'Tudo da campanha. Cria usuários e perfis.', coord: 'Pessoas, mapa e metas. Sem dinheiro.', coordreg: 'Só a própria região. Sem dinheiro.', financeiro: 'Gastos e pagamentos. Sem telefones.', analista: 'Números e mapas. Sem nomes.', lideranca: 'Só a própria rede e o link.' };
+  const linha = (k, id, nome, perfil, ve, login) => `<button type="button" class="perfil-teste" data-camp="${k}" data-id="${id}" data-login="${esc(login)}"><span class="pt-perfil">${esc(perfil)}</span><span class="pt-nome">${esc(nome)}</span><span class="pt-ve">${esc(ve)}</span></button>`;
+  main.innerHTML = `<div class="login">
+    <section class="login-form" aria-labelledby="t-entrar">
+      <div class="marca-cad">${CIC.SIMBOLO}<b>Multiplica</b></div>
+      <button type="button" class="aviso-demo" id="e-ver-perfis">Versão de exemplo: escolha um perfil para testar</button>
+      <h1 id="t-entrar">Entrar</h1>
+      <p class="login-sub">Use o login e a senha que você recebeu da sua campanha.</p>
+      <form class="form" id="f-entrar" novalidate>
+        <label>Login<input name="login" id="e-login" autocomplete="username" placeholder="nome@campanha"></label>
+        <label>Senha<input name="senha" id="e-senha" type="password" autocomplete="current-password"></label>
+        <p class="erro" id="e-erro" role="alert"></p>
+        <button class="bt grande" id="e-ok">Entrar</button>
+        <button type="button" class="link-simples" id="e-esqueci">Esqueci minha senha</button>
+      </form>
     </section>
-    <section class="outras-demo"><h2>Outras campanhas do exemplo</h2><p class="ajuda">Cada campanha é separada. Entre em uma delas para ver que ela não enxerga as outras.</p>
-      <div class="outras-grade">${camps.slice(1).map(([k, c]) => `<div class="outra"><b>${esc(c.nome)}</b><small>${esc(CIC.CARGOS[c.cargo].nome)}</small>${c.equipe.length ? c.equipe.map((u) => `<button class="usu" data-camp="${k}" data-id="${u.id}">${esc(u.nome)} <small>${esc(c.perfis[u.perfil]?.nome || u.perfil)}</small></button>`).join('') : '<small class="pend">Sem acesso ainda. Entre como Partido para criar o 1º administrador.</small>'}</div>`).join('')}</div>
-    </section>
-    <details class="login-real"><summary>Entrar com login e senha</summary>
-      <form class="form" id="f-entrar" novalidate><p class="ajuda">Na versão real, cada pessoa entra com o próprio login, a senha e um código no celular.</p>
-        <div class="linha-campos"><label>Login<input name="login" autocomplete="username" placeholder="nome@campanha"></label>
-        <label>Senha<input name="senha" type="password" autocomplete="current-password" placeholder="No exemplo, qualquer senha"></label></div>
-        <p class="erro" id="e-erro" role="alert"></p><button class="bt">Entrar</button></form></details>
+    <aside class="login-perfis" aria-labelledby="t-perfis">
+      <p class="selo-demo">Versão de exemplo</p>
+      <h2 id="t-perfis">Perfis para testar</h2>
+      <p class="login-sub">Escolha um perfil. O login e a senha entram no formulário. Depois, toque em Entrar.</p>
+      <p class="pt-grupo">${esc(c1.nome)} · ${esc(CIC.CARGOS[c1.cargo].nome)}</p>
+      <div class="pt-lista">${c1.equipe.map((u) => linha(k1, u.id, u.nome, c1.perfis[u.perfil]?.nome || u.perfil, VE[u.perfil] || '', u.login)).join('')}
+        ${linha('partido', 'partido', 'Secretaria do partido', 'Partido', 'Números de todas as campanhas.', 'secretaria@partido.exemplo')}</div>
+      <p class="pt-grupo">Outras campanhas (cada uma vê só a própria)</p>
+      <div class="pt-lista curta">${camps.slice(1).flatMap(([k, c]) => c.equipe.length ? c.equipe.map((u) => linha(k, u.id, u.nome, `${c.nome} · ${c.perfis[u.perfil]?.nome || u.perfil}`, '', u.login)) : [`<p class="pt-vazio">${esc(c.nome)}: sem acesso ainda. Entre como Partido para criar.</p>`]).join('')}</div>
+    </aside>
   </div>`;
-  main.querySelector('.entrar').addEventListener('click', (e) => { const b = e.target.closest('[data-camp]'); if (b) CIC.entrar(b.dataset.camp, b.dataset.id); });
+  let escolhido = null;
+  main.querySelector('.login-perfis').addEventListener('click', (e) => {
+    const b = e.target.closest('.perfil-teste'); if (!b) return;
+    escolhido = { camp: b.dataset.camp, id: b.dataset.id };
+    main.querySelectorAll('.perfil-teste').forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+    $('#e-login').value = b.dataset.login; $('#e-senha').value = 'exemplo123'; $('#e-erro').textContent = '';
+    $('#e-ok').focus();
+  });
+  $('#e-ver-perfis').addEventListener('click', () => main.querySelector('.login-perfis').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  $('#e-esqueci').addEventListener('click', () => CIC.aviso('Na versão real, a pessoa recebe no e-mail um link para criar uma senha nova.'));
   $('#f-entrar').addEventListener('submit', (e) => {
-    e.preventDefault(); const login = String(new FormData(e.target).get('login')).trim().toLowerCase();
+    e.preventDefault();
+    const login = $('#e-login').value.trim().toLowerCase(); const senha = $('#e-senha').value;
+    if (!login || !senha) { $('#e-erro').textContent = 'Preencha o login e a senha.'; return; }
+    if (login === 'secretaria@partido.exemplo') { CIC.entrar('partido', 'partido'); return; }
     const achou = camps.map(([k, c]) => [k, c.equipe.find((u) => u.login === login)]).find((x) => x[1]);
-    if (achou) CIC.entrar(achou[0], achou[1].id); else $('#e-erro').textContent = 'Login não encontrado. Confira o que você digitou ou toque em um cartão acima.';
+    if (achou) CIC.entrar(achou[0], achou[1].id); else $('#e-erro').textContent = 'Login não encontrado. Confira o que você digitou ou escolha um perfil ao lado.';
   });
 };
 

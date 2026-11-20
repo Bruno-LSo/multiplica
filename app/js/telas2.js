@@ -432,7 +432,7 @@ T.cadastro = (main, r) => {
   const quemCurto = ref.papel === 'candidato' ? 'A campanha' : ref.nome.split(' ')[0];
   const ini = ref.papel === 'candidato' ? '×' : CIC.iniciais(ref.nome);
   const redes = [];
-  main.innerHTML = `<div class="cad"><header class="cad-topo"><div class="marca-cad">${CIC.SIMBOLO}<b>multiplica</b></div><span class="quem"><span class="av">${esc(ini)}</span>${esc(quemCurto)} te chamou</span><h1>Uma boa ideia ganha força quando passa de mão em mão.</h1><p>Entre na rede de apoio de <b>${esc(CIC.campAtual().nome)}</b> (${esc(CIC.CARGOS[CIC.s.cargo].nome)}) em 1 minuto. Depois, receba o seu link e chame quem você conhece.</p>${CIC.multiplicacao()}<p class="cadeia">Você entra como o <b>${fN.format(ref.gen + 1)}º elo</b> desta corrente. Quem te chamou também foi chamado por alguém.</p></header>
+  main.innerHTML = `<div class="cad"><header class="cad-topo"><div class="marca-cad">${CIC.SIMBOLO}<b>Multiplica</b></div><span class="quem"><span class="av">${esc(ini)}</span>${esc(quemCurto)} te chamou</span><h1>Faça parte da rede</h1><p>Entre na rede de apoio de <b>${esc(CIC.campAtual().nome)}</b> (${esc(CIC.CARGOS[CIC.s.cargo].nome)}) em 1 minuto. Depois, receba o seu link e chame quem você conhece.</p><p class="cadeia">Você entra como o <b>${fN.format(ref.gen + 1)}º elo</b> desta corrente. Quem te chamou também foi chamado por alguém.</p></header>
     <form id="cad" class="form" novalidate>
       <label>Nome completo<input name="nome" required autocomplete="name"></label>
       <label>Celular com DDD<input name="tel" required inputmode="tel" autocomplete="tel" placeholder="(11) 91234-5678"></label>
@@ -442,7 +442,7 @@ T.cadastro = (main, r) => {
         <label class="marca"><input type="checkbox" name="c1" required> Autorizo a campanha a falar comigo por mensagem. Posso cancelar quando quiser, pelo meu link.</label>
         <label class="marca"><input type="checkbox" name="c2"> Autorizo o partido da candidatura a ver meu cadastro.</label></fieldset>
       <p class="erro" id="cad-erro" role="alert"></p>
-      <button class="bt grande chamada"><span class="x">×</span>Entrar e multiplicar</button>
+      <button class="bt grande">Entrar na rede</button>
       <p class="ajuda">Demonstração: o cadastro fica só neste navegador. Na versão completa, um código por SMS confirma o celular.</p>
     </form>${CIC.s.usuario ? '<a class="ligacao" href="#/painel">Voltar ao início</a>' : ''}</div>`;
   const listar = () => { $('#cad-redes').innerHTML = redes.map((x, i) => `<li><abbr>${CIC.REDES[x.rede].sigla}</abbr><span><b>${esc(CIC.REDES[x.rede].nome)}</b><code>${esc(x.id)}</code></span><button type="button" class="bt peq sec" data-i="${i}">Remover</button></li>`).join(''); };
@@ -464,9 +464,9 @@ T.cadastro = (main, r) => {
       redes: [{ rede: 'whatsapp', id: tel.id, url: tel.url, verif: false }, ...redes], consContato: true, consPartido: !!fd.get('c2'), acoes: 0, acoesOk: 0, sim: false, real: true };
     CIC.s.extras.push(p); CIC.indexar(); CIC.audit('Novo cadastro pelo link', ref.cod); CIC.gravar();
     const link = CIC.linkPessoal(p);
-    main.innerHTML = `<div class="cad"><header class="cad-topo"><div class="marca-cad">${CIC.SIMBOLO}<b>multiplica</b></div><p class="rotulo">Cadastro feito</p><h1>Agora é sua vez, ${esc(nome.split(' ')[0])}.</h1><p>Você entrou pelo convite de ${esc(quem)}. Mande o seu link para quem você conhece. Cada pessoa que entrar por ele fica na sua rede.</p>${CIC.multiplicacao()}</header>
+    main.innerHTML = `<div class="cad"><header class="cad-topo"><div class="marca-cad">${CIC.SIMBOLO}<b>Multiplica</b></div><p class="rotulo">Cadastro feito</p><h1>Agora é sua vez, ${esc(nome.split(' ')[0])}.</h1><p>Você entrou pelo convite de ${esc(quem)}. Mande o seu link para quem você conhece. Cada pessoa que entrar por ele fica na sua rede.</p></header>
       <div class="cartao link-pessoal"><div><p class="rotulo">Seu link</p><span class="link-marca">${esc(CIC.linkMarca(p))}</span><p class="link-nota">No exemplo, o botão copia o link desta demonstração.</p>
-      <div class="pilha-h" style="margin-top:10px"><a class="bt chamada" href="https://wa.me/?text=${encodeURIComponent(CIC.textoConvite(link))}" target="_blank" rel="noopener"><span class="x">×</span>Multiplique aí</a><button class="bt sec" data-copiar="${esc(link)}">Copiar link</button></div></div><div class="qr">${CIC.qr(link)}</div></div>
+      <div class="pilha-h" style="margin-top:10px"><a class="bt" href="https://wa.me/?text=${encodeURIComponent(CIC.textoConvite(link))}" target="_blank" rel="noopener">Multiplique aí</a><button class="bt sec" data-copiar="${esc(link)}">Copiar link</button></div></div><div class="qr">${CIC.qr(link)}</div></div>
       <p class="cadeia">Você é o <b>${fN.format(p.gen)}º elo</b> desta corrente. A campanha vê o caminho completo até a fonte inicial.</p>
       </div>`;
   });
