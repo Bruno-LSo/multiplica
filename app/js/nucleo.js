@@ -27,7 +27,7 @@ function fmtTel(d) { return d.length === 11 ? `(${d.slice(0, 2)}) ${d.slice(2, 7
 Object.assign(CIC, { fN, fP, fR, fD, fDA, fDH, DIA, esc, clamp, rngDe, hashStr, iniciais, fmtTel });
 
 /* ---------- armazenamento local (só conveniência do protótipo) ---------- */
-const CHAVE = 'cic.prototipo.v4';
+const CHAVE = 'cic.prototipo.v5';
 CIC.ler = () => { try { return JSON.parse(localStorage.getItem(CHAVE) || 'null'); } catch { return null; } };
 CIC.gravar = () => {
   try {
@@ -104,7 +104,7 @@ CIC.AREAS = [
   ['liderancas', 'Melhores lideranças', 'Nota de 0 a 100 de cada liderança.'],
   ['territorio', 'Mapa e regiões', 'Divisão do estado em regiões e cidades.'],
   ['cenarios', 'Simular votos', 'Contas de quociente, alianças e metas.'],
-  ['acordos', 'Contratos e pagamentos', 'Dinheiro da campanha.'],
+  ['acordos', 'Gastos e pagamentos', 'Para onde foi o dinheiro da campanha.'],
   ['relatorios', 'Baixar planilhas', 'Exporta os dados em planilha.'],
   ['auditoria', 'Histórico de ações', 'Quem fez o quê e quando.'],
   ['equipe', 'Equipe e acessos', 'Cria usuários e muda permissões.'],
@@ -113,7 +113,7 @@ CIC.AREAS = [
 CIC.OPCOES_PERFIL = [
   ['verDados', 'Vê nome e telefone das pessoas', 'Sem esta opção, o nome aparece abreviado e o telefone fica escondido.'],
   ['edita', 'Pode mudar o mapa e os ajustes', 'Cria regiões, muda cidades de região, muda cargo e estados.'],
-  ['financeiro', 'Registra e aprova pagamentos', 'Vale só com a área Contratos e pagamentos marcada.'],
+  ['financeiro', 'Registra e aprova gastos', 'Vale só com a tela Gastos e pagamentos marcada.'],
   ['travaEscopo', 'Vê só a própria região', 'O administrador escolhe a região de cada usuário.'],
   ['soPropriaRede', 'Vê só a própria rede', 'Para lideranças: só quem entrou pelo link dela.'],
 ];
@@ -121,7 +121,7 @@ CIC.PERFIS_PADRAO = {
   admin: { nome: 'Administrador', desc: 'Vê e muda tudo da campanha. Cria usuários e muda permissões.', rotas: CIC.AREAS.map((a) => a[0]), verDados: true, edita: true, financeiro: true, fixo: true },
   coord: { nome: 'Coordenação', desc: 'Cuida das pessoas, do mapa e das metas. Não vê dinheiro.', rotas: ['painel', 'alertas', 'contatos', 'rede', 'liderancas', 'territorio', 'cenarios', 'relatorios', 'auditoria'], verDados: true, edita: true },
   coordreg: { nome: 'Coordenação de região', desc: 'Cuida só da própria região. Não vê dinheiro.', rotas: ['painel', 'alertas', 'contatos', 'rede', 'liderancas', 'territorio', 'relatorios'], verDados: true, travaEscopo: true },
-  financeiro: { nome: 'Financeiro', desc: 'Registra e aprova contratos e pagamentos. Não vê telefone das pessoas.', rotas: ['painel', 'alertas', 'acordos', 'relatorios'], financeiro: true },
+  financeiro: { nome: 'Financeiro', desc: 'Registra gastos e pagamentos e vê para onde foi o dinheiro. Não vê telefone das pessoas.', rotas: ['painel', 'alertas', 'acordos', 'relatorios'], financeiro: true },
   analista: { nome: 'Analista de dados', desc: 'Vê números, mapas e simulações. Não vê nome nem telefone.', rotas: ['painel', 'alertas', 'liderancas', 'territorio', 'cenarios', 'relatorios'] },
   lideranca: { nome: 'Liderança', desc: 'Vê só a própria rede e o próprio link de convite.', rotas: ['painel', 'rede'], verDados: true, soPropriaRede: true },
 };
@@ -155,7 +155,7 @@ CIC.EQUIPE_BASE = {
   c4: [], c5: [],
 };
 CIC.loginDe = (nome, camp) => nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/g, '').trim().split(/\s+/).slice(0, 2).join('.') + '@' + camp + '.exemplo';
-CIC.novaEquipe = (camp) => (CIC.EQUIPE_BASE[camp] || []).map(([nome, perfil], i) => ({ id: camp + 'u' + (i + 1), nome, perfil, login: CIC.loginDe(nome, camp), criadoPor: i ? 'Administrador' : 'Partido' }));
+CIC.novaEquipe = (camp) => (CIC.EQUIPE_BASE[camp] || []).map(([nome, perfil], i) => ({ id: camp + 'u' + (i + 1), nome, perfil, login: CIC.loginDe(nome, camp), criadoPor: i ? 'Administrador' : 'Partido', semente: i > 0, pessoas: {} }));
 CIC.nomeVisivel = (pe) => {
   const p = CIC.PERFIS[CIC.s.perfil];
   if (p && !p.mascara) return pe.nome;
@@ -281,7 +281,9 @@ CIC.gerarDemo = (uf, campId = 'c1') => {
 CIC.OBJETOS = [
   ['coordenacao', 'Coordenação de militância contratada (pessoal de campanha)'],
   ['mobilizacao', 'Mobilização de rua contratada (pessoal de campanha)'],
-  ['espaco', 'Cessão ou locação de espaço para comitê ou evento'],
+  ['espaco', 'Aluguel de espaço para comitê ou evento'],
+  ['impulsionamento', 'Impulsionamento nas redes sociais'],
+  ['outros', 'Outros gastos da campanha'],
   ['transporte', 'Transporte e combustível para agenda'],
   ['material', 'Produção ou distribuição de material de campanha'],
   ['evento', 'Estrutura de evento (som, palco, alimentação)'],
@@ -428,6 +430,36 @@ CIC.calcularIEL = () => {
   CIC.lideres = vals.map((v) => v[0]);
 };
 CIC.caminho = (id) => { const c = []; let p = CIC.idx.porId.get(id); while (p) { c.unshift(p); p = p.pai == null ? null : CIC.idx.porId.get(p.pai); } return c; };
+/* ---------- equipe na rede: todo usuário da campanha tem um ponto na rede e um link próprio ----------
+   O 1º administrador (criado pelo partido) é a própria candidatura. Os outros usuários entram como fontes
+   iniciais, ligados direto à candidatura. Assim, todo apoiador tem um caminho até a fonte que mandou o 1º link. */
+CIC.ligarEquipe = () => {
+  const s = CIC.s; const c = CIC.campAtual(); if (!c?.equipe) return false;
+  const raiz = CIC.demo.pessoas[0]; let criou = false;
+  const usados = new Set(c.equipe.map((u) => u.pessoas?.[s.uf]).filter((x) => x != null));
+  const livres = CIC.todas().filter((p) => p.gen === 1 && p.papel === 'lideranca' && !p.equipe && !usados.has(p.id)).sort((a, b) => b.rede - a.rede);
+  c.equipe.forEach((u, i) => {
+    u.pessoas = u.pessoas || {};
+    let id = u.pessoas[s.uf];
+    if (id == null || !CIC.idx.porId.get(id)) {
+      if (u.perfil === 'admin' && u.criadoPor === 'Partido' && !usados.has(raiz.id)) id = raiz.id;
+      else if (u.semente && livres.length) id = livres.splice(u.perfil === 'lideranca' ? Math.min(4, livres.length - 1) : 0, 1)[0].id;
+      else {
+        const tel = '009' + String(CIC.hashStr(u.id) % 1e8).padStart(8, '0');
+        const p = { id: 500000 + s.extras.length, cod: codigoDe(CIC.hashStr(u.id + s.uf)), nome: u.nome, tel, mun: raiz.mun, pai: raiz.id, entrada: Date.now(), papel: 'lideranca', canal: 'Equipe da campanha', status: 'confirmado', redes: [{ rede: 'whatsapp', id: '+55' + tel, url: '', verif: true }], consContato: true, consPartido: false, acoes: 0, acoesOk: 0, sim: false };
+        s.extras.push(p); id = p.id; criou = true;
+      }
+      u.pessoas[s.uf] = id; usados.add(id);
+    }
+    const no = CIC.todas().find((p) => p.id === id);
+    if (no && no !== raiz) { no.nome = u.nome; no.equipe = u.id; }
+    if (no === raiz) raiz.equipe = u.id;
+  });
+  return criou;
+};
+CIC.usuarioDoNo = (p) => { const c = CIC.campAtual(); return p?.equipe ? c.equipe.find((u) => u.id === p.equipe) : null; };
+CIC.fonte = (p) => { const c = CIC.caminho(p.id); return c[1] || c[0]; };
+CIC.rotuloFonte = (p) => { const f = CIC.fonte(p); const u = CIC.usuarioDoNo(f); const nome = f.papel === 'candidato' ? f.nome : CIC.nomeVisivel(f); return u ? `${nome} (${CIC.PERFIS[u.perfil]?.nome || 'equipe'})` : nome; };
 
 /* ---------- conjunto no escopo e perfil ---------- */
 CIC.noEscopo = () => {
@@ -443,7 +475,7 @@ CIC.noEscopo = () => {
   }
   return v;
 };
-CIC.eu = () => CIC.lideres.slice().sort((a, b) => b.rede - a.rede)[2] || CIC.demo.pessoas[1];
+CIC.eu = () => { const s = CIC.s; const u = s.usuario && !s.usuario.partido && CIC.campAtual()?.equipe?.find((x) => x.id === s.usuario.id); const id = u?.pessoas?.[s.uf]; return (id != null && CIC.idx.porId.get(id)) || CIC.lideres.slice().sort((a, b) => b.rede - a.rede)[2] || CIC.demo.pessoas[1]; };
 
 /* ---------- limite de referência de contratação (Lei 9.504/1997, art. 100-A) ---------- */
 CIC.limiteContratacao = (eleitores) => (eleitores <= 30000 ? Math.floor(eleitores * 0.01) : 300 + Math.floor((eleitores - 30000) / 1000));
@@ -473,13 +505,13 @@ CIC.alertas = () => {
   if (CIC.PERFIS[CIC.s.perfil].financeiro) {
     const ac = CIC.s.acordos || [];
     const semContrato = ac.filter((a) => !a.contrato && a.pagamentos.length);
-    if (semContrato.length) add('critico', 'Pagamento sem contrato', `${qt(semContrato.length, "contrato tem", "contratos têm")} pagamento registrado e nenhum documento assinado anexado.`, 'acordos', semContrato.length);
+    if (semContrato.length) add('info', 'Gasto sem documento', `${qt(semContrato.length, "gasto pago está", "gastos pagos estão")} sem contrato ou recibo. É opcional, mas ajuda na prestação de contas.`, 'acordos', semContrato.length);
     const mesmo = ac.filter((a) => a.aprovou && a.aprovou === a.registrou);
-    if (mesmo.length) add('critico', 'Aprovação pela mesma pessoa', `${qt(mesmo.length, "contrato foi registrado e aprovado", "contratos foram registrados e aprovados")} pelo mesmo usuário.`, 'acordos', mesmo.length);
+    if (mesmo.length) add('alerta', 'Aprovação pela mesma pessoa', `${qt(mesmo.length, "gasto foi registrado e aprovado", "gastos foram registrados e aprovados")} pelo mesmo usuário.`, 'acordos', mesmo.length);
     const especie = ac.filter((a) => a.pagamentos.some((p) => p.forma === 'Espécie'));
-    if (especie.length) add('grave', 'Pagamento em espécie', `${qt(especie.length, "contrato tem", "contratos têm")} pagamento em dinheiro vivo. Prefira PIX ou transferência identificada.`, 'acordos', especie.length);
+    if (especie.length) add('alerta', 'Pagamento em dinheiro vivo', `${qt(especie.length, "gasto tem", "gastos têm")} pagamento em dinheiro vivo. Fica mais difícil saber para onde foi o dinheiro. Prefira PIX.`, 'acordos', especie.length);
     const semComp = ac.filter((a) => a.pagamentos.some((p) => !p.comprovante));
-    if (semComp.length) add('grave', 'Pagamento sem comprovante', `${qt(semComp.length, "contrato tem", "contratos têm")} pagamento sem comprovante anexado.`, 'acordos', semComp.length);
+    if (semComp.length) add('info', 'Pagamento sem comprovante', `${qt(semComp.length, "gasto tem", "gastos têm")} pagamento sem comprovante anexado.`, 'acordos', semComp.length);
   }
   const ordem = { critico: 0, grave: 1, alerta: 2, info: 3 };
   return out.sort((a, b) => ordem[a.sev] - ordem[b.sev]);
@@ -509,6 +541,7 @@ CIC.ativar = (campId, uf) => {
   else { s.grupos = CIC.gruposIBGE(); s.extras = []; s.acordos = null; s.aliados = null; CIC.auditSistema('Montou a divisão inicial pelas regiões do IBGE', CIC.nomeUF(uf)); }
   if (mudou || (s.escopo && !CIC.grupo(s.escopo))) s.escopo = null;
   CIC.indexar();
+  if (CIC.ligarEquipe()) CIC.indexar();
   if (!s.acordos) s.acordos = CIC.gerarAcordos(CIC.demo);
   if (!s.aliados) s.aliados = CIC.demo.aliados;
   CIC.gravar();

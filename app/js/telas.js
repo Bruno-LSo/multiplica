@@ -20,7 +20,7 @@ CIC.MENU = [
   ['partido', 'Campanhas do partido', 'Partido'], ['acessos', 'Acessos das campanhas', 'Partido'],
   ['painel', 'Início', 'Dia a dia'], ['alertas', 'Avisos', 'Dia a dia'], ['pessoas', 'Pessoas', 'Dia a dia'],
   ['territorio', 'Mapa e regiões', 'Planejar'], ['cenarios', 'Simular votos', 'Planejar'],
-  ['acordos', 'Contratos e pagamentos', 'Administrar'], ['relatorios', 'Baixar planilhas', 'Administrar'], ['auditoria', 'Histórico de ações', 'Administrar'],
+  ['acordos', 'Gastos e pagamentos', 'Administrar'], ['relatorios', 'Baixar planilhas', 'Administrar'], ['auditoria', 'Histórico de ações', 'Administrar'],
   ['equipe', 'Equipe e acessos', 'Administrar'], ['config', 'Ajustes da campanha', 'Administrar'],
 ];
 CIC.PESSOAS = [['contatos', 'Lista de pessoas'], ['rede', 'Quem trouxe quem'], ['liderancas', 'Melhores lideranças']];
@@ -37,6 +37,7 @@ CIC.render = () => {
   const s = CIC.s;
   if (!s.usuario && !['entrar', 'cadastro'].includes(r.nome)) { CIC.ir('entrar'); return; }
   document.body.classList.toggle('modo-cadastro', r.nome === 'cadastro' || r.nome === 'entrar');
+  document.body.classList.toggle('modo-entrar', r.nome === 'entrar');
   CIC.dica.esconder();
   if (!['cadastro', 'entrar'].includes(r.nome)) CIC.montarTopo();
   const emPessoas = CIC.PESSOAS.some(([k]) => k === r.nome);
@@ -63,6 +64,7 @@ CIC.render = () => {
   T[r.nome](main, r);
   if (emPessoas) { const cab = main.querySelector('.cab'); const abas = CIC.abasPessoas(r.nome); if (cab && abas) cab.insertAdjacentHTML('afterend', abas); }
   const alvo = main.querySelector('h1'); if (alvo) alvo.setAttribute('tabindex', '-1');
+  requestAnimationFrame(() => CIC.ajustar(main));
 };
 
 /* ---------- topo: usuário, campanha, região, tema ---------- */
@@ -243,7 +245,7 @@ T.painel = (main) => {
   ${CIC.cabecalho(ehPartido ? 'Números da campanha' : 'Início', titulo, `Hoje entraram <b>${fN.format(m.d1)}</b> pessoas ${onde}. Nos últimos 7 dias, <b>${fN.format(m.d7)}</b>.${falta ? ` Faltam <b>${fN.format(falta)}</b> pessoas para a meta.` : ' A meta foi batida.'}`,
     `<div class="cab-acoes"><label class="chave"><input type="checkbox" id="sim" ${s.sim ? 'checked' : ''}><span>Simular entradas ao vivo</span></label></div>`)}
   ${ehPartido ? `<p class="faixa-partido">O partido vê só os números de <b>${esc(CIC.campAtual().nome)}</b>, sem mudar nada. <a href="#/partido">Voltar às campanhas do partido</a></p>` : ''}
-  ${perfil.soPropriaRede ? T.blocoMeuLink(eu) : ''}
+  ${ehPartido ? '' : T.blocoMeuLink(eu)}
   ${ehPartido ? '' : `<section class="fazer"><h2>O que fazer agora</h2>${fazer.length ? `<ol>${fazer.map((a) => `<li>${CIC.selo(a.sev)}<div><b>${esc(a.regra)}</b><p>${esc(a.texto)}</p></div>${a.rota ? `<a class="bt peq" href="#/${a.rota}">Resolver</a>` : `<button class="bt peq" data-copiar="${esc(CIC.linkPessoal(eu))}">Copiar meu link</button>`}</li>`).join('')}</ol>` : '<p class="vazio">Nada urgente agora. Bom trabalho.</p>'}</section>`}
   <section class="grade-kpi">
     <article class="kpi heroi">
@@ -267,7 +269,7 @@ T.painel = (main) => {
     <article class="cartao"><header><h2>Redes sociais cadastradas</h2><p>Contatos com conta registrada em cada rede.</p></header><div id="g-redes"></div></article>
   </section>
   <section class="grade-3l">
-    <article class="cartao"><header><h2>Redes que mais cresceram</h2><p>Lideranças do 1º nível, por cadastros novos em 7 dias na rede inteira abaixo delas.</p></header><div id="t-cresc"></div></article>
+    <article class="cartao"><header><h2>Fontes iniciais que mais cresceram</h2><p>Quem mandou o 1º link de cada ramo da rede, por cadastros novos em 7 dias no ramo inteiros.</p></header><div id="t-cresc"></div></article>
     <article class="cartao"><header><h2>Ao vivo</h2><p>Últimas entradas, com quem indicou.</p></header><ol class="feed" id="feed"></ol></article>
     <article class="cartao"><header><h2>Alertas abertos</h2><p>Regras que dispararam neste recorte.</p></header><div id="t-alertas"></div></article>
   </section>`;
@@ -326,9 +328,8 @@ T.blocoPartido = (m) => {
   <table class="tab"><thead><tr><th>Conta</th><th>Cargo</th><th class="n">Contatos</th><th class="n">Parte do total do partido</th></tr></thead><tbody>${contas.map((c) => `<tr><td><b>${esc(c[0])}</b></td><td>${esc(c[1])}</td><td class="n">${fN.format(c[2])}</td><td class="n">${fP.format((c[2] / tot) * 100)}%</td></tr>`).join('')}</tbody>
   <tfoot><tr><td colspan="2">Total do partido</td><td class="n">${fN.format(tot)}</td><td class="n">100,0%</td></tr></tfoot></table></section>`;
 };
-T.blocoMeuLink = (eu) => `<section class="cartao destaque link-pessoal"><div><h2>Seu link de convite</h2><p>Quem se cadastrar por este link entra na sua rede. Quem essa pessoa trouxer também conta para você.</p>
-  <div class="copiar"><code>${esc(CIC.linkPessoal(eu))}</code><button class="bt" data-copiar="${esc(CIC.linkPessoal(eu))}">Copiar link</button></div>
-  <p class="sub">Código ${esc(eu.cod)} · ${fN.format(eu.diretos)} indicações diretas · ${fN.format(eu.rede)} pessoas na rede</p></div><div class="qr" aria-label="QR Code do link">${CIC.qr(CIC.linkPessoal(eu))}</div></section>`;
+T.blocoMeuLink = (eu) => { const link = CIC.linkPessoal(eu); return `<section class="cartao link-pessoal compacto"><div class="lp-txt"><h2>Seu link de convite</h2><p>Quem entrar por este link fica na sua rede. Quem essa pessoa convidar também conta para você. Hoje: <b>${fN.format(eu.diretos)}</b> pessoas convidadas por você e <b>${fN.format(eu.rede)}</b> na sua rede inteira.</p></div>
+  <div class="lp-acoes"><code title="${esc(link)}">${esc(link)}</code><div class="pilha-h"><button class="bt peq" data-copiar="${esc(link)}">Copiar link</button><a class="bt peq sec" href="https://wa.me/?text=${encodeURIComponent('Entre na rede da campanha pelo meu link: ' + link)}" target="_blank" rel="noopener">Enviar no WhatsApp</a><button class="bt peq sec" data-qr="${esc(link)}">Mostrar QR</button>${CIC.pode('rede') ? `<a class="bt peq sec" href="#/rede?p=${eu.id}">Ver minha rede</a>` : ''}</div></div></section>`; };
 
 /* entradas simuladas ao vivo */
 CIC.simular = () => {
@@ -677,7 +678,7 @@ T.rede = async (main, r) => {
   main.innerHTML = `
   ${CIC.cabecalho(perfil.soPropriaRede ? 'Minha rede' : 'Pessoas', 'Quem trouxe quem', perfil.soPropriaRede ? 'Cada pessoa que entrou pelo seu link, e quem ela trouxe depois. Toque em um nome para ver a rede dela.' : 'Cada cadastro guarda quem convidou. Toque em um nome para descer na rede, da candidatura até a última pessoa que entrou.')}
   <div class="busca-rede"><input id="busca-p" type="search" placeholder="Buscar pessoa pelo nome ou pelo código do link" autocomplete="off"><ul id="res-p" class="resultados" hidden></ul></div>
-  <nav class="trilha" aria-label="Caminho até a candidatura">${camVis.map((x, i) => `${i ? '<span aria-hidden="true">›</span>' : ''}<a href="#/rede?p=${x.id}" ${x === p ? 'aria-current="page"' : ''}>${esc(x.papel === 'candidato' ? x.nome : CIC.nomeVisivel(x))}</a>`).join('')}</nav>
+  <nav class="trilha" aria-label="Caminho da fonte inicial até esta pessoa">${camVis.map((x, i) => `${i ? '<span aria-hidden="true">›</span>' : ''}<a href="#/rede?p=${x.id}" ${x === p ? 'aria-current="page"' : ''}>${esc(x.papel === 'candidato' ? x.nome : CIC.nomeVisivel(x))}</a>`).join('')}</nav>
   <section class="grade-2 rede-topo">
     <article class="cartao pessoa">
       <div class="pessoa-cab"><span class="avatar">${esc(CIC.iniciais(p.nome))}</span><div><h2>${esc(p.papel === 'candidato' ? p.nome : CIC.nomeVisivel(p))}</h2><p>${esc({ candidato: 'Candidatura', lideranca: 'Liderança', apoiador: 'Apoiador' }[p.papel])} · ${esc(CIC.nomeMun(p.mun))} · nível ${p.gen}</p></div>${p.iel != null ? `<span class="classe c${p.ielClasse} grande" title="Índice de Eficácia da Liderança">${p.iel}<small>IEL ${p.ielClasse}</small></span>` : ''}</div>
@@ -685,7 +686,7 @@ T.rede = async (main, r) => {
         <div><dt>Indicações diretas</dt><dd>${fN.format(p.diretos)}</dd></div><div><dt>Pessoas na rede</dt><dd>${fN.format(p.rede)}</dd></div>
         <div><dt>Níveis abaixo</dt><dd>${fN.format(p.prof)}</dd></div><div><dt>Municípios alcançados</dt><dd>${fN.format(p.munSet.size)}</dd></div>
         <div><dt>Confirmados</dt><dd>${p.rede ? fP.format((p.conf / p.rede) * 100) + '%' : '-'}</dd></div><div><dt>Novos em 14 dias</dt><dd>${fN.format(p.n14)}</dd></div></dl>
-      ${p.papel !== 'candidato' ? `<p class="sub">Entrou em ${fDA.format(p.entrada)}${p.canal ? ` · canal: ${esc(p.canal)}` : ''}${p.pai != null ? ` · indicado por ${esc(CIC.nomeVisivel(CIC.idx.porId.get(p.pai)))}` : ''}</p>` : ''}
+      ${p.papel !== 'candidato' ? `<p class="sub">Entrou em ${fDA.format(p.entrada)}${p.canal ? ` · canal: ${esc(p.canal)}` : ''}${p.pai != null ? ` · indicado por ${esc(CIC.nomeVisivel(CIC.idx.porId.get(p.pai)))}` : ''}</p><p class="fonte-ini">Fonte inicial: <b>${esc(CIC.rotuloFonte(p))}</b> · ${fN.format(Math.max(0, p.gen - 1))} ${p.gen - 1 === 1 ? 'pessoa' : 'pessoas'} entre a fonte e esta pessoa</p>` : ''}
       <div class="link-mini"><div><p class="rotulo">Link personalizado</p><code>${esc(CIC.linkPessoal(p))}</code><div class="pilha-h"><button class="bt peq" data-copiar="${esc(CIC.linkPessoal(p))}">Copiar</button><a class="bt peq sec" href="#/cadastro?ref=${p.cod}">Abrir a página de cadastro</a></div></div><div class="qr">${CIC.qr(CIC.linkPessoal(p), 3)}</div></div>
     </article>
     <article class="cartao"><header><h2>Onde esta rede está</h2><p>Pessoas da rede abaixo de ${esc(p.papel === 'candidato' ? 'toda a candidatura' : CIC.nomeVisivel(p))}, por município.</p></header><div class="mini-mapa" id="mapa-rede"></div><div class="legenda" id="leg-rede"></div></article>
@@ -715,6 +716,8 @@ T.rede = async (main, r) => {
   if (cont.size && cont.size < 60) mapa.enquadrar([...cont.keys()]);
 };
 
+/* QR do link em diálogo (delegado) */
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-qr]'); if (!b) return; CIC.dialogo(`<p class="rotulo">Seu link em QR</p><h2>Aponte a câmera do celular</h2><div class="qr grande">${CIC.qr(b.dataset.qr, 6)}</div><p class="ajuda">Imprima ou mostre na tela em eventos. Quem ler entra na sua rede.</p><div class="acoes-dl"><button class="bt sec" data-fechar>Fechar</button></div>`); });
 /* copiar link (delegado) */
 document.addEventListener('click', async (e) => {
   const b = e.target.closest('[data-copiar]'); if (!b) return;

@@ -15,7 +15,7 @@ T.contatos = (main, r) => {
     <span class="contagem" id="f-n"></span>
   </div>
   ${CIC.PERFIS[CIC.s.perfil].mascara ? '<p class="faixa">O seu perfil vê o nome abreviado e o telefone escondido.</p>' : ''}
-  <div class="tab-rolagem"><table class="tab clicavel"><thead><tr><th>Pessoa</th><th>Município</th><th>Indicado por</th><th>Redes</th><th>Entrada</th><th>Situação</th></tr></thead><tbody id="t-cont"></tbody></table></div>
+  <div class="tab-rolagem"><table class="tab clicavel" data-propria-pagina><thead><tr><th>Pessoa</th><th>Município</th><th>Convidado por</th><th>Redes</th><th>Entrada</th><th>Situação</th></tr></thead><tbody id="t-cont"></tbody></table></div>
   <div class="paginas" id="paginas"></div>`;
   $('#f-papel').value = st.papel; $('#f-status').value = st.status; $('#f-rede').value = st.rede;
   const filtrar = () => {
@@ -23,10 +23,10 @@ T.contatos = (main, r) => {
     return CIC.noEscopo().filter((p) => (!st.papel || p.papel === st.papel) && (!st.status || p.status === st.status) && (!st.rede || p.redes.some((x) => x.rede === st.rede)) && (!q || p.nome.toLowerCase().includes(q) || CIC.nomeMun(p.mun).toLowerCase().includes(q))).sort((a, b) => b.entrada - a.entrada);
   };
   const desenhar = () => {
-    const v = filtrar(); const por = 40; const pags = Math.max(1, Math.ceil(v.length / por)); st.pag = Math.min(st.pag, pags - 1);
+    const v = filtrar(); const por = st.por || 40; const pags = Math.max(1, Math.ceil(v.length / por)); st.pag = Math.min(st.pag, pags - 1);
     $('#f-n').textContent = `${fN.format(v.length)} contatos`;
     $('#t-cont').innerHTML = v.slice(st.pag * por, st.pag * por + por).map((p) => { const pai = p.pai != null ? CIC.idx.porId.get(p.pai) : null;
-      return `<tr data-id="${p.id}" tabindex="0"><td><b>${esc(CIC.nomeVisivel(p))}</b><small>${p.papel === 'lideranca' ? 'Liderança' : 'Apoiador'} · nível ${p.gen}</small></td><td>${esc(CIC.nomeMun(p.mun))}</td><td>${pai ? esc(pai.papel === 'candidato' ? pai.nome : CIC.nomeVisivel(pai)) : '-'}</td><td><span class="siglas">${p.redes.map((x) => `<abbr title="${esc(CIC.REDES[x.rede].nome)}">${CIC.REDES[x.rede].sigla}</abbr>`).join('')}</span></td><td>${fD.format(p.entrada)}</td><td><span class="situ s-${p.status}">${esc(p.status)}</span></td></tr>`; }).join('') || '<tr><td colspan="6" class="vazio">Nenhum contato com estes filtros.</td></tr>';
+      return `<tr data-id="${p.id}" tabindex="0"><td><b>${esc(CIC.nomeVisivel(p))}</b><small>${p.papel === 'lideranca' ? 'Liderança' : 'Apoiador'} · nível ${p.gen}</small></td><td>${esc(CIC.nomeMun(p.mun))}</td><td>${pai ? esc(pai.papel === 'candidato' ? pai.nome : CIC.nomeVisivel(pai)) : '-'}<small>fonte: ${esc(CIC.rotuloFonte(p))}</small></td><td><span class="siglas">${p.redes.map((x) => `<abbr title="${esc(CIC.REDES[x.rede].nome)}">${CIC.REDES[x.rede].sigla}</abbr>`).join('')}</span></td><td>${fD.format(p.entrada)}</td><td><span class="situ s-${p.status}">${esc(p.status)}</span></td></tr>`; }).join('') || '<tr><td colspan="6" class="vazio">Nenhum contato com estes filtros.</td></tr>';
     $('#paginas').innerHTML = pags > 1 ? `<button class="bt sec peq" data-p="-1" ${st.pag ? '' : 'disabled'}>Anterior</button><span>Página ${st.pag + 1} de ${fN.format(pags)}</span><button class="bt sec peq" data-p="1" ${st.pag < pags - 1 ? '' : 'disabled'}>Próxima</button>` : '';
   };
   const url = () => { const q = new URLSearchParams(Object.entries({ q: st.q, papel: st.papel, status: st.status, rede: st.rede }).filter(([, v]) => v)); history.replaceState(null, '', '#/contatos' + (q.toString() ? '?' + q : '')); };
@@ -36,6 +36,7 @@ T.contatos = (main, r) => {
   const abrir = (e) => { const tr = e.target.closest('tr[data-id]'); if (tr && (e.type === 'click' || e.key === 'Enter')) T.fichaContato(CIC.idx.porId.get(+tr.dataset.id), desenhar); };
   $('#t-cont').addEventListener('click', abrir); $('#t-cont').addEventListener('keydown', abrir);
   desenhar();
+  requestAnimationFrame(() => { const t = $('#t-cont'); const tr = t?.querySelector('tr'); if (!tr) return; const m = $('#principal'); const livre = m.getBoundingClientRect().bottom - t.getBoundingClientRect().top - $('#paginas').offsetHeight - 40; const n = Math.max(5, Math.floor(livre / tr.offsetHeight)); if (n !== 40) { st.por = n; desenhar(); } });
 };
 T.formRede = (aoSalvar) => {
   const op = Object.entries(CIC.REDES).map(([k, v]) => `<option value="${k}">${esc(v.nome)}</option>`).join('');
@@ -60,7 +61,7 @@ T.fichaContato = (p, depois) => {
     <dl class="dados"><div><dt>Município</dt><dd>${esc(CIC.nomeMun(p.mun))}</dd></div><div><dt>Celular</dt><dd>${esc(CIC.telVisivel(p))}</dd></div>
       <div><dt>Entrada</dt><dd>${fDH.format(p.entrada)}</dd></div><div><dt>Canal</dt><dd>${esc(p.canal || '-')}</dd></div>
       <div><dt>Situação</dt><dd><span class="situ s-${p.status}">${esc(p.status)}</span></dd></div><div><dt>Rede própria</dt><dd>${fN.format(p.rede)} pessoas</dd></div></dl>
-    <p class="rotulo mt">Caminho na rede</p><p class="trilha-txt">${cam.map((x) => esc(x.papel === 'candidato' ? x.nome : CIC.nomeVisivel(x))).join(' › ')} › <b>${esc(CIC.nomeVisivel(p))}</b></p>
+    <p class="rotulo mt">De onde veio</p><p class="fonte-ini">Fonte inicial: <b>${esc(CIC.rotuloFonte(p))}</b></p><p class="trilha-txt">${cam.map((x) => esc(x.papel === 'candidato' ? x.nome : CIC.nomeVisivel(x))).join(' › ')} › <b>${esc(CIC.nomeVisivel(p))}</b></p>
     <p class="rotulo mt">Autorizações (LGPD)</p><ul class="cons"><li class="${p.consContato ? 'sim' : 'nao'}">${p.consContato ? 'Autorizou' : 'Não autorizou'} mensagens da campanha</li><li class="${p.consPartido ? 'sim' : 'nao'}">${p.consPartido ? 'Autorizou' : 'Não autorizou'} o partido a ver o cadastro</li></ul>
     <p class="rotulo mt">Redes sociais</p>
     <ul class="redes-lista">${p.redes.map((x, i) => `<li><abbr>${CIC.REDES[x.rede].sigla}</abbr><span><b>${esc(CIC.REDES[x.rede].nome)}</b><code>${masc ? '••••' : esc(x.rede === 'whatsapp' ? CIC.telVisivel(p) : x.id)}</code></span><em>${x.verif ? 'verificada' : 'não verificada'}</em>${masc ? '' : `<button class="bt peq sec" data-tira="${i}" aria-label="Remover">Remover</button>`}</li>`).join('')}</ul>
@@ -123,66 +124,70 @@ T.acordos = (main) => {
     const A = lista(); const neg = A.reduce((s, a) => s + a.negociado, 0), pg = A.reduce((s, a) => s + pago(a), 0);
     const semC = A.filter((a) => a.negociado && !a.contrato).length;
     const porMun = d3.rollups(A.filter((a) => ['coordenacao', 'mobilizacao'].includes(a.objeto)), (x) => x.length, (a) => CIC.idx.porId.get(a.pessoa).mun).sort((a, b) => b[1] - a[1]).slice(0, 8);
-    main.innerHTML = `${CIC.cabecalho('Contratos e pagamentos', 'O que foi combinado, com quem e quanto foi pago', `Só quem tem esta tela no perfil abre esta página. Quem registra um pagamento não pode aprovar o mesmo pagamento. Toda mudança fica no histórico.`,
-      escreve ? '<div class="cab-acoes"><button class="bt" id="novo-acordo">Novo contrato…</button></div>' : '<div class="cab-acoes"><span class="faixa">O seu perfil só vê, sem mudar</span></div>')}
+    main.innerHTML = `${CIC.cabecalho('Gastos e pagamentos', 'Para onde foi o dinheiro', `Registre cada gasto: com quem, em quê, quanto e quando foi pago. Contrato e comprovante são opcionais, mas ajudam na prestação de contas. Toda mudança fica no histórico.`,
+      escreve ? '<div class="cab-acoes"><button class="bt" id="novo-acordo">Registrar gasto</button></div>' : '<div class="cab-acoes"><span class="faixa">O seu perfil só vê, sem mudar</span></div>')}
     <section class="grade-kpi cinco">
-      <article class="kpi"><p class="rotulo">Negociado</p><p class="numero">${fR.format(neg)}</p><p class="sub">${fN.format(A.length)} acordos no recorte.</p></article>
-      <article class="kpi"><p class="rotulo">Pago</p><p class="numero">${fR.format(pg)}</p><p class="sub">${fP.format(neg ? (pg / neg) * 100 : 0)}% do valor negociado.</p></article>
-      <article class="kpi"><p class="rotulo">A pagar</p><p class="numero">${fR.format(neg - pg)}</p><p class="sub">${fN.format(A.filter((a) => ['a pagar', 'parcial'].includes(situacao(a))).length)} acordos com saldo.</p></article>
-      <article class="kpi"><p class="rotulo">Sem contrato</p><p class="numero">${fN.format(semC)}</p><p class="sub">Acordos com valor e sem contrato anexado.</p></article>
-      <article class="kpi"><p class="rotulo">Na prestação de contas</p><p class="numero">${fP.format(A.length ? (A.filter((a) => a.spce).length / A.length) * 100 : 0)}%</p><p class="sub">Dos acordos já lançados no sistema de contas do TSE (SPCE).</p></article>
+      <article class="kpi"><p class="rotulo">Combinado</p><p class="numero">${fR.format(neg)}</p><p class="sub">${fN.format(A.length)} gastos nesta região.</p></article>
+      <article class="kpi"><p class="rotulo">Pago</p><p class="numero">${fR.format(pg)}</p><p class="sub">${fP.format(neg ? (pg / neg) * 100 : 0)}% do valor combinado.</p></article>
+      <article class="kpi"><p class="rotulo">A pagar</p><p class="numero">${fR.format(neg - pg)}</p><p class="sub">${fN.format(A.filter((a) => ['a pagar', 'parcial'].includes(situacao(a))).length)} gastos com saldo a pagar.</p></article>
+      <article class="kpi"><p class="rotulo">Com documento</p><p class="numero">${fN.format(A.filter((a) => a.negociado && a.contrato).length)}<small> de ${fN.format(A.filter((a) => a.negociado).length)}</small></p><p class="sub">Gastos com contrato ou recibo anexado. É opcional.</p></article>
+      <article class="kpi"><p class="rotulo">Na prestação de contas</p><p class="numero">${fP.format(A.length ? (A.filter((a) => a.spce).length / A.length) * 100 : 0)}%</p><p class="sub">Dos gastos já lançados no sistema de contas do TSE (SPCE).</p></article>
     </section>
-    <p class="faixa lei">O objeto de cada acordo vem de uma lista fechada de serviços que a campanha pode contratar e declarar. Não existe campo para voto. Oferecer vantagem em troca de voto é crime eleitoral (Lei 9.504/1997, art. 41-A).</p>
-    <div class="tab-rolagem"><table class="tab clicavel"><thead><tr><th>Pessoa</th><th>Objeto</th><th class="n">Negociado</th><th class="n">Pago</th><th>Situação</th><th>Contrato</th><th>Aprovação</th></tr></thead><tbody id="t-ac">
-    ${A.map((a) => { const p = CIC.idx.porId.get(a.pessoa); return `<tr data-id="${a.id}" tabindex="0"><td><b>${esc(CIC.nomeVisivel(p))}</b><small>${esc(CIC.nomeMun(p.mun))}</small></td><td>${esc(nomeObj(a.objeto))}</td><td class="n">${fR.format(a.negociado)}</td><td class="n">${fR.format(pago(a))}</td><td><span class="situ a-${situacao(a).replace(' ', '-')}">${esc(situacao(a))}</span></td><td>${a.negociado ? (a.contrato ? 'Sim' : '<b class="ruim">Não</b>') : '-'}</td><td>${a.aprovou ? (a.aprovou === a.registrou ? '<b class="ruim">mesma pessoa</b>' : esc(a.aprovou)) : '<span class="pend">aguardando</span>'}</td></tr>`; }).join('')}</tbody></table></div>
+    <p class="faixa lei">O tipo de cada gasto vem de uma lista fechada de gastos que a campanha pode fazer e declarar. Não existe campo para voto. Oferecer vantagem em troca de voto é crime eleitoral (Lei 9.504/1997, art. 41-A).</p>
+    <div class="tab-rolagem"><table class="tab clicavel"><thead><tr><th>Com quem</th><th>Tipo de gasto</th><th class="n">Combinado</th><th class="n">Pago</th><th>Situação</th><th>Documento</th><th>Aprovação</th></tr></thead><tbody id="t-ac">
+    ${A.map((a) => { const p = CIC.idx.porId.get(a.pessoa); return `<tr data-id="${a.id}" tabindex="0"><td><b>${esc(CIC.nomeVisivel(p))}</b><small>${esc(CIC.nomeMun(p.mun))}</small></td><td>${esc(nomeObj(a.objeto))}</td><td class="n">${fR.format(a.negociado)}</td><td class="n">${fR.format(pago(a))}</td><td><span class="situ a-${situacao(a).replace(' ', '-')}">${esc(situacao(a))}</span></td><td>${a.negociado ? (a.contrato ? 'anexado' : '<span class="pend">sem</span>') : '-'}</td><td>${a.aprovou ? (a.aprovou === a.registrou ? '<b class="ruim">mesma pessoa</b>' : esc(a.aprovou)) : '<span class="pend">aguardando</span>'}</td></tr>`; }).join('')}</tbody></table></div>
     <section class="grade-2">
       <article class="cartao"><header><h2>Pessoal contratado por município</h2><p>Coordenação e mobilização contratadas, contra o limite de referência da Lei 9.504/1997, art. 100-A: até 30 mil eleitores, 1% do eleitorado; acima, 300 mais 1 a cada mil eleitores que passam de 30 mil.</p></header>
       <table class="tab"><thead><tr><th>Município</th><th class="n">Contratados</th><th class="n">Limite de referência</th></tr></thead><tbody>${porMun.map(([c, n]) => `<tr><td>${esc(CIC.nomeMun(c))}</td><td class="n">${fN.format(n)}</td><td class="n">${fN.format(CIC.limiteContratacao(CIC.mun(c).eleit))}</td></tr>`).join('') || '<tr><td colspan="3" class="vazio">Nenhuma contratação no recorte.</td></tr>'}</tbody></table>
       <p class="ajuda">Para Deputado, Senador, Governador e Presidente, o limite oficial sai da tabela que o TSE publica a cada eleição (em 2026, a Portaria TSE nº 444/2026). A versão completa carrega essa tabela. Aqui, o eleitorado é estimado.</p></article>
-      <article class="cartao"><header><h2>Trilha de auditoria</h2><p>Últimas ações, com perfil e horário. Ninguém apaga esta trilha.</p></header><ol class="historico">${CIC.s.auditoria.filter((x) => x.camp === CIC.s.camp).slice(0, 12).map((x) => `<li><time>${fDH.format(x.quando)}</time> <b>${esc(x.quem)}</b>: ${esc(x.acao)}${x.alvo ? ` (${esc(x.alvo)})` : ''}</li>`).join('') || '<li class="vazio">Sem ações ainda.</li>'}</ol></article>
+      <article class="cartao"><header><h2>Para onde foi o dinheiro</h2><p>Valor pago por tipo de gasto e nas cidades que mais receberam.</p></header><p class="rotulo">Por tipo de gasto</p><div id="g-gasto-tipo"></div><p class="rotulo mt">Por cidade</p><div id="g-gasto-cid"></div></article>
     </section>`;
     const abrir = (e) => { const tr = e.target.closest('tr[data-id]'); if (tr && (e.type === 'click' || e.key === 'Enter')) ficha(CIC.s.acordos.find((a) => a.id === tr.dataset.id)); };
     $('#t-ac').addEventListener('click', abrir); $('#t-ac').addEventListener('keydown', abrir);
     $('#novo-acordo')?.addEventListener('click', novo);
+    const porTipo = d3.rollups(A.filter((a) => pago(a)), (x) => d3.sum(x, pago), (a) => nomeObj(a.objeto).replace(/ \(.*\)$/, '')).map(([rotulo, valor]) => ({ rotulo, valor })).sort((a, b) => b.valor - a.valor);
+    const porCid = d3.rollups(A.filter((a) => pago(a)), (x) => d3.sum(x, pago), (a) => CIC.nomeMun(CIC.idx.porId.get(a.pessoa).mun)).map(([rotulo, valor]) => ({ rotulo, valor })).sort((a, b) => b.valor - a.valor).slice(0, 6);
+    CIC.G.barrasH($('#g-gasto-tipo'), porTipo, { fmt: (v) => fR.format(v), base: 'do valor pago' });
+    CIC.G.barrasH($('#g-gasto-cid'), porCid, { fmt: (v) => fR.format(v), total: pg, base: 'do valor pago' });
   };
   const ficha = (a) => {
     const p = CIC.idx.porId.get(a.pessoa);
-    const html = () => `<p class="rotulo">Acordo ${esc(a.id)} · ${esc(situacao(a))}</p><h2>${esc(CIC.nomeVisivel(p))}</h2>
-      <dl class="dados"><div><dt>Objeto</dt><dd>${esc(nomeObj(a.objeto))}</dd></div><div><dt>Município</dt><dd>${esc(CIC.nomeMun(p.mun))}</dd></div>
-      <div><dt>Negociado</dt><dd>${fR.format(a.negociado)}</dd></div><div><dt>Pago</dt><dd>${fR.format(pago(a))}</dd></div>
-      <div><dt>Contrato</dt><dd>${a.contrato ? 'anexado' : 'não anexado'}</dd></div><div><dt>Prestação de contas</dt><dd>${a.spce ? 'lançado' : 'falta lançar'}</dd></div>
+    const html = () => `<p class="rotulo">Gasto ${esc(a.id)} · ${esc(situacao(a))}</p><h2>${esc(CIC.nomeVisivel(p))}</h2>
+      <dl class="dados"><div><dt>Tipo de gasto</dt><dd>${esc(nomeObj(a.objeto))}</dd></div><div><dt>Cidade</dt><dd>${esc(CIC.nomeMun(p.mun))}</dd></div>
+      <div><dt>Combinado</dt><dd>${fR.format(a.negociado)}</dd></div><div><dt>Pago</dt><dd>${fR.format(pago(a))}</dd></div>
+      <div><dt>Documento</dt><dd>${a.contrato ? 'anexado' : 'sem documento (opcional)'}</dd></div><div><dt>Prestação de contas</dt><dd>${a.spce ? 'lançado' : 'falta lançar'}</dd></div>
       <div><dt>Registrado por</dt><dd>${esc(a.registrou)}</dd></div><div><dt>Aprovado por</dt><dd>${esc(a.aprovou || 'aguardando')}</dd></div></dl>
-      <p class="rotulo mt">O que foi negociado</p><p>${esc(a.obs)}</p>
-      <p class="rotulo mt">Pagamentos</p><ul class="historico">${a.pagamentos.map((x) => `<li><time>${fDA.format(x.data)}</time> ${fR.format(x.valor)} · ${esc(x.forma)} · ${x.comprovante ? 'com comprovante' : '<b class="ruim">sem comprovante</b>'}</li>`).join('') || '<li class="vazio">Nenhum pagamento.</li>'}</ul>
+      <p class="rotulo mt">O que foi combinado</p><p>${esc(a.obs)}</p>
+      <p class="rotulo mt">Pagamentos</p><ul class="historico">${a.pagamentos.map((x) => `<li><time>${fDA.format(x.data)}</time> ${fR.format(x.valor)} · ${esc(x.forma)} · ${x.comprovante ? 'com comprovante' : 'sem comprovante'}</li>`).join('') || '<li class="vazio">Nenhum pagamento.</li>'}</ul>
       ${escreve && a.negociado ? `<form class="form-pag" id="f-pag"><div class="linha-campos"><label>Valor (R$)<input name="valor" type="number" min="1" step="1" required inputmode="numeric"></label><label>Forma<select name="forma"><option>PIX</option><option>Transferência</option><option>Espécie</option></select></label></div>
         <label class="marca"><input type="checkbox" name="comp"> Comprovante anexado</label><button class="bt">Registrar pagamento</button></form>` : ''}
       ${escreve && !a.aprovou ? `<button class="bt sec mt" id="aprovar">Aprovar como ${esc(usuario === a.registrou ? 'Financeiro 2' : usuario)}</button><p class="ajuda">Na demonstração, o perfil Financeiro aprova como "Financeiro 2" se foi ele que registrou.</p>` : ''}`;
     CIC.gaveta(`<div id="fa">${html()}</div>`, (corpo) => {
       const ligar = () => {
         corpo.querySelector('#f-pag')?.addEventListener('submit', (e) => { e.preventDefault(); const f = new FormData(e.target); const v = Math.round(+f.get('valor')); if (!(v > 0)) return;
-          if (pago(a) + v > a.negociado) { CIC.aviso(`O pagamento passa o valor negociado em ${fR.format(pago(a) + v - a.negociado)}. Registre um aditivo antes.`); return; }
+          if (pago(a) + v > a.negociado) { CIC.aviso(`O pagamento passa o valor combinado em ${fR.format(pago(a) + v - a.negociado)}. Registre um aditivo antes.`); return; }
           a.pagamentos.push({ data: Date.now(), valor: v, forma: f.get('forma'), comprovante: !!f.get('comp') }); CIC.audit('Registrou pagamento', `${a.id}, ${fR.format(v)}`); CIC.gravar(); corpo.querySelector('#fa').innerHTML = html(); ligar(); desenhar(); });
-        corpo.querySelector('#aprovar')?.addEventListener('click', () => { const quem = usuario === a.registrou ? 'Financeiro 2' : usuario; if (quem === a.registrou) { CIC.aviso('Quem registrou não pode aprovar.'); return; } a.aprovou = quem; CIC.audit('Aprovou acordo', a.id); CIC.gravar(); corpo.querySelector('#fa').innerHTML = html(); ligar(); desenhar(); });
+        corpo.querySelector('#aprovar')?.addEventListener('click', () => { const quem = usuario === a.registrou ? 'Financeiro 2' : usuario; if (quem === a.registrou) { CIC.aviso('Quem registrou não pode aprovar.'); return; } a.aprovou = quem; CIC.audit('Aprovou gasto', a.id); CIC.gravar(); corpo.querySelector('#fa').innerHTML = html(); ligar(); desenhar(); });
       };
       ligar();
     });
   };
   const novo = () => {
     const L = CIC.lideres.filter((p) => !ms || ms.has(p.mun)).sort((a, b) => a.nome.localeCompare(b.nome));
-    CIC.gaveta(`<p class="rotulo">Novo acordo</p><h2>Registrar o que foi negociado</h2>
+    CIC.gaveta(`<p class="rotulo">Novo gasto</p><h2>Registrar um gasto da campanha</h2>
       <form id="f-novo" class="form">
-        <label>Pessoa<select name="pessoa" required>${L.map((p) => `<option value="${p.id}">${esc(CIC.nomeVisivel(p))} · ${esc(CIC.nomeMun(p.mun))}</option>`).join('')}</select></label>
-        <label>Objeto<select name="objeto">${CIC.OBJETOS.map((o) => `<option value="${o[0]}">${esc(o[1])}</option>`).join('')}</select></label>
-        <label>Valor negociado (R$)<input name="valor" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
-        <label>O que foi negociado<textarea name="obs" rows="3" required placeholder="Entregas, prazo, forma de pagamento"></textarea></label>
-        <label class="marca"><input type="checkbox" name="contrato"> Contrato anexado</label>
+        <label>Com quem (pessoa da rede)<select name="pessoa" required>${L.map((p) => `<option value="${p.id}">${esc(CIC.nomeVisivel(p))} · ${esc(CIC.nomeMun(p.mun))}</option>`).join('')}</select></label>
+        <label>Tipo de gasto<select name="objeto">${CIC.OBJETOS.map((o) => `<option value="${o[0]}">${esc(o[1])}</option>`).join('')}</select></label>
+        <label>Valor combinado (R$)<input name="valor" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
+        <label>Descrição<textarea name="obs" rows="2" required placeholder="O que foi comprado ou contratado, prazo e forma de pagamento"></textarea></label>
+        <label class="marca"><input type="checkbox" name="contrato"> Contrato ou recibo anexado (opcional)</label>
         <label class="marca"><input type="checkbox" name="spce"> Lançado na prestação de contas</label>
-        <p class="ajuda">O acordo fica "aguardando aprovação" até outra pessoa do Financeiro aprovar.</p>
-        <button class="bt">Registrar acordo</button></form>`, (corpo, fechar) => {
+        <p class="ajuda">O gasto fica "aguardando aprovação" até outra pessoa com acesso ao dinheiro aprovar.</p>
+        <button class="bt">Registrar gasto</button></form>`, (corpo, fechar) => {
       corpo.querySelector('#f-novo').addEventListener('submit', (e) => { e.preventDefault(); const f = new FormData(e.target);
         const a = { id: 'c' + (CIC.s.acordos.length + 1), pessoa: +f.get('pessoa'), objeto: f.get('objeto'), negociado: Math.round(+f.get('valor') || 0), pagamentos: [], contrato: !!f.get('contrato'), spce: !!f.get('spce'), registrou: usuario, aprovou: null, obs: f.get('obs'), criado: Date.now() };
         if (a.objeto === 'apoio') a.negociado = 0;
-        CIC.s.acordos.unshift(a); CIC.audit('Registrou acordo', a.id); CIC.gravar(); fechar(); desenhar(); });
+        CIC.s.acordos.unshift(a); CIC.audit('Registrou gasto', a.id); CIC.gravar(); fechar(); desenhar(); });
     });
   };
   desenhar();
@@ -335,11 +340,11 @@ CIC.baixarCSV = csv;
 T.relatorios = (main) => {
   const fin = CIC.PERFIS[CIC.s.perfil].financeiro;
   const R = [
-    ['contatos', 'Contatos do recorte', 'Uma linha por contato: município, papel, nível, quem indicou, canal, redes e situação. Segue a máscara do perfil.', true],
+    ['contatos', 'Pessoas da região', 'Uma linha por pessoa: cidade, quem convidou, fonte inicial, caminho completo de links, canal, redes e situação. Segue as regras do seu perfil.', CIC.pode('contatos')],
     ['municipios', 'Indicadores por município', 'População, eleitorado estimado, contatos, contatos por 1.000 habitantes, lideranças e cadastros em 7 dias.', true],
     ['grupos', 'Território: grupos e municípios', 'Cada grupo com nível, grupo-pai e municípios. Serve para conferir a divisão.', true],
     ['liderancas', 'Lideranças e IEL', 'Rede, indicações diretas, componentes e nota do IEL.', true],
-    ['acordos', 'Contratos e pagamentos', 'Combinado, pago, contrato e aprovação. Só para quem tem a tela Contratos e pagamentos.', CIC.pode('acordos')],
+    ['acordos', 'Gastos e pagamentos', 'Cada gasto com tipo, cidade, combinado, pago, documento e aprovação. Só para quem tem a tela Gastos e pagamentos.', CIC.pode('acordos')],
     ['auditoria', 'Histórico de ações', 'Quem fez o quê e quando, com perfil e estado.', CIC.pode('auditoria')],
     ['', 'Boletim diário em PDF', 'Resumo do dia para o candidato: números, alertas e as 10 redes que mais cresceram. Sai às 7h.', false],
     ['', 'Meta × resultado por seção', 'Depois da apuração: votos por seção contra a meta e o voto atribuído a cada liderança.', false],
@@ -351,11 +356,11 @@ T.relatorios = (main) => {
     const b = e.target.closest('[data-r]'); if (!b) return; const v = CIC.noEscopo(); const uf = CIC.s.uf;
     if (b.dataset.r === 'partido') { CIC.ir('partido'); return; }
     if (b.dataset.r === 'auditoria') { CIC.ir('auditoria'); return; }
-    if (b.dataset.r === 'contatos') csv(`contatos-${uf}.csv`, ['codigo', 'nome', 'municipio', 'papel', 'nivel', 'indicado_por', 'canal', 'redes', 'situacao', 'entrada'], v.map((p) => [p.cod, CIC.nomeVisivel(p), CIC.nomeMun(p.mun), p.papel, p.gen, p.pai != null ? CIC.idx.porId.get(p.pai).cod : '', p.canal, p.redes.map((x) => x.rede).join(' '), p.status, fDA.format(p.entrada)]));
+    if (b.dataset.r === 'contatos') csv(`contatos-${uf}.csv`, ['codigo', 'nome', 'municipio', 'papel', 'nivel', 'convidado_por', 'fonte_inicial', 'caminho', 'canal', 'redes', 'situacao', 'entrada'], v.map((p) => [p.cod, CIC.nomeVisivel(p), CIC.nomeMun(p.mun), p.papel, p.gen, p.pai != null ? CIC.idx.porId.get(p.pai).cod : '', CIC.rotuloFonte(p), CIC.caminho(p.id).map((x) => x.cod).join(' > '), p.canal, p.redes.map((x) => x.rede).join(' '), p.status, fDA.format(p.entrada)]));
     if (b.dataset.r === 'municipios') { const c = new Map(); v.forEach((p) => c.set(p.mun, (c.get(p.mun) || 0) + 1)); csv(`municipios-${uf}.csv`, ['ibge', 'municipio', 'populacao_censo_2022', 'eleitorado_estimado', 'contatos', 'contatos_por_mil_hab'], CIC.demo.lista.map((m) => [m.cod, m.nome, m.pop, m.eleit, c.get(m.cod) || 0, fP.format(((c.get(m.cod) || 0) / m.pop) * 1000)])); }
     if (b.dataset.r === 'grupos') csv(`territorio-${uf}.csv`, ['grupo', 'nivel', 'grupo_pai', 'ibge', 'municipio'], CIC.s.grupos.flatMap((g) => g.munis.map((c) => [g.nome, CIC.s.niveis[g.nivel], g.pai ? CIC.grupo(g.pai)?.nome : '', c, CIC.nomeMun(c)])));
     if (b.dataset.r === 'liderancas') csv(`liderancas-${uf}.csv`, ['codigo', 'nome', 'municipio', 'diretas', 'rede', 'novos_14d', 'volume', 'qualidade', 'adesao', 'multiplicacao', 'ritmo', 'iel', 'classe'], CIC.lideres.filter((p) => v.includes(p)).map((p) => [p.cod, CIC.nomeVisivel(p), CIC.nomeMun(p.mun), p.diretos, p.rede, p.n14, p.ielComp.vol, p.ielComp.qua, p.ielComp.ade, p.ielComp.mul, p.ielComp.rit, p.iel, p.ielClasse]));
-    if (b.dataset.r === 'acordos') csv(`acordos-${uf}.csv`, ['acordo', 'pessoa', 'municipio', 'objeto', 'negociado', 'pago', 'contrato', 'registrou', 'aprovou'], CIC.s.acordos.map((a) => { const p = CIC.idx.porId.get(a.pessoa); return [a.id, CIC.nomeVisivel(p), CIC.nomeMun(p.mun), nomeObj(a.objeto), a.negociado, pago(a), a.contrato ? 'sim' : 'nao', a.registrou, a.aprovou || '']; }));
+    if (b.dataset.r === 'acordos') csv(`gastos-${uf}.csv`, ['gasto', 'com_quem', 'cidade', 'tipo_de_gasto', 'combinado', 'pago', 'documento', 'registrou', 'aprovou'], CIC.s.acordos.map((a) => { const p = CIC.idx.porId.get(a.pessoa); return [a.id, CIC.nomeVisivel(p), CIC.nomeMun(p.mun), nomeObj(a.objeto), a.negociado, pago(a), a.contrato ? 'sim' : 'nao', a.registrou, a.aprovou || '']; }));
   });
 };
 
@@ -415,7 +420,7 @@ T.config = (main) => {
   info();
   $('#cargo').addEventListener('change', (e) => { s.cargo = e.target.value; CIC.audit('Mudou o cargo da conta', CIC.CARGOS[s.cargo].nome); CIC.gravar(); info(); CIC.montarTopo(); });
   const f = T.formRede((n) => CIC.aviso(`Gravaria: ${esc(CIC.REDES[n.rede].nome)} ${esc(n.id)}`)); $('#teste-rede').innerHTML = f.html; f.ligar($('#teste-rede'));
-  $('#reset').addEventListener('click', () => CIC.aviso('Apagar grupos, acordos, cadastros novos e perfil escolhidos neste navegador?', [['Apagar e recomeçar', () => { CIC.apagarTudo(); location.hash = '#/painel'; location.reload(); }], ['Cancelar', () => {}]]));
+  $('#reset').addEventListener('click', () => CIC.aviso('Apagar grupos, gastos, cadastros novos e perfil escolhidos neste navegador?', [['Apagar e recomeçar', () => { CIC.apagarTudo(); location.hash = '#/painel'; location.reload(); }], ['Cancelar', () => {}]]));
   $('#nova-conta')?.addEventListener('click', () => CIC.aviso('Na versão completa, o partido informa o candidato, o cargo e o e-mail. O candidato recebe o convite e cria a senha com segundo fator.'));
 };
 

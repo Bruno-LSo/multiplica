@@ -58,7 +58,7 @@ T.auditoria = (main) => {
   const s = CIC.s; const ehPartido = s.perfil === 'partido';
   const st = { q: '', perfil: '', camp: ehPartido ? '' : s.camp };
   const base = () => s.auditoria.filter((a) => (ehPartido || a.camp === s.camp));
-  main.innerHTML = `${CIC.cabecalho('Histórico de ações', 'Quem fez o quê e quando', `Toda ação fica gravada: grupos e municípios do território, perfis, cadastros, redes sociais, contatos, acordos, pagamentos, aprovações e exportações. Você vê só o histórico desta campanha. Ninguém apaga o histórico.`,
+  main.innerHTML = `${CIC.cabecalho('Histórico de ações', 'Quem fez o quê e quando', `Toda ação fica gravada: grupos e municípios do território, perfis, cadastros, redes sociais, contatos, gastos, pagamentos, aprovações e exportações. Você vê só o histórico desta campanha. Ninguém apaga o histórico.`,
     '<div class="cab-acoes"><button class="bt sec" id="csv-aud">Baixar registro (CSV)</button></div>')}
   <div class="filtros"><input type="search" id="a-q" placeholder="Buscar ação, grupo ou município">
     <select id="a-perfil"><option value="">Todos os perfis</option>${[...new Set(base().map((a) => a.perfil))].map((p) => `<option>${esc(p)}</option>`).join('')}</select>
