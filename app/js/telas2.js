@@ -10,7 +10,7 @@ T.contatos = (main, r) => {
   <div class="filtros">
     <input id="f-q" type="search" placeholder="Nome ou município" value="${esc(st.q)}">
     <select id="f-papel"><option value="">Todos os papéis</option><option value="lideranca">Lideranças</option><option value="apoiador">Apoiadores</option></select>
-    <select id="f-status"><option value="">Todas as situações</option><option value="confirmado">Confirmado</option><option value="pendente">Pendente</option><option value="suspeito">Suspeito</option></select>
+    <select id="f-status"><option value="">Todas as situações</option><option value="confirmado">Confirmado</option><option value="pendente">Celular a confirmar</option></select>
     <select id="f-rede"><option value="">Qualquer rede social</option>${Object.entries(CIC.REDES).map(([k, v]) => `<option value="${k}">Tem ${esc(v.nome)}</option>`).join('')}</select>
     <span class="contagem" id="f-n"></span>
   </div>
@@ -74,7 +74,7 @@ T.fichaContato = (p, depois) => {
   CIC.gaveta(`<div id="ficha">${html()}</div>`, (corpo) => {
     const ligar = () => {
       const alvo = corpo.querySelector('#nova-rede');
-      if (alvo) { const f = T.formRede((nova) => { if (p.redes.some((x) => x.rede === nova.rede && x.id === nova.id)) { CIC.aviso('Esta conta já está no cadastro.'); return; } p.redes.push(nova); CIC.audit('Incluiu rede social no cadastro', p.cod, CIC.REDES[nova.rede].nome); CIC.gravar(); corpo.querySelector('#ficha').innerHTML = html(); ligar(); depois && depois(); }); alvo.innerHTML = f.html; f.ligar(alvo); }
+      if (alvo) { const f = T.formRede((nova) => { if (p.redes.some((x) => x.rede === nova.rede && x.id === nova.id)) { CIC.aviso('Esta conta já está no cadastro.'); return; } if (CIC.duplicado({ redes: [nova] })) { CIC.aviso('Esta conta já está no cadastro de outra pessoa. Cada conta pertence a uma pessoa só.'); return; } p.redes.push(nova); CIC.audit('Incluiu rede social no cadastro', p.cod, CIC.REDES[nova.rede].nome); CIC.gravar(); corpo.querySelector('#ficha').innerHTML = html(); ligar(); depois && depois(); }); alvo.innerHTML = f.html; f.ligar(alvo); }
       corpo.querySelectorAll('[data-tira]').forEach((b) => b.addEventListener('click', () => { const [tirada] = p.redes.splice(+b.dataset.tira, 1); CIC.audit('Tirou rede social do cadastro', p.cod, CIC.REDES[tirada.rede].nome); CIC.gravar(); corpo.querySelector('#ficha').innerHTML = html(); ligar(); depois && depois(); }));
       corpo.querySelector('#reg-contato')?.addEventListener('click', () => { (p.hist = p.hist || []).unshift({ t: Date.now(), txt: `Contato registrado por ${CIC.PERFIS[CIC.s.perfil].nome}` }); CIC.audit('Registrou contato', p.cod); corpo.querySelector('#ficha').innerHTML = html(); ligar(); });
     };
@@ -97,7 +97,7 @@ T.liderancas = (main) => {
   <div class="tab-rolagem"><table class="tab clicavel"><thead><tr><th>Liderança</th><th>Município</th><th class="n">Rede</th><th class="n">Novos 14 dias</th><th>Componentes</th><th class="n">IEL</th></tr></thead><tbody id="t-lid"></tbody></table></div>`;
   const desenhar = () => {
     CIC.calcularIEL();
-    const ms = CIC.munisEscopo(); let L = CIC.lideres.filter((p) => !ms || ms.has(p.mun));
+    const dentro = new Set(CIC.noEscopo()); let L = CIC.lideres.filter((p) => dentro.has(p));
     G.colunas($('#g-classes'), ['A', 'B', 'C', 'D'].map((c) => ({ rotulo: c, valor: L.filter((p) => p.ielClasse === c).length })), { prefixo: 'Classe ', base: 'das lideranças do recorte' });
     if (st.classe) L = L.filter((p) => p.ielClasse === st.classe);
     L.sort((a, b) => b[st.ord] - a[st.ord]);
@@ -327,7 +327,7 @@ T.alertas = (main) => {
   <ul class="lista-alertas grande">${A.map((a) => `<li>${CIC.selo(a.sev)}<div><b>${esc(a.regra)}</b><p>${esc(a.texto)}</p></div>${CIC.pode(a.rota.split('?')[0]) ? `<a class="bt sec peq" href="#/${a.rota}">Abrir</a>` : ''}</li>`).join('') || '<li class="vazio">Nenhum alerta aberto.</li>'}</ul>
   <section class="cartao"><header><h2>Regras ativas</h2><p>Cada regra tem limite, responsável e canal. O coordenador ajusta o limite do próprio grupo.</p></header>
   <table class="tab"><thead><tr><th>Regra</th><th>Dispara quando</th><th>Gravidade</th></tr></thead><tbody>
-  ${[['Liderança parada', 'Rede com 15 pessoas ou mais e 0 cadastro em 14 dias', 'alerta'], ['Queda de ritmo', 'Cadastros em 7 dias abaixo de 80% dos 7 dias anteriores', 'alerta'], ['Cadastro suspeito', 'Celular repetido, número inválido ou muitos cadastros do mesmo aparelho em pouco tempo', 'grave'], ['Município grande sem rede', 'Município com 50 mil habitantes ou mais e nenhum contato', 'alerta'], ['Subgrupo fora do grupo-pai', 'Município do subgrupo não está no grupo-pai e não foi aceito como exceção', 'alerta'], ['Sobreposição de grupos', 'Mesmo município em 2 grupos do mesmo nível', 'alerta'], ['Conta de rede social repetida', 'Mesma conta em 2 cadastros', 'info'], ['Pagamento sem contrato', 'Pagamento registrado em acordo sem contrato', 'critico'], ['Aprovação pela mesma pessoa', 'Quem registrou também aprovou', 'critico'], ['Pagamento em espécie', 'Qualquer pagamento em dinheiro vivo', 'grave'], ['Pagamento sem comprovante', 'Pagamento sem arquivo de comprovante', 'grave'], ['Contratação acima do limite', 'Pessoal contratado no município passa o limite da Lei 9.504/1997, art. 100-A', 'critico']].map(([a, b, c]) => `<tr><td><b>${a}</b></td><td>${b}</td><td>${CIC.selo(c)}</td></tr>`).join('')}</tbody></table></section>`;
+  ${[['Liderança parada', 'Rede com 15 pessoas ou mais e 0 cadastro em 14 dias', 'alerta'], ['Queda de ritmo', 'Cadastros em 7 dias abaixo de 80% dos 7 dias anteriores', 'alerta'], ['Município grande sem rede', 'Município com 50 mil habitantes ou mais e nenhum contato', 'alerta'], ['Subgrupo fora do grupo-pai', 'Município do subgrupo não está no grupo-pai e não foi aceito como exceção', 'alerta'], ['Sobreposição de grupos', 'Mesmo município em 2 grupos do mesmo nível', 'alerta'], ['Pagamento sem contrato', 'Pagamento registrado em acordo sem contrato', 'critico'], ['Aprovação pela mesma pessoa', 'Quem registrou também aprovou', 'critico'], ['Pagamento em espécie', 'Qualquer pagamento em dinheiro vivo', 'grave'], ['Pagamento sem comprovante', 'Pagamento sem arquivo de comprovante', 'grave'], ['Contratação acima do limite', 'Pessoal contratado no município passa o limite da Lei 9.504/1997, art. 100-A', 'critico']].map(([a, b, c]) => `<tr><td><b>${a}</b></td><td>${b}</td><td>${CIC.selo(c)}</td></tr>`).join('')}</tbody></table></section>`;
 };
 
 /* ---------- RELATÓRIOS ---------- */

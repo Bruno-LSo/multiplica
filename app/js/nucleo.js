@@ -27,7 +27,7 @@ function fmtTel(d) { return d.length === 11 ? `(${d.slice(0, 2)}) ${d.slice(2, 7
 Object.assign(CIC, { fN, fP, fR, fD, fDA, fDH, DIA, esc, clamp, rngDe, hashStr, iniciais, fmtTel });
 
 /* ---------- armazenamento local (só conveniência do protótipo) ---------- */
-const CHAVE = 'cic.prototipo.v6';
+const CHAVE = 'cic.prototipo.v7';
 CIC.ler = () => { try { return JSON.parse(localStorage.getItem(CHAVE) || 'null'); } catch { return null; } };
 CIC.gravar = () => {
   try {
@@ -118,12 +118,8 @@ CIC.OPCOES_PERFIL = [
   ['soPropriaRede', 'Vê só a própria rede', 'Para lideranças: só quem entrou pelo link dela.'],
 ];
 CIC.PERFIS_PADRAO = {
-  admin: { nome: 'Administrador', desc: 'Vê e muda tudo da campanha. Cria usuários e muda permissões.', rotas: CIC.AREAS.map((a) => a[0]), verDados: true, edita: true, financeiro: true, fixo: true },
-  coord: { nome: 'Coordenação', desc: 'Cuida das pessoas, do mapa e das metas. Não vê dinheiro.', rotas: ['painel', 'alertas', 'contatos', 'rede', 'liderancas', 'territorio', 'cenarios', 'relatorios', 'auditoria'], verDados: true, edita: true },
-  coordreg: { nome: 'Coordenação de região', desc: 'Cuida só da própria região. Não vê dinheiro.', rotas: ['painel', 'alertas', 'contatos', 'rede', 'liderancas', 'territorio', 'relatorios'], verDados: true, travaEscopo: true },
-  financeiro: { nome: 'Financeiro', desc: 'Registra gastos e pagamentos e vê para onde foi o dinheiro. Não vê telefone das pessoas.', rotas: ['painel', 'alertas', 'acordos', 'relatorios'], financeiro: true },
-  analista: { nome: 'Analista de dados', desc: 'Vê números, mapas e simulações. Não vê nome nem telefone.', rotas: ['painel', 'alertas', 'liderancas', 'territorio', 'cenarios', 'relatorios'] },
-  lideranca: { nome: 'Liderança', desc: 'Vê só a própria rede e o próprio link de convite.', rotas: ['painel', 'rede'], verDados: true, soPropriaRede: true },
+  admin: { nome: 'Acesso total', desc: 'Vê e muda tudo da campanha: toda a rede, mapa, gastos, equipe e permissões.', rotas: CIC.AREAS.map((a) => a[0]), verDados: true, edita: true, financeiro: true, fixo: true },
+  lideranca: { nome: 'Liderança', desc: 'Cuida da própria rede: as pessoas que entraram pelo seu link e por quem elas chamaram. Não vê o resto da campanha nem dinheiro.', rotas: ['painel', 'alertas', 'contatos', 'rede', 'liderancas', 'relatorios'], verDados: true, soPropriaRede: true },
 };
 CIC.PERFIL_PARTIDO = { nome: 'Partido', desc: 'Vê os números de todas as campanhas, sem mudar nada. Cria o primeiro administrador de cada campanha.', rotas: ['painel'], partido: true };
 CIC.normPerfil = (p) => ({ ...p, mascara: !p.verDados });
@@ -145,12 +141,12 @@ CIC.pode = (rota) => {
 CIC.editaConfig = () => !!CIC.PERFIS[CIC.s.perfil]?.edita;
 CIC.usuarioAtual = () => {
   const s = CIC.s; if (!s.usuario) return 'Sem usuário';
-  return s.perfil === 'lideranca' && CIC.lideres ? 'Liderança ' + CIC.eu().nome : s.usuario.nome;
+  return s.usuario.nome;
 };
 /* equipe inicial de cada campanha (nomes fictícios). As campanhas D e E esperam o partido criar o 1º administrador. */
 CIC.EQUIPE_BASE = {
-  c1: [['Titular da candidatura', 'admin'], ['Paula Ferraz', 'coord'], ['Rui Campos', 'coordreg'], ['Lia Moraes', 'financeiro'], ['Caio Duarte', 'analista'], ['Joana Prado', 'lideranca']],
-  c2: [['Titular da candidatura B', 'admin'], ['Vera Leme', 'coord']],
+  c1: [['Titular da candidatura', 'admin'], ['Paula Ferraz', 'admin'], ['Rui Campos', 'lideranca'], ['Joana Prado', 'lideranca']],
+  c2: [['Titular da candidatura B', 'admin'], ['Vera Leme', 'lideranca']],
   c3: [['Titular da candidatura C', 'admin']],
   c4: [], c5: [],
 };
@@ -162,7 +158,7 @@ CIC.nomeVisivel = (pe) => {
   const partes = pe.nome.split(' ');
   return partes[0][0] + '. ' + partes[partes.length - 1][0] + '.';
 };
-CIC.telVisivel = (pe) => (CIC.PERFIS[CIC.s.perfil].mascara ? '(••) •••••-' + pe.tel.slice(-2) : fmtTel(pe.tel));
+CIC.telVisivel = (pe) => (CIC.PERFIS[CIC.s.perfil].mascara ? '(••) •••••-' + pe.tel.slice(-2) : pe.ddi && pe.ddi !== '55' ? `+${pe.ddi} ${pe.tel}` : '+55 ' + fmtTel(pe.tel));
 
 /* ---------- carga de dados do IBGE ---------- */
 CIC.carregarBase = async () => {
@@ -203,6 +199,7 @@ CIC.gerarDemo = (uf, campId = 'c1') => {
   const capital = lista.reduce((a, b) => (b.pop > a.pop ? b : a));
   const agora = Date.now();
   const pessoas = [];
+  const contasUsadas = new Set();
   let n = 0;
   const nova = (pai, cod, entrada, papel) => {
     const nome = NOMES[Math.floor(r() * NOMES.length)] + ' ' + SOBRENOMES[Math.floor(r() * SOBRENOMES.length)] + (r() < 0.35 ? ' ' + SOBRENOMES[Math.floor(r() * SOBRENOMES.length)] : '');
@@ -210,12 +207,15 @@ CIC.gerarDemo = (uf, campId = 'c1') => {
     const slug = nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(' ');
     const redes = [{ rede: 'whatsapp', id: '+55' + tel, url: 'https://wa.me/55' + tel, verif: r() < 0.7 }];
     for (const [rd, pr] of Object.entries(PROB_REDE)) if (r() < pr) {
-      const u = (slug[0] + (r() < 0.5 ? '.' : '') + slug[slug.length - 1] + (r() < 0.6 ? Math.floor(r() * 99) : '')).slice(0, 24);
-      redes.push({ rede: rd, id: rd === 'facebook' || rd === 'linkedin' ? u.replace(/\./g, '-') : '@' + u, url: '', verif: r() < 0.4 });
+      let u = (slug[0] + (r() < 0.5 ? '.' : '') + slug[slug.length - 1] + (r() < 0.6 ? Math.floor(r() * 99) : '')).slice(0, 22);
+      let id = rd === 'facebook' || rd === 'linkedin' ? u.replace(/\./g, '-') : '@' + u;
+      while (contasUsadas.has(rd + id)) id += Math.floor(r() * 10);
+      contasUsadas.add(rd + id);
+      redes.push({ rede: rd, id, url: '', verif: r() < 0.4 });
     }
     const st = r();
     const p = { id: n, cod: codigoDe(n + 1000), nome, tel, mun: cod, pai, entrada, papel, canal: pai == null ? '' : sorteioPeso(r, CANAIS),
-      status: st < 0.84 ? 'confirmado' : st < 0.975 ? 'pendente' : 'suspeito', redes, consContato: r() < 0.96, consPartido: r() < 0.55,
+      status: st < 0.86 ? 'confirmado' : 'pendente', redes, consContato: r() < 0.96, consPartido: r() < 0.55,
       acoes: Math.floor(r() * 30), acoesOk: 0, sim: false };
     p.acoesOk = Math.round(p.acoes * clamp(0.35 + r() * 0.6, 0, 1));
     n++; pessoas.push(p); return p;
@@ -488,8 +488,6 @@ CIC.alertas = () => {
   const add = (sev, regra, texto, rota, quantos) => out.push({ sev, regra, texto, rota, quantos });
   const paradas = CIC.lideres.filter((p) => v.includes(p) && p.rede >= 15 && p.n14 === 0);
   if (paradas.length) add('alerta', 'Liderança parada', `${fN.format(paradas.length)} lideranças com 15 ou mais pessoas na rede não trouxeram nenhum cadastro em 14 dias.`, 'liderancas', paradas.length);
-  const susp = v.filter((p) => p.status === 'suspeito');
-  if (susp.length) add('grave', 'Cadastro suspeito', `${fN.format(susp.length)} cadastros com sinal de duplicidade ou dado inválido esperam revisão.`, 'contatos?status=suspeito', susp.length);
   const ag = Date.now(); const s7 = v.filter((p) => ag - p.entrada < 7 * DIA).length; const a7 = v.filter((p) => ag - p.entrada >= 7 * DIA && ag - p.entrada < 14 * DIA).length;
   if (a7 && s7 < a7 * 0.8) add('alerta', 'Queda de ritmo', `Cadastros nos últimos 7 dias: ${fN.format(s7)}. Nos 7 dias anteriores: ${fN.format(a7)} (${fP.format((s7 / a7 - 1) * 100)}%).`, 'painel', 1);
   const ms = CIC.munisEscopo(); const cont = new Map(); v.forEach((p) => cont.set(p.mun, (cont.get(p.mun) || 0) + 1));
@@ -497,9 +495,6 @@ CIC.alertas = () => {
   if (vazios.length) add('alerta', 'Município grande sem rede', `${fN.format(vazios.length)} municípios com 50 mil habitantes ou mais (Censo 2022) não têm nenhum contato.`, 'territorio', vazios.length);
   const terr = CIC.verificarTerritorio();
   terr.filter((a) => a.tipo !== 'cobertura').forEach((a) => add('alerta', a.tipo === 'fora' ? 'Subgrupo fora do grupo-pai' : a.tipo === 'sobre' ? 'Sobreposição de grupos' : 'Grupo sem pai', a.texto, 'territorio', 1));
-  const contas = new Map(); v.forEach((p) => p.redes.forEach((rd) => { if (rd.rede === 'whatsapp') return; const k = rd.rede + rd.id; contas.set(k, (contas.get(k) || 0) + 1); }));
-  const rep = [...contas.values()].filter((x) => x > 1).length;
-  if (rep) add('info', 'Conta de rede social repetida', `${fN.format(rep)} contas de rede social aparecem em mais de um cadastro.`, 'contatos', rep);
   const semCons = v.filter((p) => !p.consContato).length;
   if (semCons) add('info', 'Sem consentimento de contato', `${fN.format(semCons)} contatos não autorizaram mensagens. A plataforma bloqueia o envio para eles.`, 'contatos', semCons);
   if (CIC.PERFIS[CIC.s.perfil].financeiro) {
@@ -583,7 +578,7 @@ CIC.resumoCamp = (campId) => {
     out.d1 += P.filter((p) => ag - p.entrada < DIA).length;
     out.lid += L.length; out.ativos += L.filter((p) => rec.has(p.id)).length;
     out.munRede += new Set(P.map((p) => p.mun)).size; out.munTotal += d.lista.length;
-    out.susp += P.filter((p) => p.status === 'suspeito').length;
+    out.susp += P.filter((p) => p.status === 'pendente').length;
     out.meta += Math.ceil((d.pessoas.length * 1.5) / 1000) * 1000;
     P.forEach((p) => { const k = Math.floor((ag - p.entrada) / DIA); const ini = k > 60 ? 0 : 60 - k; for (let i = ini; i <= 60; i++) out.serie[i]++; });
   });

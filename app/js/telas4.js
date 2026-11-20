@@ -19,7 +19,7 @@ T.entrar = (main) => {
   const s = CIC.s;
   const camps = Object.keys(CIC.CAMPANHAS_BASE).map((k) => { if (!s.store[k]) s.store[k] = CIC.novaCamp(k); return [k, s.store[k]]; });
   const [k1, c1] = camps[0];
-  const VE = { admin: 'Tudo da campanha. Cria usuários e perfis.', coord: 'Pessoas, mapa e metas. Sem dinheiro.', coordreg: 'Só a própria região. Sem dinheiro.', financeiro: 'Gastos e pagamentos. Sem telefones.', analista: 'Números e mapas. Sem nomes.', lideranca: 'Só a própria rede e o link.' };
+  const VE = { admin: 'Tudo da campanha: rede inteira, mapa, gastos e equipe.', lideranca: 'Só a própria rede: quem entrou pelo seu link e quem essas pessoas chamaram.' };
   const linha = (k, id, nome, perfil, ve, login) => `<button type="button" class="perfil-teste" data-camp="${k}" data-id="${id}" data-login="${esc(login)}"><span class="pt-perfil">${esc(perfil)}</span><span class="pt-nome">${esc(nome)}</span><span class="pt-ve">${esc(ve)}</span></button>`;
   main.innerHTML = `<div class="login">
     <section class="login-form" aria-labelledby="t-entrar">
@@ -72,7 +72,7 @@ T.equipe = (main) => {
   const podeMudar = CIC.PERFIS[s.perfil].rotas.includes('equipe');
   const regioes = s.grupos.filter((g) => g.nivel === 0).sort((a, b) => a.nome.localeCompare(b.nome));
   const admins = () => c.equipe.filter((u) => u.perfil === 'admin');
-  if (!c.perfis[T._perfilSel]) T._perfilSel = 'coord' in c.perfis ? 'coord' : Object.keys(c.perfis)[0];
+  if (!c.perfis[T._perfilSel]) T._perfilSel = 'lideranca' in c.perfis ? 'lideranca' : Object.keys(c.perfis)[0];
   const sel = T._perfilSel;
   const salvar = (acao, alvo, detalhe) => { CIC.aplicarPerfis(); if (CIC.ligarEquipe()) CIC.indexar(); CIC.audit(acao, alvo, detalhe); CIC.gravar(); T.equipe(main); CIC.montarTopo(); };
   const opcoesPerfil = (sel) => Object.entries(c.perfis).map(([k, p]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(p.nome)}</option>`).join('');
@@ -85,7 +85,7 @@ T.equipe = (main) => {
       <td><select class="u-perfil" aria-label="Perfil de ${esc(u.nome)}">${opcoesPerfil(u.perfil)}</select></td>
       <td>${c.perfis[u.perfil]?.travaEscopo ? `<select class="u-regiao" aria-label="Região de ${esc(u.nome)}"><option value="">Escolha a região</option>${opcoesRegiao(u.regiao)}</select>` : '<span class="pend">todas</span>'}</td>
       <td>${esc(u.criadoPor || '-')}</td><td class="n">${u.id === s.usuario.id ? '' : '<button class="bt sec peq u-tirar">Tirar acesso</button>'}</td></tr>`).join('')}</tbody></table></div></section>
-  <section class="cartao mt"><header><h2>Perfis e o que cada um vê</h2><p>Escolha um perfil e marque as telas dele. A mudança vale na hora para todas as pessoas do perfil. O Administrador vê tudo e não muda.</p></header>
+  <section class="cartao mt"><header><h2>Perfis e o que cada um vê</h2><p>Escolha um perfil e marque as telas dele. A mudança vale na hora para todas as pessoas do perfil. O perfil Acesso total vê tudo e não muda.</p></header>
     <div class="perfil-chips" role="tablist">${Object.entries(c.perfis).map(([k, p]) => { const n = c.equipe.filter((u) => u.perfil === k).length; return `<button role="tab" class="chip" data-sel="${k}" aria-selected="${k === sel}">${esc(p.nome)} <small>${fN.format(n)}</small></button>`; }).join('')}<button class="chip novo" id="novo-perfil">+ Criar perfil</button></div>
     ${(() => { const p = c.perfis[sel]; const n = c.equipe.filter((u) => u.perfil === sel).length; return `<article class="perfil-editor" data-p="${sel}"><p class="ajuda">${esc(p.desc || '')}</p>
       <div class="perfil-campos"><fieldset><legend>Telas que abre</legend><div class="marcas-grade">${CIC.AREAS.map(([a, nome]) => `<label class="marca"><input type="checkbox" data-area="${a}" ${p.rotas.includes(a) ? 'checked' : ''} ${p.fixo || a === 'painel' ? 'disabled' : ''}> ${esc(nome)}</label>`).join('')}</div></fieldset>
@@ -116,7 +116,7 @@ T.equipe = (main) => {
   main.querySelectorAll('.p-apagar').forEach((b) => b.addEventListener('click', () => { const k = b.closest('.perfil-editor').dataset.p; const nome = c.perfis[k].nome; delete c.perfis[k]; T._perfilSel = null; salvar('Apagou um perfil', nome); }));
   $('#novo-perfil').addEventListener('click', () => CIC.dialogo(`<p class="rotulo">Criar perfil</p><h2>Novo perfil</h2>
     <form class="form" id="np"><label>Nome do perfil<input name="nome" required placeholder="Por exemplo: Jurídico"></label>
-    <label>Começar igual a<select name="base">${opcoesPerfil('coord')}</select></label><p class="ajuda">Depois, marque e desmarque as telas no cartão do perfil.</p>
+    <label>Começar igual a<select name="base">${opcoesPerfil('lideranca')}</select></label><p class="ajuda">Depois, marque e desmarque as telas no cartão do perfil.</p>
     <div class="acoes-dl"><button class="bt">Criar</button><button type="button" class="bt sec" data-fechar>Cancelar</button></div></form>`,
     (el, fechar) => el.querySelector('#np').addEventListener('submit', (e) => {
       e.preventDefault(); const fd = new FormData(e.target); const nome = String(fd.get('nome')).trim(); if (!nome) return;
@@ -126,7 +126,7 @@ T.equipe = (main) => {
     })));
   $('#novo-usu').addEventListener('click', () => CIC.dialogo(`<p class="rotulo">Dar acesso</p><h2>Nova pessoa na equipe</h2>
     <form class="form" id="nu"><label>Nome<input name="nome" required autocomplete="off"></label>
-    <label>Perfil<select name="perfil">${opcoesPerfil('coord')}</select></label>
+    <label>Perfil<select name="perfil">${opcoesPerfil('lideranca')}</select></label>
     <label id="nu-reg" hidden>Região<select name="regiao">${opcoesRegiao()}</select></label>
     <p class="erro" id="nu-erro" role="alert"></p>
     <div class="acoes-dl"><button class="bt">Criar acesso</button><button type="button" class="bt sec" data-fechar>Cancelar</button></div></form>`,

@@ -292,7 +292,7 @@ tbody tr:last-child td { border-bottom: 0; }
       <a class="tela" href="app/#/auditoria"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i></i></div><div class="txt"><h4>Histórico de ações</h4><p>Quem fez o quê, quando e em qual estado, só da própria campanha. Busca, filtro por perfil e exportação.</p><span class="ir">abrir</span></div></a>
       <a class="tela" href="app/#/config"><div class="moldura m3" aria-hidden="true"><i></i><i></i><i></i><i class="t"></i></div><div class="txt"><h4>Ajustes da campanha</h4><p>Cargo, estados de atuação, redes aceitas e controles de segurança.</p><span class="ir">abrir</span></div></a>
       <a class="tela" href="app/#/cadastro"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i class="s"></i></div><div class="txt"><h4>Convite do apoiador</h4><p>"Paula te chamou": cadastro em 1 minuto pelo celular. No fim, o apoiador recebe o próprio link e o botão "Multiplique aí".</p><span class="ir">abrir</span></div></a>
-      <a class="tela" href="app/#/equipe"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i class="s"></i><i></i></div><div class="txt"><h4>Equipe e acessos</h4><p>O administrador dá acesso, cria perfis e marca as telas e regras de cada perfil, um perfil por vez.</p><span class="ir">abrir com o Administrador</span></div></a>
+      <a class="tela" href="app/#/equipe"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i class="s"></i><i></i></div><div class="txt"><h4>Equipe e acessos</h4><p>Quem tem acesso total dá acesso às pessoas, escolhe o perfil (Acesso total ou Liderança) e ajusta as telas de cada perfil.</p><span class="ir">abrir com Acesso total</span></div></a>
       <a class="tela" href="app/#/acessos"><div class="moldura m4" aria-hidden="true"><i class="t"></i><i></i><i></i><i></i><i></i></div><div class="txt"><h4>Acessos das campanhas</h4><p>O partido cria o primeiro administrador de cada campanha e entrega o login e a senha provisória.</p><span class="ir">abrir com o perfil Partido</span></div></a>
       <a class="tela" href="app/#/entrar"><div class="moldura m2" aria-hidden="true"><i></i><i class="s"></i><i></i></div><div class="txt"><h4>Entrar</h4><p>Um cartão por perfil de exemplo, com o que cada um vê. Login e senha ficam em segundo plano.</p><span class="ir">abrir</span></div></a>
     </div>
@@ -362,6 +362,22 @@ tbody tr:last-child td { border-bottom: 0; }
     </ul>
   </section>
 
+  <section id="cadastro">
+    <p class="rotulo">Cadastro</p>
+    <h2>Cada celular entra uma vez só, e tudo fica gravado no mesmo formato</h2>
+    <p>O apoiador preenche só 3 campos obrigatórios: nome, celular e cidade. E-mail, CPF e endereço são opcionais. A plataforma corrige o formato na hora e mostra embaixo de cada campo como ele fica gravado.</p>
+    <div class="tab-rolagem"><table><thead><tr><th>Campo</th><th>O que a pessoa digita</th><th>Como fica gravado</th></tr></thead><tbody>
+      <tr><td>Nome</td><td>maria DA silva de souza</td><td>Maria da Silva de Souza (preposição em minúscula)</td></tr>
+      <tr><td>Celular (chave única)</td><td>País em lista (Brasil já escolhido) e (11) 91234-5678</td><td>+5511912345678. Confere o DDD e o 9 do celular.</td></tr>
+      <tr><td>Cidade</td><td>Busca com lista: "sao jose dos"</td><td>Código IBGE do município e a UF</td></tr>
+      <tr><td>E-mail</td><td>Maria.Souza@GMAIL.com</td><td>maria.souza@gmail.com</td></tr>
+      <tr><td>CPF</td><td>529.982.247-25 ou 52998224725</td><td>52998224725, com os 2 dígitos verificadores conferidos</td></tr>
+      <tr><td>Endereço</td><td>Só o CEP</td><td>Rua, bairro, cidade e estado vêm do CEP (ViaCEP). A pessoa completa o número.</td></tr>
+      <tr><td>Redes sociais</td><td>@usuario ou o link do perfil</td><td>Formato único por rede</td></tr>
+    </tbody></table></div>
+    <p>Não entram dois cadastros com o mesmo celular, e-mail, CPF ou conta de rede social. Se o celular já existe, a indicação continua com quem trouxe primeiro. Por isso a plataforma não tem fila de "cadastro suspeito".</p>
+  </section>
+
   <section id="redes-sociais">
     <p class="rotulo">09 · Redes sociais</p>
     <h2>O apoiador escolhe a rede e digita a conta. A plataforma grava sempre igual.</h2>
@@ -391,7 +407,7 @@ tbody tr:last-child td { border-bottom: 0; }
   <section id="acordos">
     <p class="rotulo">10 · Gastos e pagamentos</p>
     <h2>Para onde foi o dinheiro</h2>
-    <p>A campanha registra cada gasto: com quem, o tipo de gasto, o valor combinado e cada pagamento, com data e forma. Contrato e comprovante são opcionais: a tela serve para gerenciar a campanha e saber para onde foi o dinheiro. O resumo mostra o valor pago por tipo de gasto e por cidade. A tela abre só para os perfis com acesso a ela (por padrão, Administrador e Financeiro). O partido não vê os gastos das campanhas.</p>
+    <p>A campanha registra cada gasto: com quem, o tipo de gasto, o valor combinado e cada pagamento, com data e forma. Contrato e comprovante são opcionais: a tela serve para gerenciar a campanha e saber para onde foi o dinheiro. O resumo mostra o valor pago por tipo de gasto e por cidade. A tela abre só para os perfis com acesso a ela (por padrão, só Acesso total). O partido não vê os gastos das campanhas.</p>
     <div class="cartoes">
       <div class="cartao"><h4>Lista fechada de tipos de gasto</h4><p>Coordenação e mobilização contratadas, espaço, transporte, material, estrutura de evento e apoio político sem valor. Não existe campo para voto.</p></div>
       <div class="cartao"><h4>Aprovação por outra pessoa</h4><p>Se a campanha quiser, quem registra não aprova. O gasto fica "aguardando" até outra pessoa com acesso ao dinheiro aprovar.</p></div>
@@ -454,7 +470,7 @@ lideranças necessárias = contatos necessários ÷ contatos por liderança</div
     <p>O Início abre com uma saudação e a frase do dia: quantas pessoas entraram hoje e em 7 dias, e quantas faltam para a meta. Logo abaixo: o link de convite da pessoa, com o botão "Multiplique aí", e "O que fazer agora", com até 3 avisos e o botão que resolve cada um. Depois vêm os números, o mapa, as fontes iniciais que mais cresceram e quem entrou ao vivo. O que não cabe na tela vira partes, com abas no alto.</p>
     <p>O seletor "Ver números de", no alto, filtra tudo pela região. O perfil Liderança vê a própria rede e o próprio link. O perfil Partido começa em Campanhas do partido.</p>
     <h3>Avisos</h3>
-    <p>12 regras no protótipo, em 4 gravidades: crítica, grave, atenção e informação. A cor da gravidade sempre vem com ícone e nome. Exemplos: liderança parada, queda de ritmo, cadastro suspeito, município grande sem rede, subgrupo fora do grupo-pai, gasto sem documento. Na versão completa, cada alerta vai por e-mail ou notificação ao responsável do grupo.</p>
+    <p>10 regras no protótipo, em 4 gravidades: crítica, grave, atenção e informação. A cor da gravidade sempre vem com ícone e nome. Exemplos: liderança parada, queda de ritmo, município grande sem rede, subgrupo fora do grupo-pai, gasto sem documento. Na versão completa, cada alerta vai por e-mail ou notificação ao responsável do grupo.</p>
     <h3>Relatórios em tempo real</h3>
     <p>Todo relatório sai da mesma base, na hora, com o recorte e o perfil atuais. O protótipo já exporta em CSV: contatos, indicadores por município, grupos do território, lideranças, acordos, desempenho das candidaturas (só partido) e registro de atividades. A versão completa soma o boletim diário em PDF, a meta contra o resultado por seção e as despesas no formato da prestação de contas. Toda exportação leva marca d'água e entra no registro.</p>
   </section>
@@ -476,15 +492,11 @@ lideranças necessárias = contatos necessários ÷ contatos por liderança</div
   <section id="perfis">
     <p class="rotulo">15 · Perfis e segurança</p>
     <h2>Cada pessoa vê só o que precisa ver</h2>
-    <p>Os perfis abaixo vêm prontos. O administrador de cada campanha muda as telas e as regras de qualquer perfil, menos do Administrador, e cria perfis novos. Todo perfil da campanha tem um link de convite.</p>
+    <p>Os perfis abaixo vêm prontos. São só 2 perfis prontos. Quem tem acesso total muda as telas e as regras da Liderança e pode criar perfis novos, se precisar. Todo perfil da campanha tem um link de convite.</p>
     <div class="tab-rolagem"><table><thead><tr><th>Perfil</th><th>Vê</th><th>Dado pessoal</th></tr></thead><tbody>
       <tr><td>Partido</td><td>Os números de todas as campanhas, só leitura. Cria o 1º administrador de cada campanha.</td><td>Nenhum</td></tr>
-      <tr><td>Administrador</td><td>Tudo da campanha. Dá acesso, cria perfis e escolhe as telas de cada perfil. Pode criar outros administradores.</td><td>Completo</td></tr>
-      <tr><td>Coordenação</td><td>Pessoas, mapa, simulações, planilhas e histórico. Sem dinheiro.</td><td>Completo</td></tr>
-      <tr><td>Coordenação de região</td><td>Só a própria região. Sem dinheiro.</td><td>Completo, só da região</td></tr>
-      <tr><td>Financeiro</td><td>Gastos e pagamentos, avisos e planilhas.</td><td>Mascarado</td></tr>
-      <tr><td>Analista de dados</td><td>Números, mapas e simulações.</td><td>Nenhum</td></tr>
-      <tr><td>Liderança</td><td>A própria rede e o próprio link.</td><td>Da própria rede</td></tr>
+      <tr><td>Acesso total</td><td>Tudo da campanha: a rede inteira, mapa, simulações, gastos, histórico, equipe e permissões. Pode criar outras contas de acesso total.</td><td>Completo</td></tr>
+      <tr><td>Liderança</td><td>Só a própria rede: quem entrou pelo seu link e quem essas pessoas chamaram. Início, avisos, lista de pessoas, quem trouxe quem, lideranças da própria rede e planilhas. Sem dinheiro e sem o resto da campanha.</td><td>Da própria rede</td></tr>
     </tbody></table></div>
     <h3>Controles</h3>
     <ul class="lista">
@@ -555,7 +567,7 @@ lideranças necessárias = contatos necessários ÷ contatos por liderança</div
       <tr><td>0 · Validação</td><td>Protótipo com 3 a 5 clientes (partido, candidatura, entidade)</td><td>Lista de ajustes aprovada e preço testado</td></tr>
       <tr><td>1 · Rede</td><td>Contratante, contas, estados de atuação, perfis, cadastro por link, redes sociais, consentimento, painel, registro</td><td>Uma campanha real cadastra a rede pelo link</td></tr>
       <tr><td>2 · Território e partido</td><td>Editor de grupos no banco, escopo por grupo, mapa em PMTiles, eleição municipal, painel do partido</td><td>O partido acompanha as candidaturas e a coordenação trabalha só no próprio grupo</td></tr>
-      <tr><td>3 · Decisão</td><td>IEL, avisos, simulações, gastos e pagamentos, planilhas</td><td>Financeiro registra os gastos e vê para onde foi o dinheiro</td></tr>
+      <tr><td>3 · Decisão</td><td>IEL, avisos, simulações, gastos e pagamentos, planilhas</td><td>Quem tem acesso total registra os gastos e vê para onde foi o dinheiro</td></tr>
       <tr><td>4 · Eleição</td><td>Apuração ao vivo, meta contra resultado por seção, conversão em voto</td><td>IEL completo com conversão e meta do ciclo seguinte</td></tr>
     </tbody></table></div>
     <h3>Riscos</h3>
@@ -574,7 +586,7 @@ lideranças necessárias = contatos necessários ÷ contatos por liderança</div
     <p>O protótipo roda no navegador. Estados, municípios, códigos, mapas e população são reais (IBGE). Pessoas, telefones, contas de redes sociais, gastos, aliados, partidos e as 5 candidaturas são fictícios. Os telefones usam o DDD 00, que não existe.</p>
     <ul class="lista">
       <li><b>Entre como Partido</b> na tela de entrada, veja os números de cada campanha e crie o 1º administrador da Candidatura D.</li>
-      <li><b>Entre como Administrador</b>, abra Equipe e acessos, crie um perfil e tire uma tela dele. Entre com esse perfil e veja o menu mudar.</li>
+      <li><b>Entre com Acesso total</b>, abra Equipe e acessos, crie um perfil e tire uma tela dele. Entre com esse perfil e veja o menu mudar.</li>
       <li><b>Marque um segundo estado</b> em Ajustes da campanha e troque o estado no alto.</li>
       <li><b>Monte uma divisão</b> pelo botão "Escolher municípios": marque, desmarque, crie grupos e tente pôr um município fora do grupo-pai.</li>
       <li><b>Toque em "Multiplique aí"</b> no Início, abra o seu link e cadastre-se como apoiador. Depois, veja a fonte inicial na Lista de pessoas.</li>

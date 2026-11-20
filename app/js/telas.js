@@ -150,7 +150,7 @@ CIC.dialogo = (html, aoMontar) => {
 };
 CIC.cabecalho = (rotulo, titulo, texto, extra = '') => `<header class="cab"><div><p class="rotulo">${esc(rotulo)}</p><h1>${titulo}</h1>${texto ? `<p class="lead">${texto}</p>` : ''}</div>${extra}</header>`;
 CIC.mun = (cod) => CIC.demo.mun.get(cod);
-CIC.nomeMun = (cod) => CIC.mun(cod)?.nome || 'Município';
+CIC.nomeMun = (cod) => CIC.mun(cod)?.nome || CIC.munBR?.().porCod.get(cod)?.nome || 'Município';
 CIC.linkPessoal = (p) => `${location.origin}${location.pathname}#/cadastro?ref=${p.cod}`;
 CIC.linkMarca = (p) => `multipliqueai.com.br/${String(p.cod).toLowerCase()}`;
 CIC.SIMBOLO = '<svg class="marca-simbolo" viewBox="0 0 64 64" aria-hidden="true"><path d="M15 53 L40 28" stroke="#14b8a6" stroke-width="10" stroke-linecap="round" fill="none"/><circle cx="50" cy="16" r="7.5" fill="#14b8a6"/><path d="M49 53 L24 28" stroke="#ff7a59" stroke-width="10" stroke-linecap="round" fill="none"/><circle cx="14" cy="16" r="7.5" fill="#ff7a59"/></svg>';
@@ -333,7 +333,7 @@ T.blocoPartido = (m) => {
   <table class="tab"><thead><tr><th>Conta</th><th>Cargo</th><th class="n">Contatos</th><th class="n">Parte do total do partido</th></tr></thead><tbody>${contas.map((c) => `<tr><td><b>${esc(c[0])}</b></td><td>${esc(c[1])}</td><td class="n">${fN.format(c[2])}</td><td class="n">${fP.format((c[2] / tot) * 100)}%</td></tr>`).join('')}</tbody>
   <tfoot><tr><td colspan="2">Total do partido</td><td class="n">${fN.format(tot)}</td><td class="n">100,0%</td></tr></tfoot></table></section>`;
 };
-T.blocoMeuLink = (eu) => { const link = CIC.linkPessoal(eu); return `<section class="cartao link-pessoal compacto"><div class="lp-txt"><h2>Seu link de convite</h2><p>Quem entrar por este link fica na sua rede. Quem essa pessoa chamar também conta para você. Hoje: <b>${fN.format(eu.diretos)}</b> pessoas convidadas por você e <b>${fN.format(eu.rede)}</b> na sua rede inteira.</p></div>
+T.blocoMeuLink = (eu) => { const link = CIC.linkPessoal(eu); return `<section class="cartao link-pessoal compacto"><div class="lp-txt"><h2>Seu link de convite</h2><p>Cada pessoa que se cadastra pelo seu link fica ligada a você e ganha o próprio link. Quem ela chamar também entra na sua rede.${eu.pai != null && CIC.idx.porId.get(eu.pai)?.papel !== 'candidato' ? ` Você veio da rede de <b>${esc(CIC.rotuloFonte(eu))}</b>.` : ''} Hoje: <b>${fN.format(eu.diretos)}</b> pessoas convidadas por você e <b>${fN.format(eu.rede)}</b> na sua rede inteira.</p></div>
   <div class="lp-acoes"><span class="link-marca" title="Endereço na versão real">${esc(CIC.linkMarca(eu))}</span><div class="pilha-h"><a class="bt peq" href="https://wa.me/?text=${encodeURIComponent(CIC.textoConvite(link))}" target="_blank" rel="noopener">Multiplique aí</a><button class="bt peq sec" data-copiar="${esc(link)}">Copiar link</button><button class="bt peq sec" data-qr="${esc(link)}">Mostrar QR</button>${CIC.pode('rede') ? `<a class="bt peq sec" href="#/rede?p=${eu.id}">Ver minha rede</a>` : ''}</div></div></section>`; };
 
 /* entradas simuladas ao vivo */

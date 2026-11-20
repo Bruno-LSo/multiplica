@@ -22,7 +22,7 @@ T.partido = (main) => {
     <article class="kpi heroi"><p class="rotulo">Contatos de todas as candidaturas</p><p class="numero">${fN.format(tot)}</p><p class="sub"><b>+${fN.format(d7)}</b> em 7 dias · ${p7 ? `${d7 >= p7 ? '+' : ''}${fP.format((d7 / p7 - 1) * 100)}% sobre os 7 dias anteriores` : ''}</p></article>
     <article class="kpi"><p class="rotulo">Candidaturas</p><p class="numero">${fN.format(R.length)}</p><p class="sub">Em ${fN.format(ufs.size)} estados: ${[...ufs].map(esc).join(', ')}.</p></article>
     <article class="kpi"><p class="rotulo">Lideranças ativas</p><p class="numero">${fN.format(ativos)}<small> de ${fN.format(lid)}</small></p><p class="sub">Com 1 cadastro novo ou mais em 14 dias.</p></article>
-    <article class="kpi"><p class="rotulo">Cadastros suspeitos</p><p class="numero">${fN.format(R.reduce((a, r) => a + r.susp, 0))}</p><p class="sub">Somados em todas as candidaturas.</p></article>
+    <article class="kpi"><p class="rotulo">Celulares a confirmar</p><p class="numero">${fN.format(R.reduce((a, r) => a + r.susp, 0))}</p><p class="sub">Somados em todas as candidaturas.</p></article>
     <article class="kpi"><p class="rotulo">Meta somada</p><p class="numero">${fP.format((tot / R.reduce((a, r) => a + r.meta, 0)) * 100)}%</p><p class="sub">Dos ${fN.format(R.reduce((a, r) => a + r.meta, 0))} contatos de meta das candidaturas.</p></article>
   </section>
   <section class="cartao"><header><h2>Desempenho por campanha</h2><p>Toque em "Ver números" para abrir o início da campanha, só para leitura.</p></header>
@@ -48,7 +48,7 @@ T.partido = (main) => {
     CIC.ativar(b.dataset.abrir); T._terr = null; CIC.audit('Partido abriu os números da campanha', CIC.campAtual().nome); CIC.ir('painel');
   });
   $('#csv-partido').addEventListener('click', () => {
-    CIC.baixarCSV(`desempenho-candidaturas.csv`, ['candidatura', 'cargo', 'estados', 'contatos', 'novos_7d', 'novos_7d_anteriores', 'liderancas_ativas', 'liderancas', 'municipios_com_rede', 'municipios', 'meta_contatos', 'suspeitos'],
+    CIC.baixarCSV(`desempenho-candidaturas.csv`, ['candidatura', 'cargo', 'estados', 'contatos', 'novos_7d', 'novos_7d_anteriores', 'liderancas_ativas', 'liderancas', 'municipios_com_rede', 'municipios', 'meta_contatos', 'celulares_a_confirmar'],
       R.map((r) => [r.nome, CIC.CARGOS[r.cargo].nome, r.ufs.join(' '), r.total, r.d7, r.p7, r.ativos, r.lid, r.munRede, r.munTotal, r.meta, r.susp]));
   });
 };
