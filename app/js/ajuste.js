@@ -17,6 +17,7 @@ const umaColuna = (el) => {
   return cs.display === 'block';
 };
 const titulo = (els) => {
+  for (const el of els) { const t = el.dataset?.titulo || el.querySelector?.('[data-titulo]')?.dataset.titulo; if (t) return t; }
   for (const sel of ['h2', 'h3', 'legend', '.rotulo']) for (const el of els) { const t = el.matches(sel) ? el : el.querySelector(sel); if (t && t.textContent.trim()) return t.textContent.trim().replace(/\s*\(\d[\d.]*\)$/, ''); }
   for (const el of els) if (el.querySelector('table') || el.matches('table, .tab-rolagem')) return 'Lista';
   return '';
@@ -66,7 +67,7 @@ CIC.ajustar = (main = $('#principal')) => {
   soltarTabelas(main);
   const filhos = [...main.children].filter((e) => e.tagName !== 'SCRIPT');
   let i = 0; const cab = [];
-  while (i < filhos.length && (filhos[i].matches('.cab, nav.abas, .faixa-partido, .bloqueio'))) cab.push(filhos[i++]);
+  while (i < filhos.length && (filhos[i].matches('.cab, nav.abas, .faixa-partido, .bloqueio, .rede-barra'))) cab.push(filhos[i++]);
   let blocos = filhos.slice(i);
   const cs = getComputedStyle(main);
   const H = main.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - cab.reduce((a, e) => a + alt(e), 0) - 52;

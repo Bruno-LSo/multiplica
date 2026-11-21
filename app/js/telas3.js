@@ -18,6 +18,12 @@ T.partido = (main) => {
   const ufs = new Set(R.flatMap((r) => r.ufs));
   main.innerHTML = `${CIC.cabecalho('Campanhas do partido', esc(CIC.PARTIDO), 'Os números de cada campanha, lado a lado. O partido só vê números: não vê nomes, telefones, contratos nem pagamentos, e não muda nada.',
     '<div class="cab-acoes"><button class="bt sec" id="csv-partido">Baixar desempenho (CSV)</button></div>')}
+  <section class="cartao"><header><h2>Desempenho por campanha</h2><p>Da campanha com mais pessoas para a com menos. Toque em "Ver números" para abrir os números de uma campanha, só para leitura.</p></header>
+  <div class="tab-rolagem"><table class="tab"><thead><tr><th>Candidatura</th><th>Estados</th><th class="n">Pessoas</th><th class="n">+7 dias</th><th class="n">Ritmo</th><th class="n">Lideranças ativas</th><th class="n">Municípios com rede</th><th class="n">Meta</th><th>Últimos 60 dias</th><th></th></tr></thead><tbody>
+  ${R.sort((a, b) => b.total - a.total).map((r) => `<tr><td><b>${esc(r.nome)}</b><small>${esc(CIC.CARGOS[r.cargo].nome)}</small></td><td>${r.ufs.map(esc).join(', ')}</td><td class="n">${fN.format(r.total)}</td><td class="n">+${fN.format(r.d7)}</td>
+    <td class="n">${r.p7 ? `<span class="${r.d7 < r.p7 * 0.8 ? 'ruim' : ''}">${r.d7 >= r.p7 ? '+' : ''}${fP.format((r.d7 / r.p7 - 1) * 100)}%</span>` : '-'}</td><td class="n">${fN.format(r.ativos)} / ${fN.format(r.lid)}</td>
+    <td class="n">${fP.format((r.munRede / r.munTotal) * 100)}%</td><td class="n">${fP.format((r.total / r.meta) * 100)}%</td><td data-serie="${r.id}">${linhaMini(r.serie)}</td><td><button class="bt peq" data-abrir="${r.id}">Ver números</button></td></tr>`).join('')}</tbody></table></div>
+  <p class="ajuda">Ritmo: cadastros dos últimos 7 dias sobre os 7 dias anteriores. Em vermelho: queda de mais de 20%. Municípios com rede: parte dos municípios dos estados da candidatura com 1 contato ou mais.</p></section>
   <section class="grade-kpi">
     <article class="kpi heroi"><p class="rotulo">Contatos de todas as candidaturas</p><p class="numero">${fN.format(tot)}</p><p class="sub"><b>+${fN.format(d7)}</b> em 7 dias · ${p7 ? `${d7 >= p7 ? '+' : ''}${fP.format((d7 / p7 - 1) * 100)}% sobre os 7 dias anteriores` : ''}</p></article>
     <article class="kpi"><p class="rotulo">Candidaturas</p><p class="numero">${fN.format(R.length)}</p><p class="sub">Em ${fN.format(ufs.size)} estados: ${[...ufs].map(esc).join(', ')}.</p></article>
@@ -25,12 +31,6 @@ T.partido = (main) => {
     <article class="kpi"><p class="rotulo">Celulares a confirmar</p><p class="numero">${fN.format(R.reduce((a, r) => a + r.susp, 0))}</p><p class="sub">Somados em todas as candidaturas.</p></article>
     <article class="kpi"><p class="rotulo">Meta somada</p><p class="numero">${fP.format((tot / R.reduce((a, r) => a + r.meta, 0)) * 100)}%</p><p class="sub">Dos ${fN.format(R.reduce((a, r) => a + r.meta, 0))} contatos de meta das candidaturas.</p></article>
   </section>
-  <section class="cartao"><header><h2>Desempenho por campanha</h2><p>Toque em "Ver números" para abrir o início da campanha, só para leitura.</p></header>
-  <div class="tab-rolagem"><table class="tab"><thead><tr><th>Candidatura</th><th>Estados</th><th class="n">Contatos</th><th class="n">+7 dias</th><th class="n">Ritmo</th><th class="n">Lideranças ativas</th><th class="n">Municípios com rede</th><th class="n">Meta</th><th>Últimos 60 dias</th><th></th></tr></thead><tbody>
-  ${R.sort((a, b) => b.total - a.total).map((r) => `<tr><td><b>${esc(r.nome)}</b><small>${esc(CIC.CARGOS[r.cargo].nome)}</small></td><td>${r.ufs.map(esc).join(', ')}</td><td class="n">${fN.format(r.total)}</td><td class="n">+${fN.format(r.d7)}</td>
-    <td class="n">${r.p7 ? `<span class="${r.d7 < r.p7 * 0.8 ? 'ruim' : ''}">${r.d7 >= r.p7 ? '+' : ''}${fP.format((r.d7 / r.p7 - 1) * 100)}%</span>` : '-'}</td><td class="n">${fN.format(r.ativos)} / ${fN.format(r.lid)}</td>
-    <td class="n">${fP.format((r.munRede / r.munTotal) * 100)}%</td><td class="n">${fP.format((r.total / r.meta) * 100)}%</td><td data-serie="${r.id}">${linhaMini(r.serie)}</td><td><button class="bt peq" data-abrir="${r.id}">Ver números</button></td></tr>`).join('')}</tbody></table></div>
-  <p class="ajuda">Ritmo: cadastros dos últimos 7 dias sobre os 7 dias anteriores. Em vermelho: queda de mais de 20%. Municípios com rede: parte dos municípios dos estados da candidatura com 1 contato ou mais.</p></section>
   <section class="grade-2 mt">
     <article class="cartao"><header><h2>Contatos por candidatura</h2><p>Parte de cada candidatura no total do partido.</p></header><div id="g-camp"></div></article>
     <article class="cartao"><header><h2>Quem vê o quê</h2><p>Regra de acesso entre o partido e as candidaturas.</p></header>

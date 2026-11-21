@@ -20,6 +20,10 @@ T.entrar = (main) => {
   const camps = Object.keys(CIC.CAMPANHAS_BASE).map((k) => { if (!s.store[k]) s.store[k] = CIC.novaCamp(k); return [k, s.store[k]]; });
   const [k1, c1] = camps[0];
   const VE = { admin: 'Tudo da campanha: rede inteira, mapa, gastos e equipe.', lideranca: 'Só a própria rede: quem entrou pelo seu link e quem essas pessoas chamaram.' };
+  // o convite de exemplo é o link da 1ª liderança da campanha de exemplo
+  if (CIC.s.camp !== k1 || !CIC.idx) CIC.ativar(k1);
+  const lid1 = c1.equipe.find((u) => u.perfil === 'lideranca');
+  const apoiador = lid1 ? CIC.todas().find((p) => p.id === lid1.pessoas?.[c1.ufs[0]]) : null;
   const linha = (k, id, nome, perfil, ve, login) => `<button type="button" class="perfil-teste" data-camp="${k}" data-id="${id}" data-login="${esc(login)}"><span class="pt-perfil">${esc(perfil)}</span><span class="pt-nome">${esc(nome)}</span><span class="pt-ve">${esc(ve)}</span></button>`;
   main.innerHTML = `<div class="login">
     <section class="login-form" aria-labelledby="t-entrar">
@@ -38,17 +42,20 @@ T.entrar = (main) => {
     <aside class="login-perfis" aria-labelledby="t-perfis">
       <p class="selo-demo">Versão de exemplo</p>
       <h2 id="t-perfis">Perfis para testar</h2>
-      <p class="login-sub">Escolha um perfil. O login e a senha entram no formulário. Depois, toque em Entrar.</p>
-      <p class="pt-grupo">${esc(c1.nome)} · ${esc(CIC.CARGOS[c1.cargo].nome)}</p>
-      <div class="pt-lista">${c1.equipe.map((u) => linha(k1, u.id, u.nome, c1.perfis[u.perfil]?.nome || u.perfil, VE[u.perfil] || '', u.login)).join('')}
-        ${linha('partido', 'partido', 'Secretaria do partido', 'Partido', 'Números de todas as campanhas.', 'secretaria@partido.exemplo')}</div>
-      <p class="pt-grupo">Outras campanhas (cada uma vê só a própria)</p>
-      <div class="pt-lista curta">${camps.slice(1).flatMap(([k, c]) => c.equipe.length ? c.equipe.map((u) => linha(k, u.id, u.nome, `${c.nome} · ${c.perfis[u.perfil]?.nome || u.perfil}`, '', u.login)) : [`<p class="pt-vazio">${esc(c.nome)}: sem acesso ainda. Entre como Partido para criar.</p>`]).join('')}</div>
+      <p class="login-sub">Escolha um perfil. O login e a senha entram no formulário. Depois, toque em Entrar. A ordem vai do partido até o apoiador.</p>
+      <p class="pt-grupo">1. Partido</p>
+      <div class="pt-lista">${linha('partido', 'partido', 'Secretaria do partido', 'Partido', 'Compara os números de todas as campanhas. Cria o 1º acesso de cada uma.', 'secretaria@partido.exemplo')}</div>
+      <p class="pt-grupo">2. ${esc(c1.nome)} · ${esc(CIC.CARGOS[c1.cargo].nome)}</p>
+      <div class="pt-lista">${c1.equipe.slice().sort((a, b) => (a.perfil === 'admin' ? 0 : 1) - (b.perfil === 'admin' ? 0 : 1)).map((u) => linha(k1, u.id, u.nome, c1.perfis[u.perfil]?.nome || u.perfil, VE[u.perfil] || '', u.login)).join('')}</div>
+      <p class="pt-grupo">3. Apoiador (sem login)</p>
+      <div class="pt-lista">${apoiador ? `<a class="perfil-teste" href="#/cadastro?ref=${apoiador.cod}"><span class="pt-perfil">Apoiador</span><span class="pt-nome">Abrir o convite de ${esc(apoiador.nome)}</span><span class="pt-ve">A página que abre quando alguém toca no link. Quem se cadastra entra na rede de ${esc(apoiador.nome.split(' ')[0])}.</span></a>` : ''}</div>
+      <details class="pt-outras"><summary class="pt-grupo">Outras campanhas (cada uma vê só a própria)</summary>
+      <div class="pt-lista curta">${camps.slice(1).flatMap(([k, c]) => c.equipe.length ? c.equipe.map((u) => linha(k, u.id, u.nome, `${c.nome} · ${c.perfis[u.perfil]?.nome || u.perfil}`, '', u.login)) : [`<p class="pt-vazio">${esc(c.nome)}: sem acesso ainda. Entre como Partido para criar.</p>`]).join('')}</div></details>
     </aside>
   </div>`;
   let escolhido = null;
   main.querySelector('.login-perfis').addEventListener('click', (e) => {
-    const b = e.target.closest('.perfil-teste'); if (!b) return;
+    const b = e.target.closest('.perfil-teste'); if (!b || b.tagName === 'A') return;
     escolhido = { camp: b.dataset.camp, id: b.dataset.id };
     main.querySelectorAll('.perfil-teste').forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
     $('#e-login').value = b.dataset.login; $('#e-senha').value = 'exemplo123'; $('#e-erro').textContent = '';
@@ -80,10 +87,10 @@ T.equipe = (main) => {
   main.innerHTML = `${CIC.cabecalho('Equipe e acessos', 'Quem entra na campanha e o que vê', 'Dê acesso a uma pessoa e escolha o perfil dela. O perfil decide as telas que ela abre. Só esta campanha aparece aqui: o partido e as outras campanhas não veem a sua equipe.',
     '<div class="cab-acoes"><button class="bt" id="novo-usu">Dar acesso a uma pessoa</button></div>')}
   <section class="cartao"><header><h2>Pessoas com acesso</h2><p>${fN.format(c.equipe.length)} pessoas. ${fN.format(admins().length)} administradores.</p></header>
-    <div class="tab-rolagem"><table class="tab"><thead><tr><th>Pessoa</th><th>Perfil</th><th>Região</th><th>Criado por</th><th></th></tr></thead><tbody>
+    <div class="tab-rolagem"><table class="tab"><thead><tr><th>Pessoa</th><th>Perfil</th><th>O que alcança</th><th>Criado por</th><th></th></tr></thead><tbody>
     ${c.equipe.map((u) => `<tr data-u="${u.id}"><td><b>${esc(u.nome)}</b><small>${esc(u.login)}${u.id === s.usuario.id ? ' · você' : ''}</small></td>
       <td><select class="u-perfil" aria-label="Perfil de ${esc(u.nome)}">${opcoesPerfil(u.perfil)}</select></td>
-      <td>${c.perfis[u.perfil]?.travaEscopo ? `<select class="u-regiao" aria-label="Região de ${esc(u.nome)}"><option value="">Escolha a região</option>${opcoesRegiao(u.regiao)}</select>` : '<span class="pend">todas</span>'}</td>
+      <td>${c.perfis[u.perfil]?.travaEscopo ? `<select class="u-regiao" aria-label="Região de ${esc(u.nome)}"><option value="">Escolha a região</option>${opcoesRegiao(u.regiao)}</select>` : `<span class="pend">${c.perfis[u.perfil]?.soPropriaRede ? 'só a própria rede' : 'toda a campanha'}</span>`}</td>
       <td>${esc(u.criadoPor || '-')}</td><td class="n">${u.id === s.usuario.id ? '' : '<button class="bt sec peq u-tirar">Tirar acesso</button>'}</td></tr>`).join('')}</tbody></table></div></section>
   <section class="cartao mt"><header><h2>Perfis e o que cada um vê</h2><p>Escolha um perfil e marque as telas dele. A mudança vale na hora para todas as pessoas do perfil. O perfil Acesso total vê tudo e não muda.</p></header>
     <div class="perfil-chips" role="tablist">${Object.entries(c.perfis).map(([k, p]) => { const n = c.equipe.filter((u) => u.perfil === k).length; return `<button role="tab" class="chip" data-sel="${k}" aria-selected="${k === sel}">${esc(p.nome)} <small>${fN.format(n)}</small></button>`; }).join('')}<button class="chip novo" id="novo-perfil">+ Criar perfil</button></div>

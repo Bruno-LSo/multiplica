@@ -27,7 +27,7 @@ function fmtTel(d) { return d.length === 11 ? `(${d.slice(0, 2)}) ${d.slice(2, 7
 Object.assign(CIC, { fN, fP, fR, fD, fDA, fDH, DIA, esc, clamp, rngDe, hashStr, iniciais, fmtTel });
 
 /* ---------- armazenamento local (só conveniência do protótipo) ---------- */
-const CHAVE = 'cic.prototipo.v7';
+const CHAVE = 'cic.prototipo.v8';
 CIC.ler = () => { try { return JSON.parse(localStorage.getItem(CHAVE) || 'null'); } catch { return null; } };
 CIC.gravar = () => {
   try {
@@ -292,7 +292,8 @@ CIC.OBJETOS = [
 CIC.gerarAcordos = (demo) => {
   const r = rngDe(hashStr('acordos-' + CIC.s.uf + CIC.s.camp));
   const lid = demo.pessoas.filter((p) => p.papel === 'lideranca').sort((a, b) => b.id - a.id).slice(0, 24);
-  const usuarios = ['Financeiro 1', 'Financeiro 2', 'Coordenação geral'];
+  const adm = (CIC.s.store?.[CIC.s.camp]?.equipe || []).filter((u) => u.perfil === 'admin').map((u) => u.nome);
+  const usuarios = [adm[0] || 'Titular da candidatura', adm[1] || 'Tesouraria da campanha'];
   return lid.map((p, i) => {
     const obj = CIC.OBJETOS[Math.floor(r() * CIC.OBJETOS.length)][0];
     const valor = obj === 'apoio' ? 0 : Math.round((800 + r() * 7000) / 50) * 50;
@@ -300,7 +301,7 @@ CIC.gerarAcordos = (demo) => {
     for (let k = 0; k < npag && soma < valor; k++) { const v = Math.min(valor - soma, Math.round(valor / 3 / 50) * 50 || valor); soma += v; pagos.push({ data: Date.now() - (40 - k * 12) * DIA, valor: v, forma: r() < 0.88 ? 'PIX' : 'Espécie', comprovante: r() < 0.9 }); }
     const registrou = usuarios[Math.floor(r() * 2)];
     return { id: 'c' + (i + 1), pessoa: p.id, objeto: obj, negociado: valor, pagamentos: pagos, contrato: obj === 'apoio' ? false : r() < 0.88, spce: r() < 0.7,
-      registrou, aprovou: i === 5 ? registrou : r() < 0.85 ? (registrou === 'Financeiro 1' ? 'Financeiro 2' : 'Financeiro 1') : null,
+      registrou, aprovou: i === 5 ? registrou : r() < 0.85 ? (registrou === usuarios[0] ? usuarios[1] : usuarios[0]) : null,
       obs: ['Agenda semanal de visitas na região.', 'Inclui 2 eventos de bairro.', 'Pagamento em 3 parcelas após entrega.', 'Compromisso de indicar 30 lideranças locais.', 'Contrato com recibo eleitoral.'][Math.floor(r() * 5)], criado: Date.now() - (60 - i) * DIA };
   });
 };
@@ -486,17 +487,20 @@ CIC.alertas = () => {
   const out = [];
   const v = CIC.noEscopo();
   const add = (sev, regra, texto, rota, quantos) => out.push({ sev, regra, texto, rota, quantos });
+  const lider = !!CIC.PERFIS[CIC.s.perfil]?.soPropriaRede;
   const paradas = CIC.lideres.filter((p) => v.includes(p) && p.rede >= 15 && p.n14 === 0);
-  if (paradas.length) add('alerta', 'Liderança parada', `${fN.format(paradas.length)} lideranças com 15 ou mais pessoas na rede não trouxeram nenhum cadastro em 14 dias.`, 'liderancas', paradas.length);
+  if (paradas.length) add('alerta', 'Liderança parada', `${qt(paradas.length, 'liderança', 'lideranças')}${lider ? ' da sua rede' : ''} com 15 ou mais pessoas na rede não ${paradas.length === 1 ? 'trouxe' : 'trouxeram'} nenhum cadastro em 14 dias.`, 'liderancas', paradas.length);
   const ag = Date.now(); const s7 = v.filter((p) => ag - p.entrada < 7 * DIA).length; const a7 = v.filter((p) => ag - p.entrada >= 7 * DIA && ag - p.entrada < 14 * DIA).length;
   if (a7 && s7 < a7 * 0.8) add('alerta', 'Queda de ritmo', `Cadastros nos últimos 7 dias: ${fN.format(s7)}. Nos 7 dias anteriores: ${fN.format(a7)} (${fP.format((s7 / a7 - 1) * 100)}%).`, 'painel', 1);
   const ms = CIC.munisEscopo(); const cont = new Map(); v.forEach((p) => cont.set(p.mun, (cont.get(p.mun) || 0) + 1));
   const vazios = CIC.demo.lista.filter((m) => (!ms || ms.has(m.cod)) && m.pop >= 50000 && !cont.get(m.cod));
-  if (vazios.length) add('alerta', 'Município grande sem rede', `${fN.format(vazios.length)} municípios com 50 mil habitantes ou mais (Censo 2022) não têm nenhum contato.`, 'territorio', vazios.length);
+  if (vazios.length && !lider) add('alerta', 'Município grande sem rede', `${fN.format(vazios.length)} municípios com 50 mil habitantes ou mais (Censo 2022) não têm nenhum contato.`, 'territorio', vazios.length);
   const terr = CIC.verificarTerritorio();
-  terr.filter((a) => a.tipo !== 'cobertura').forEach((a) => add('alerta', a.tipo === 'fora' ? 'Subgrupo fora do grupo-pai' : a.tipo === 'sobre' ? 'Sobreposição de grupos' : 'Grupo sem pai', a.texto, 'territorio', 1));
+  if (!lider) terr.filter((a) => a.tipo !== 'cobertura').forEach((a) => add('alerta', a.tipo === 'fora' ? 'Subgrupo fora do grupo-pai' : a.tipo === 'sobre' ? 'Sobreposição de grupos' : 'Grupo sem pai', a.texto, 'territorio', 1));
   const semCons = v.filter((p) => !p.consContato).length;
-  if (semCons) add('info', 'Sem consentimento de contato', `${fN.format(semCons)} contatos não autorizaram mensagens. A plataforma bloqueia o envio para eles.`, 'contatos', semCons);
+  if (semCons) add('info', 'Sem consentimento de contato', `${qt(semCons, 'pessoa', 'pessoas')}${lider ? ' da sua rede' : ''} não ${semCons === 1 ? 'autorizou' : 'autorizaram'} mensagens. A plataforma bloqueia o envio para elas.`, 'contatos', semCons);
+  const aConf = v.filter((p) => p.status === 'pendente').length;
+  if (aConf) add('info', 'Celular a confirmar', `${qt(aConf, 'pessoa', 'pessoas')}${lider ? ' da sua rede' : ''} ainda não ${aConf === 1 ? 'confirmou' : 'confirmaram'} o celular pelo código do WhatsApp.`, 'contatos?status=pendente', aConf);
   if (CIC.PERFIS[CIC.s.perfil].financeiro) {
     const ac = CIC.s.acordos || [];
     const semContrato = ac.filter((a) => !a.contrato && a.pagamentos.length);

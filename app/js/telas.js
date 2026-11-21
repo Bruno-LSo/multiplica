@@ -16,14 +16,27 @@ CIC.rota = () => {
 };
 CIC.ir = (h) => { location.hash = '#/' + h; };
 /* Menu em 4 grupos, com nomes do dia a dia. "Pessoas" junta 3 telas em abas: lista, quem trouxe quem e lideranças. */
-CIC.MENU = [
-  ['partido', 'Campanhas do partido', 'Partido'], ['acessos', 'Acessos das campanhas', 'Partido'],
+/* O menu muda com o perfil:
+   - Partido: só as 3 telas do partido, na ordem do trabalho (comparar, abrir uma campanha, dar o 1º acesso).
+   - Liderança: 4 itens num grupo só, com a própria rede logo depois do Início.
+   - Acesso total: dia a dia, planejar e administrar. */
+CIC.MENU_CAMPANHA = [
   ['painel', 'Início', 'Dia a dia'], ['alertas', 'Avisos', 'Dia a dia'], ['pessoas', 'Pessoas', 'Dia a dia'],
   ['territorio', 'Mapa e regiões', 'Planejar'], ['cenarios', 'Simular votos', 'Planejar'],
-  ['acordos', 'Gastos e pagamentos', 'Administrar'], ['relatorios', 'Baixar planilhas', 'Administrar'], ['auditoria', 'Histórico de ações', 'Administrar'],
-  ['equipe', 'Equipe e acessos', 'Administrar'], ['config', 'Ajustes da campanha', 'Administrar'],
+  ['acordos', 'Gastos e pagamentos', 'Administrar'], ['equipe', 'Equipe e acessos', 'Administrar'], ['relatorios', 'Baixar planilhas', 'Administrar'],
+  ['auditoria', 'Histórico de ações', 'Administrar'], ['config', 'Ajustes da campanha', 'Administrar'],
 ];
-CIC.PESSOAS = [['contatos', 'Lista de pessoas'], ['rede', 'Quem trouxe quem'], ['liderancas', 'Melhores lideranças']];
+CIC.menuDe = () => {
+  const s = CIC.s; const p = CIC.PERFIS[s.perfil];
+  if (s.perfil === 'partido') return [['partido', 'Campanhas do partido', 'Partido'], ['painel', 'Números de uma campanha', 'Partido'], ['acessos', 'Acessos das campanhas', 'Partido']];
+  if (p?.soPropriaRede) return [['painel', 'Início', 'Minha rede'], ['pessoas', 'Minha rede', 'Minha rede'], ['alertas', 'Avisos', 'Minha rede'], ['relatorios', 'Baixar planilhas', 'Minha rede'], ...CIC.MENU_CAMPANHA.filter((m) => !['painel', 'pessoas', 'alertas', 'relatorios'].includes(m[0]))];
+  return CIC.MENU_CAMPANHA;
+};
+/* Abas de Pessoas. A liderança começa pela própria árvore; quem tem acesso total começa pela lista. */
+CIC.pessoasAbas = () => (CIC.PERFIS[CIC.s.perfil]?.soPropriaRede
+  ? [['rede', 'Quem trouxe quem'], ['contatos', 'Lista de pessoas'], ['liderancas', 'Lideranças da rede']]
+  : [['contatos', 'Lista de pessoas'], ['rede', 'Quem trouxe quem'], ['liderancas', 'Melhores lideranças']]);
+Object.defineProperty(CIC, 'PESSOAS', { get: () => CIC.pessoasAbas() });
 CIC.rotaPessoas = () => CIC.PESSOAS.map((x) => x[0]).find((k) => CIC.pode(k));
 CIC.abasPessoas = (atual) => {
   const L = CIC.PESSOAS.filter(([k]) => CIC.pode(k));
@@ -39,7 +52,7 @@ CIC.render = () => {
   document.body.classList.toggle('modo-cadastro', r.nome === 'cadastro' || r.nome === 'entrar');
   document.body.classList.toggle('modo-entrar', r.nome === 'entrar');
   CIC.dica.esconder();
-  if (!['cadastro', 'entrar'].includes(r.nome)) CIC.montarTopo();
+  if (!['cadastro', 'entrar'].includes(r.nome)) { CIC.montarMenu(); CIC.montarTopo(); }
   const emPessoas = CIC.PESSOAS.some(([k]) => k === r.nome);
   $$('#menu a').forEach((a) => {
     const nome = a.dataset.rota;
@@ -107,10 +120,15 @@ CIC.ligarTopo = () => {
   const aplicar = () => { if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t; $('#tema').setAttribute('aria-label', nomes[t]); $('#tema').title = nomes[t]; };
   aplicar();
   $('#tema').addEventListener('click', () => { t = temas[(temas.indexOf(t) + 1) % 3]; try { localStorage.setItem('cic.tema', t); } catch {} aplicar(); CIC.render(); });
-  const grupos = [...new Set(CIC.MENU.map((m) => m[2]))];
-  $('#menu').innerHTML = grupos.map((g) => `<div class="menu-grupo"><p class="menu-titulo">${esc(g)}</p>${CIC.MENU.filter((m) => m[2] === g).map(([k, v]) => `<a href="#/${k}" data-rota="${k}"><span>${v}</span>${k === 'alertas' ? '<b class="contador" hidden></b>' : ''}</a>`).join('')}</div>`).join('');
   $('#abrir-menu').addEventListener('click', () => document.body.classList.toggle('menu-aberto'));
   $('#menu').addEventListener('click', () => document.body.classList.remove('menu-aberto'));
+};
+
+CIC.montarMenu = () => {
+  const M = CIC.menuDe(); const chave = M.map((m) => m.join('|')).join(';');
+  if (CIC._menuChave === chave) return; CIC._menuChave = chave;
+  const grupos = [...new Set(M.map((m) => m[2]))];
+  $('#menu').innerHTML = grupos.map((g) => `<div class="menu-grupo"><p class="menu-titulo">${esc(g)}</p>${M.filter((m) => m[2] === g).map(([k, v]) => `<a href="#/${k}" data-rota="${k}"><span>${v}</span>${k === 'alertas' ? '<b class="contador" hidden></b>' : ''}</a>`).join('')}</div>`).join('');
 };
 
 /* ---------- utilidades de tela ---------- */
@@ -241,65 +259,72 @@ T.painel = (main) => {
   const titulo = ehPartido ? esc(CIC.campAtual().nome) : `${saud}, ${esc(primeiro)}`;
   const onde = perfil.soPropriaRede ? 'da sua rede' : `de ${esc(CIC.nomeEscopo())}`;
   const falta = Math.max(0, meta - m.total);
-  // o que fazer agora: os 3 avisos mais graves que o perfil consegue resolver
-  const fazer = perfil.soPropriaRede
-    ? [{ sev: 'info', regra: 'Convide mais gente', texto: `Mande o seu link para 5 pessoas hoje. Faltam ${fN.format(falta)} pessoas para a meta da sua rede.`, rota: null }]
-    : ehPartido ? [] : CIC.alertas().filter((a) => CIC.pode(a.rota.split('?')[0])).slice(0, 3);
-  main.innerHTML = `
-  ${CIC.cabecalho(ehPartido ? 'Números da campanha' : 'Início', titulo, `Hoje ${m.d1 === 1 ? 'entrou' : 'entraram'} <b>${fN.format(m.d1)}</b> ${m.d1 === 1 ? 'pessoa' : 'pessoas'} ${onde}. Nos últimos 7 dias, <b>${fN.format(m.d7)}</b>.${falta ? ` ${falta === 1 ? 'Falta' : 'Faltam'} <b>${fN.format(falta)}</b> ${falta === 1 ? 'pessoa' : 'pessoas'} para a meta.` : ' A meta foi batida.'}`,
-    `<div class="cab-acoes"><label class="chave"><input type="checkbox" id="sim" ${s.sim ? 'checked' : ''}><span>Simular entradas ao vivo</span></label></div>`)}
-  ${ehPartido ? `<p class="faixa-partido">O partido vê só os números de <b>${esc(CIC.campAtual().nome)}</b>, sem mudar nada. <a href="#/partido">Voltar às campanhas do partido</a></p>` : ''}
-  ${ehPartido ? '' : T.blocoMeuLink(eu)}
-  ${ehPartido ? '' : `<section class="fazer"><h2>O que fazer agora</h2>${fazer.length ? `<ol>${fazer.map((a) => `<li>${CIC.selo(a.sev)}<div><b>${esc(a.regra)}</b><p>${esc(a.texto)}</p></div>${a.rota ? `<a class="bt peq" href="#/${a.rota}">Resolver</a>` : `<button class="bt peq" data-copiar="${esc(CIC.linkPessoal(eu))}">Copiar meu link</button>`}</li>`).join('')}</ol>` : '<p class="vazio">Nada urgente agora. Bom trabalho.</p>'}</section>`}
-  <section class="grade-kpi">
-    <article class="kpi heroi">
-      <p class="rotulo">Pessoas na rede</p>
+  const lider = !!perfil.soPropriaRede;
+  // o que fazer agora: para a liderança, convidar vem primeiro; para o acesso total, os 3 avisos mais graves
+  const convide = { sev: 'info', regra: 'Convide mais gente', texto: `Mande o seu link para 5 pessoas hoje. ${falta === 1 ? 'Falta' : 'Faltam'} ${fN.format(falta)} ${falta === 1 ? 'pessoa' : 'pessoas'} para a meta da sua rede.`, rota: null };
+  const fazer = ehPartido ? [] : lider ? [convide, ...CIC.alertas().filter((a) => CIC.pode(a.rota.split('?')[0])).slice(0, 2)] : CIC.alertas().filter((a) => CIC.pode(a.rota.split('?')[0])).slice(0, 3);
+  const blocoFazer = ehPartido ? '' : `<section class="fazer"><h2>O que fazer agora</h2>${fazer.length ? `<ol>${fazer.map((a) => `<li>${CIC.selo(a.sev)}<div><b>${esc(a.regra)}</b><p>${esc(a.texto)}</p></div>${a.rota ? `<a class="bt peq" href="#/${a.rota}">Resolver</a>` : `<button class="bt peq" data-copiar="${esc(CIC.linkPessoal(eu))}">Copiar meu link</button>`}</li>`).join('')}</ol>` : '<p class="vazio">Nada urgente agora.</p>'}</section>`;
+  const kpiHeroi = `<article class="kpi heroi">
+      <p class="rotulo">${lider ? 'Pessoas na sua rede' : 'Pessoas na rede'}</p>
       <p class="numero" id="k-total">${fN.format(m.total)}</p>
       <p class="sub"><b id="k-d1">+${fN.format(m.d1)}</b> hoje · <b id="k-d7">+${fN.format(m.d7)}</b> em 7 dias</p>
-      <div class="meta"><div class="meta-trilha"><span style="width:${pm}%"></span></div><p><span id="k-pm">${fP.format(pm)}%</span> da meta de ${fN.format(meta)} pessoas ${perfil.soPropriaRede ? 'da sua rede' : 'desta região'}</p></div>
-    </article>
+      <div class="meta"><div class="meta-trilha"><span style="width:${pm}%"></span></div><p><span id="k-pm">${fP.format(pm)}%</span> da meta de ${fN.format(meta)} pessoas ${lider ? 'da sua rede' : 'desta região'}</p></div>
+    </article>`;
+  const kpis = lider ? `<section class="grade-kpi">${kpiHeroi}
+    <article class="kpi"><p class="rotulo">Convidadas por você</p><p class="numero">${fN.format(eu.diretos)}</p><p class="sub">Entraram direto pelo seu link. As outras ${fN.format(Math.max(0, m.total - eu.diretos))} vieram pelo link delas.</p></article>
+    <article class="kpi"><p class="rotulo">Lideranças trazendo gente</p><p class="numero">${fN.format(m.ativos)}<small> de ${fN.format(m.lid)}</small></p><p class="sub">Lideranças da sua rede com 1 cadastro novo ou mais em 14 dias.</p></article>
+    <article class="kpi"><p class="rotulo">Cidades alcançadas</p><p class="numero">${fN.format(new Set(v.map((p) => p.mun)).size)}</p><p class="sub">Cidades com 1 pessoa ou mais da sua rede.</p></article>
+    <article class="kpi"><p class="rotulo">Celular confirmado</p><p class="numero">${fP.format(m.total ? (m.conf / m.total) * 100 : 0)}%</p><p class="sub">${fN.format(m.conf)} das ${fN.format(m.total)} pessoas da sua rede.</p></article>
+  </section>` : `<section class="grade-kpi">${kpiHeroi}
     <article class="kpi"><p class="rotulo">Lideranças trazendo gente</p><p class="numero">${fN.format(m.ativos)}<small> de ${fN.format(m.lid)}</small></p><p class="sub">Trouxeram 1 pessoa ou mais nos últimos 14 dias.</p></article>
     <article class="kpi"><p class="rotulo">Cidades com apoiadores</p><p class="numero">${fN.format(m.munRede)}<small> de ${fN.format(m.munTotal)}</small></p><p class="sub">${fP.format(m.munTotal ? (m.munRede / m.munTotal) * 100 : 0)}% das cidades desta região têm 1 pessoa ou mais.</p></article>
     <article class="kpi"><p class="rotulo">Vieram por indicação</p><p class="numero">${fP.format(m.total ? (m.g2 / m.total) * 100 : 0)}%</p><p class="sub">${fN.format(m.g2)} das ${fN.format(m.total)} pessoas entraram pelo link de quem já estava na rede.</p></article>
     <article class="kpi"><p class="rotulo">Com outra rede social</p><p class="numero">${fP.format(m.total ? (m.comOutra / m.total) * 100 : 0)}%</p><p class="sub">${fN.format(m.comOutra)} das ${fN.format(m.total)} pessoas têm rede social além do WhatsApp.</p></article>
-  </section>
-  <section class="grade-2">
-    <article class="cartao"><header><h2>Crescimento da base</h2><p>Contatos acumulados por dia, nos últimos 120 dias.</p></header><div id="g-cresc"></div></article>
-    <article class="cartao"><header><h2>Onde a base está</h2><p>Contatos por 1.000 habitantes (Censo 2022). Clique no mapa para abrir o território.</p></header><div class="mini-mapa" id="g-mapa"></div><div id="g-legenda" class="legenda"></div></article>
-  </section>
-  <section class="grade-3">
-    <article class="cartao"><header><h2>Origem do cadastro</h2><p>Canal pelo qual o link chegou, em contatos.</p></header><div id="g-canal"></div></article>
-    <article class="cartao"><header><h2>Nível na rede</h2><p>Contatos por distância até a candidatura: 1 é indicação direta.</p></header><div id="g-nivel"></div></article>
-    <article class="cartao"><header><h2>Redes sociais cadastradas</h2><p>Contatos com conta registrada em cada rede.</p></header><div id="g-redes"></div></article>
-  </section>
-  <section class="grade-3l">
-    <article class="cartao"><header><h2>Fontes iniciais que mais cresceram</h2><p>Quem mandou o 1º link de cada ramo da rede, por cadastros novos em 7 dias no ramo inteiros.</p></header><div id="t-cresc"></div></article>
-    <article class="cartao"><header><h2>Quem entrou agora</h2><p>Últimas entradas, com quem chamou.</p></header><ol class="feed" id="feed"></ol></article>
-    <article class="cartao"><header><h2>Alertas abertos</h2><p>Regras que dispararam neste recorte.</p></header><div id="t-alertas"></div></article>
   </section>`;
+  const graficosBase = `<section class="grade-2">
+    <article class="cartao"><header><h2>${lider ? 'Crescimento da sua rede' : 'Crescimento da base'}</h2><p>Pessoas acumuladas por dia, nos últimos 120 dias.</p></header><div id="g-cresc"></div></article>
+    <article class="cartao"><header><h2>${lider ? 'Onde a sua rede está' : 'Onde a base está'}</h2><p>Pessoas por 1.000 habitantes (Censo 2022).${CIC.pode('territorio') ? ' Clique no mapa para abrir Mapa e regiões.' : ''}</p></header><div class="mini-mapa" id="g-mapa"></div><div id="g-legenda" class="legenda"></div></article>
+  </section>`;
+  const graficosOrigem = `<section class="grade-3">
+    <article class="cartao"><header><h2>Origem do cadastro</h2><p>Canal pelo qual o link chegou, em pessoas.</p></header><div id="g-canal"></div></article>
+    <article class="cartao"><header><h2>Nível na rede</h2><p>Pessoas por distância até a candidatura: 1 é indicação direta.</p></header><div id="g-nivel"></div></article>
+    <article class="cartao"><header><h2>Redes sociais cadastradas</h2><p>Pessoas com conta registrada em cada rede.</p></header><div id="g-redes"></div></article>
+  </section>`;
+  const quemCresce = `<section class="grade-2">
+    <article class="cartao"><header><h2>Quem entrou agora</h2><p>Últimas entradas${lider ? ' na sua rede' : ''}, com quem chamou.</p></header><ol class="feed" id="feed"></ol></article>
+    <article class="cartao"><header><h2>${lider ? 'Quem da sua rede mais trouxe gente' : 'Fontes iniciais que mais cresceram'}</h2><p>${lider ? 'Pessoas que você convidou, pelos cadastros novos em 7 dias no ramo de cada uma.' : 'Quem mandou o 1º link de cada ramo da rede, pelos cadastros novos em 7 dias no ramo inteiro.'}</p></header><div id="t-cresc"></div></article>
+  </section>`;
+  // ordem por perfil: liderança (convidar primeiro), partido (só números), acesso total (decidir primeiro)
+  const corpo = lider ? [T.blocoMeuLink(eu), blocoFazer, kpis, quemCresce, graficosBase]
+    : ehPartido ? [kpis, graficosBase, graficosOrigem]
+    : [blocoFazer, kpis, graficosBase, quemCresce, T.blocoMeuLink(eu), graficosOrigem];
+  main.innerHTML = `
+  ${CIC.cabecalho(ehPartido ? 'Números da campanha' : 'Início', titulo, `Hoje ${m.d1 === 1 ? 'entrou' : 'entraram'} <b>${fN.format(m.d1)}</b> ${m.d1 === 1 ? 'pessoa' : 'pessoas'} ${onde}. Nos últimos 7 dias, <b>${fN.format(m.d7)}</b>.${falta ? ` ${falta === 1 ? 'Falta' : 'Faltam'} <b>${fN.format(falta)}</b> ${falta === 1 ? 'pessoa' : 'pessoas'} para a meta.` : ' A meta foi batida.'}`,
+    `<div class="cab-acoes"><label class="chave"><input type="checkbox" id="sim" ${s.sim ? 'checked' : ''}><span>Simular entradas ao vivo</span></label></div>`)}
+  ${ehPartido ? `<p class="faixa-partido">O partido vê só os números de <b>${esc(CIC.campAtual().nome)}</b>, sem nomes e sem mudar nada. <a href="#/partido">Voltar às campanhas do partido</a></p>` : ''}
+  ${corpo.join('\n')}`;
   // crescimento
   const ag = Date.now(); const ini = ag - 120 * DIA;
   const dias = []; const ord = v.map((p) => p.entrada).sort((a, b) => a - b); let k = 0;
   const antes = ord.filter((t) => t < ini).length; k = antes;
   for (let t = ini; t <= ag + 1; t += DIA) { let novos = 0; while (k < ord.length && ord[k] < t + DIA) { k++; novos++; } dias.push({ t: new Date(t), v: k, n: novos }); }
-  G.linha($('#g-cresc'), dias, { rotulo: 'Contatos acumulados por dia', dica: (d) => `<b>${fDA.format(d.t)}</b><br>${fN.format(d.v)} contatos acumulados<br>+${fN.format(d.n)} no dia` });
-  // canais
-  const canais = d3.rollups(v, (x) => x.length, (p) => p.canal || 'Direto').map(([rotulo, valor]) => ({ rotulo, valor })).sort((a, b) => b.valor - a.valor);
-  G.barrasH($('#g-canal'), canais, { base: 'dos contatos do recorte' });
-  const niveis = d3.rollups(v, (x) => x.length, (p) => Math.min(p.gen, 7)).sort((a, b) => a[0] - b[0]).map(([g, valor]) => ({ rotulo: g === 7 ? '7+' : String(g), valor }));
-  G.colunas($('#g-nivel'), niveis, { rotulo: 'Contatos por nível na rede', prefixo: 'Nível ', base: 'dos contatos do recorte' });
-  const redes = Object.entries(CIC.REDES).map(([k2, r]) => ({ rotulo: r.nome, valor: v.filter((p) => p.redes.some((x) => x.rede === k2)).length })).filter((x) => x.valor).sort((a, b) => b.valor - a.valor);
-  G.barrasH($('#g-redes'), redes, { total: v.length, base: 'dos contatos do recorte' });
-  // top crescimento por raiz
-  const porRaiz = d3.rollups(v.filter((p) => ag - p.entrada < 7 * DIA && p.raiz != null), (x) => x.length, (p) => p.raiz).sort((a, b) => b[1] - a[1]).slice(0, 6);
-  $('#t-cresc').innerHTML = porRaiz.length ? `<table class="tab"><thead><tr><th>Liderança</th><th class="n">+7 dias</th><th class="n">Rede</th><th class="n">IEL</th></tr></thead><tbody>${porRaiz.map(([id, n]) => { const p = CIC.idx.porId.get(id); return `<tr data-ir="rede?p=${p.id}"><td><b>${esc(CIC.nomeVisivel(p))}</b><small>${esc(CIC.nomeMun(p.mun))}</small></td><td class="n">+${fN.format(n)}</td><td class="n">${fN.format(p.rede)}</td><td class="n">${p.iel != null ? `<span class="classe c${p.ielClasse}">${p.iel}</span>` : '-'}</td></tr>`; }).join('')}</tbody></table>` : '<p class="vazio">Nenhum cadastro novo em 7 dias neste recorte.</p>';
-  $('#t-cresc').addEventListener('click', (e) => { const tr = e.target.closest('tr[data-ir]'); if (tr && CIC.pode('rede')) CIC.ir(tr.dataset.ir); });
-  // feed
-  const feed = v.slice().sort((a, b) => b.entrada - a.entrada).slice(0, 7);
-  $('#feed').innerHTML = feed.map(T.itemFeed).join('');
-  // alertas
-  const al = CIC.alertas().slice(0, 4);
-  $('#t-alertas').innerHTML = al.length ? `<ul class="lista-alertas">${al.map((a) => `<li>${CIC.selo(a.sev)}<div><b>${esc(a.regra)}</b><p>${esc(a.texto)}</p></div></li>`).join('')}</ul>${CIC.pode("alertas") ? `<a class="ligacao" href="#/alertas">Ver os ${fN.format(CIC.alertas().length)} avisos</a>` : ""}` : '<p class="vazio">Nenhum alerta aberto.</p>';
+  G.linha($('#g-cresc'), dias, { rotulo: 'Pessoas acumuladas por dia', dica: (d) => `<b>${fDA.format(d.t)}</b><br>${fN.format(d.v)} pessoas acumuladas<br>+${fN.format(d.n)} no dia` });
+  if ($('#g-canal')) {
+    const canais = d3.rollups(v, (x) => x.length, (p) => p.canal || 'Direto').map(([rotulo, valor]) => ({ rotulo, valor })).sort((a, b) => b.valor - a.valor);
+    G.barrasH($('#g-canal'), canais, { base: 'das pessoas do recorte' });
+    const niveis = d3.rollups(v, (x) => x.length, (p) => Math.min(p.gen, 7)).sort((a, b) => a[0] - b[0]).map(([g, valor]) => ({ rotulo: g === 7 ? '7+' : String(g), valor }));
+    G.colunas($('#g-nivel'), niveis, { rotulo: 'Pessoas por nível na rede', prefixo: 'Nível ', base: 'das pessoas do recorte' });
+    const redes = Object.entries(CIC.REDES).map(([k2, r]) => ({ rotulo: r.nome, valor: v.filter((p) => p.redes.some((x) => x.rede === k2)).length })).filter((x) => x.valor).sort((a, b) => b.valor - a.valor);
+    G.barrasH($('#g-redes'), redes, { total: v.length, base: 'das pessoas do recorte' });
+  }
+  if ($('#t-cresc')) {
+    // liderança: ramo de cada pessoa que ela convidou; acesso total: fonte inicial de cada ramo
+    const ramo = (p) => { if (!lider) return p.raiz; let x = p; while (x && x.pai != null && x.pai !== eu.id) x = CIC.idx.porId.get(x.pai); return x && x.pai === eu.id ? x.id : null; };
+    const porRaiz = d3.rollups(v.filter((p) => ag - p.entrada < 7 * DIA), (x) => x.length, ramo).filter(([id]) => id != null).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    $('#t-cresc').innerHTML = porRaiz.length ? `<table class="tab"><thead><tr><th>${lider ? 'Pessoa' : 'Fonte inicial'}</th><th class="n">+7 dias</th><th class="n">Rede</th><th class="n">IEL</th></tr></thead><tbody>${porRaiz.map(([id, n]) => { const p = CIC.idx.porId.get(id); return `<tr data-ir="rede?p=${p.id}"><td><b>${esc(CIC.nomeVisivel(p))}</b><small>${esc(CIC.nomeMun(p.mun))}</small></td><td class="n">+${fN.format(n)}</td><td class="n">${fN.format(p.rede)}</td><td class="n">${p.iel != null ? `<span class="classe c${p.ielClasse}">${p.iel}</span>` : '-'}</td></tr>`; }).join('')}</tbody></table>` : `<p class="vazio">Nenhum cadastro novo em 7 dias ${lider ? 'na sua rede' : 'neste recorte'}.</p>`;
+    $('#t-cresc').addEventListener('click', (e) => { const tr = e.target.closest('tr[data-ir]'); if (tr && CIC.pode('rede')) CIC.ir(tr.dataset.ir); });
+  }
+  if ($('#feed')) { const feed = v.slice().sort((a, b) => b.entrada - a.entrada).slice(0, 7); $('#feed').innerHTML = feed.map(T.itemFeed).join(''); }
   // mapa
   T.miniMapa($('#g-mapa'), v, $('#g-legenda'));
   $('#sim').addEventListener('change', (e) => { s.sim = e.target.checked; CIC.gravar(); });
@@ -682,8 +707,8 @@ T.rede = async (main, r) => {
   const ag = Date.now();
   main.innerHTML = `
   ${CIC.cabecalho(perfil.soPropriaRede ? 'Minha rede' : 'Pessoas', 'Quem trouxe quem', perfil.soPropriaRede ? 'Cada pessoa que entrou pelo seu link, e quem ela trouxe depois. Toque em um nome para ver a rede dela.' : 'Cada cadastro guarda quem convidou. Toque em um nome para descer na rede, da candidatura até a última pessoa que entrou.')}
-  <div class="busca-rede"><input id="busca-p" type="search" placeholder="Buscar pessoa pelo nome ou pelo código do link" autocomplete="off"><ul id="res-p" class="resultados" hidden></ul></div>
-  <nav class="trilha" aria-label="Caminho da fonte inicial até esta pessoa">${camVis.map((x, i) => `${i ? '<span aria-hidden="true">›</span>' : ''}<a href="#/rede?p=${x.id}" ${x === p ? 'aria-current="page"' : ''}>${esc(x.papel === 'candidato' ? x.nome : CIC.nomeVisivel(x))}</a>`).join('')}</nav>
+  <div class="rede-barra"><div class="busca-rede"><input id="busca-p" type="search" placeholder="Buscar pessoa pelo nome ou pelo código do link" autocomplete="off"><ul id="res-p" class="resultados" hidden></ul></div>
+  ${camVis.length < 2 ? '' : `<nav class="trilha" aria-label="Caminho da fonte inicial até esta pessoa">${camVis.map((x, i) => `${i ? '<span aria-hidden="true">›</span>' : ''}<a href="#/rede?p=${x.id}" ${x === p ? 'aria-current="page"' : ''}>${esc(x.papel === 'candidato' ? x.nome : CIC.nomeVisivel(x))}</a>`).join('')}</nav>`}</div>
   <section class="grade-2 rede-topo">
     <article class="cartao pessoa">
       <div class="pessoa-cab"><span class="avatar">${esc(CIC.iniciais(p.nome))}</span><div><h2>${esc(p.papel === 'candidato' ? p.nome : CIC.nomeVisivel(p))}</h2><p>${esc({ candidato: 'Candidatura', lideranca: 'Liderança', apoiador: 'Apoiador' }[p.papel])} · ${esc(CIC.nomeMun(p.mun))} · nível ${p.gen}</p></div>${p.iel != null ? `<span class="classe c${p.ielClasse} grande" title="Índice de Eficácia da Liderança">${p.iel}<small>IEL ${p.ielClasse}</small></span>` : ''}</div>
@@ -691,7 +716,7 @@ T.rede = async (main, r) => {
         <div><dt>Indicações diretas</dt><dd>${fN.format(p.diretos)}</dd></div><div><dt>Pessoas na rede</dt><dd>${fN.format(p.rede)}</dd></div>
         <div><dt>Níveis abaixo</dt><dd>${fN.format(p.prof)}</dd></div><div><dt>Municípios alcançados</dt><dd>${fN.format(p.munSet.size)}</dd></div>
         <div><dt>Confirmados</dt><dd>${p.rede ? fP.format((p.conf / p.rede) * 100) + '%' : '-'}</dd></div><div><dt>Novos em 14 dias</dt><dd>${fN.format(p.n14)}</dd></div></dl>
-      ${p.papel !== 'candidato' ? `<p class="sub">Entrou em ${fDA.format(p.entrada)}${p.canal ? ` · canal: ${esc(p.canal)}` : ''}${p.pai != null ? ` · indicado por ${esc(CIC.nomeVisivel(CIC.idx.porId.get(p.pai)))}` : ''}</p><p class="fonte-ini">Fonte inicial: <b>${esc(CIC.rotuloFonte(p))}</b> · ${fN.format(Math.max(0, p.gen - 1))} ${p.gen - 1 === 1 ? 'pessoa' : 'pessoas'} entre a fonte e esta pessoa</p>` : ''}
+      ${p.papel !== 'candidato' ? `<p class="sub">Entrou em ${fDA.format(p.entrada)}${p.canal ? ` · canal: ${esc(p.canal)}` : ''}${p.pai != null ? ` · indicado por ${esc(CIC.nomeVisivel(CIC.idx.porId.get(p.pai)))}` : ''}</p>${CIC.fonte(p) !== p ? `<p class="fonte-ini">Fonte inicial: <b>${esc(CIC.rotuloFonte(p))}</b> · ${fN.format(Math.max(0, p.gen - 1))} ${p.gen - 1 === 1 ? 'pessoa' : 'pessoas'} entre a fonte e esta pessoa</p>` : ''}` : ''}
       <div class="link-mini"><div><p class="rotulo">Link de convite</p><code>${esc(CIC.linkMarca(p))}</code><div class="pilha-h"><button class="bt peq" data-copiar="${esc(CIC.linkPessoal(p))}">Copiar</button><a class="bt peq sec" href="#/cadastro?ref=${p.cod}">Abrir a página de cadastro</a></div></div><div class="qr">${CIC.qr(CIC.linkPessoal(p), 3)}</div></div>
     </article>
     <article class="cartao"><header><h2>Onde esta rede está</h2><p>Pessoas da rede abaixo de ${esc(p.papel === 'candidato' ? 'toda a candidatura' : CIC.nomeVisivel(p))}, por município.</p></header><div class="mini-mapa" id="mapa-rede"></div><div class="legenda" id="leg-rede"></div></article>

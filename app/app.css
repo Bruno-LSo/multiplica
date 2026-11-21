@@ -793,3 +793,18 @@ body.modo-entrar main { max-width: 1080px; padding: clamp(16px, 5vh, 56px) 16px;
 .opcionais > label { display: flex; margin: 12px 0 5px; }
 .opcionais > .campo { margin: 0; }
 .opcionais .end-grade { margin-top: 12px; }
+
+/* v8: barra de busca e caminho de Quem trouxe quem, junto do título */
+.rede-barra { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 14px; }
+.rede-barra .busca-rede { flex: 1 1 300px; max-width: 460px; margin: 0; }
+.rede-barra .trilha { flex: 1 1 280px; margin: 0; }
+.grade-2.sem-margem { margin-bottom: 0; }
+a.perfil-teste { text-decoration: none; color: inherit; }
+.sugestao { display: inline-block; margin-top: 6px; border: 1px dashed var(--linha-forte, var(--linha)); background: transparent; color: var(--tinta-2); font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 8px; cursor: pointer; }
+.sugestao:hover { color: var(--tinta); border-style: solid; }
+.rede-topo .mini-mapa { height: 250px; }
+/* a linha "Fica gravado assim" tem espaço reservado: a tela não pula quando o campo perde o foco */
+.cad .campo .grava { min-height: 1.5em; margin-top: 3px; }
+.pt-outras summary { cursor: pointer; list-style: none; }
+.pt-outras summary::before { content: '+ '; }
+.pt-outras[open] summary::before { content: '- '; }

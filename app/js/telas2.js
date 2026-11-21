@@ -6,7 +6,8 @@ const { $, $$, fN, fP, fR, fD, fDA, fDH, DIA, esc, T, G } = CIC;
 /* ---------- CONTATOS ---------- */
 T.contatos = (main, r) => {
   const st = { q: r.p.q || '', papel: r.p.papel || '', status: r.p.status || '', rede: r.p.rede || '', pag: 0 };
-  main.innerHTML = `${CIC.cabecalho('Pessoas', 'Lista de pessoas', 'Todas as pessoas que entraram na rede. Toque em um nome para ver a ficha. Quem não autorizou mensagem não recebe mensagem.')}
+  const lider = !!CIC.PERFIS[CIC.s.perfil].soPropriaRede; const eu = lider ? CIC.eu() : null;
+  main.innerHTML = `${CIC.cabecalho(lider ? 'Minha rede' : 'Pessoas', 'Lista de pessoas', lider ? 'Todas as pessoas da sua rede, das mais novas para as mais antigas. Toque em um nome para ver a ficha.' : 'Todas as pessoas que entraram na rede, das mais novas para as mais antigas. Toque em um nome para ver a ficha. Quem não autorizou mensagem não recebe mensagem.')}
   <div class="filtros">
     <input id="f-q" type="search" placeholder="Nome ou município" value="${esc(st.q)}">
     <select id="f-papel"><option value="">Todos os papéis</option><option value="lideranca">Lideranças</option><option value="apoiador">Apoiadores</option></select>
@@ -15,7 +16,7 @@ T.contatos = (main, r) => {
     <span class="contagem" id="f-n"></span>
   </div>
   ${CIC.PERFIS[CIC.s.perfil].mascara ? '<p class="faixa">O seu perfil vê o nome abreviado e o telefone escondido.</p>' : ''}
-  <div class="tab-rolagem"><table class="tab clicavel" data-propria-pagina><thead><tr><th>Pessoa</th><th>Município</th><th>Convidado por</th><th>Redes</th><th>Entrada</th><th>Situação</th></tr></thead><tbody id="t-cont"></tbody></table></div>
+  <div class="tab-rolagem"><table class="tab clicavel" data-propria-pagina><thead><tr><th>Pessoa</th><th>Município</th><th>Convidado por</th><th>Redes</th><th>Entrada</th><th>Celular</th></tr></thead><tbody id="t-cont"></tbody></table></div>
   <div class="paginas" id="paginas"></div>`;
   $('#f-papel').value = st.papel; $('#f-status').value = st.status; $('#f-rede').value = st.rede;
   const filtrar = () => {
@@ -26,7 +27,7 @@ T.contatos = (main, r) => {
     const v = filtrar(); const por = st.por || 40; const pags = Math.max(1, Math.ceil(v.length / por)); st.pag = Math.min(st.pag, pags - 1);
     $('#f-n').textContent = `${fN.format(v.length)} contatos`;
     $('#t-cont').innerHTML = v.slice(st.pag * por, st.pag * por + por).map((p) => { const pai = p.pai != null ? CIC.idx.porId.get(p.pai) : null;
-      return `<tr data-id="${p.id}" tabindex="0"><td><b>${esc(CIC.nomeVisivel(p))}</b><small>${p.papel === 'lideranca' ? 'Liderança' : 'Apoiador'} · nível ${p.gen}</small></td><td>${esc(CIC.nomeMun(p.mun))}</td><td>${pai ? esc(pai.papel === 'candidato' ? pai.nome : CIC.nomeVisivel(pai)) : '-'}<small>fonte: ${esc(CIC.rotuloFonte(p))}</small></td><td><span class="siglas">${p.redes.map((x) => `<abbr title="${esc(CIC.REDES[x.rede].nome)}">${CIC.REDES[x.rede].sigla}</abbr>`).join('')}</span></td><td>${fD.format(p.entrada)}</td><td><span class="situ s-${p.status}">${esc(p.status)}</span></td></tr>`; }).join('') || '<tr><td colspan="6" class="vazio">Nenhum contato com estes filtros.</td></tr>';
+      return `<tr data-id="${p.id}" tabindex="0"><td><b>${esc(CIC.nomeVisivel(p))}</b><small>${p.papel === 'lideranca' ? 'Liderança' : 'Apoiador'} · nível ${p.gen}</small></td><td>${esc(CIC.nomeMun(p.mun))}</td><td>${pai ? esc(pai.papel === 'candidato' ? pai.nome : CIC.nomeVisivel(pai)) : '-'}${!lider || CIC.fonte(p) !== eu ? `<small>fonte: ${esc(CIC.rotuloFonte(p))}</small>` : ''}</td><td><span class="siglas">${p.redes.map((x) => `<abbr title="${esc(CIC.REDES[x.rede].nome)}">${CIC.REDES[x.rede].sigla}</abbr>`).join('')}</span></td><td>${fD.format(p.entrada)}</td><td><span class="situ s-${p.status}">${p.status === 'pendente' ? 'a confirmar' : esc(p.status)}</span></td></tr>`; }).join('') || '<tr><td colspan="6" class="vazio">Nenhum contato com estes filtros.</td></tr>';
     $('#paginas').innerHTML = pags > 1 ? `<button class="bt sec peq" data-p="-1" ${st.pag ? '' : 'disabled'}>Anterior</button><span>Página ${st.pag + 1} de ${fN.format(pags)}</span><button class="bt sec peq" data-p="1" ${st.pag < pags - 1 ? '' : 'disabled'}>Próxima</button>` : '';
   };
   const url = () => { const q = new URLSearchParams(Object.entries({ q: st.q, papel: st.papel, status: st.status, rede: st.rede }).filter(([, v]) => v)); history.replaceState(null, '', '#/contatos' + (q.toString() ? '?' + q : '')); };
@@ -60,7 +61,7 @@ T.fichaContato = (p, depois) => {
   const html = () => `<p class="rotulo">${p.papel === 'lideranca' ? 'Liderança' : 'Apoiador'} · código ${esc(p.cod)}</p><h2>${esc(CIC.nomeVisivel(p))}</h2>
     <dl class="dados"><div><dt>Município</dt><dd>${esc(CIC.nomeMun(p.mun))}</dd></div><div><dt>Celular</dt><dd>${esc(CIC.telVisivel(p))}</dd></div>
       <div><dt>Entrada</dt><dd>${fDH.format(p.entrada)}</dd></div><div><dt>Canal</dt><dd>${esc(p.canal || '-')}</dd></div>
-      <div><dt>Situação</dt><dd><span class="situ s-${p.status}">${esc(p.status)}</span></dd></div><div><dt>Rede própria</dt><dd>${fN.format(p.rede)} pessoas</dd></div></dl>
+      <div><dt>Celular</dt><dd><span class="situ s-${p.status}">${p.status === 'pendente' ? 'a confirmar' : esc(p.status)}</span></dd></div><div><dt>Rede própria</dt><dd>${fN.format(p.rede)} pessoas</dd></div></dl>
     <p class="rotulo mt">De onde veio</p><p class="fonte-ini">Fonte inicial: <b>${esc(CIC.rotuloFonte(p))}</b></p><p class="trilha-txt">${cam.map((x) => esc(x.papel === 'candidato' ? x.nome : CIC.nomeVisivel(x))).join(' › ')} › <b>${esc(CIC.nomeVisivel(p))}</b></p>
     <p class="rotulo mt">Autorizações (LGPD)</p><ul class="cons"><li class="${p.consContato ? 'sim' : 'nao'}">${p.consContato ? 'Autorizou' : 'Não autorizou'} mensagens da campanha</li><li class="${p.consPartido ? 'sim' : 'nao'}">${p.consPartido ? 'Autorizou' : 'Não autorizou'} o partido a ver o cadastro</li></ul>
     <p class="rotulo mt">Redes sociais</p>
@@ -86,21 +87,23 @@ T.fichaContato = (p, depois) => {
 T.liderancas = (main) => {
   const st = { classe: '', ord: 'iel' };
   const NOMES = { vol: 'Volume', qua: 'Qualidade', ade: 'Adesão', mul: 'Multiplicação', rit: 'Ritmo', con: 'Conversão em voto' };
-  main.innerHTML = `${CIC.cabecalho('Pessoas', 'Melhores lideranças', 'Nota de 0 a 100 para cada liderança com 3 indicações ou mais. Quanto maior a nota, mais a liderança traz gente boa e constante. A nota se chama IEL (Índice de Eficácia da Liderança).')}
+  const perfil = CIC.PERFIS[CIC.s.perfil]; const lider = !!perfil.soPropriaRede; const ajusta = !!perfil.edita;
+  main.innerHTML = `${CIC.cabecalho(lider ? 'Minha rede' : 'Pessoas', lider ? 'Lideranças da sua rede' : 'Melhores lideranças', `Nota de 0 a 100 para cada liderança${lider ? ' da sua rede' : ''} com 3 indicações ou mais. Quanto maior a nota, mais a liderança traz gente boa e constante. A nota se chama IEL (Índice de Eficácia da Liderança).`)}
+  <div class="filtros"><select id="f-classe" aria-label="Classe"><option value="">Todas as classes</option><option value="A">Classe A (75 ou mais)</option><option value="B">Classe B (55 a 74)</option><option value="C">Classe C (35 a 54)</option><option value="D">Classe D (abaixo de 35)</option></select><select id="f-ord" aria-label="Ordem"><option value="iel">Ordenar por IEL</option><option value="rede">Ordenar por rede</option><option value="n14">Ordenar por novos em 14 dias</option></select><span class="contagem" id="n-lid"></span></div>
+  <div class="tab-rolagem" data-titulo="Lideranças"><table class="tab clicavel"><thead><tr><th>Liderança</th><th>Município</th><th class="n">Rede</th><th class="n">Novos 14 dias</th><th>Componentes</th><th class="n">IEL</th></tr></thead><tbody id="t-lid"></tbody></table></div>
   <section class="grade-iel">
-    <article class="cartao"><header><h2>Componentes e pesos</h2><p>Mude o peso e veja a classificação mudar.</p></header>
-      <ul class="pesos">${Object.entries(CIC.PESOS_IEL).map(([k, w]) => `<li><label for="w-${k}">${NOMES[k]}</label><input type="range" id="w-${k}" min="0" max="40" value="${w}" ${k === 'con' ? 'disabled' : ''}><output>${k === 'con' ? 'após a eleição' : w}</output></li>`).join('')}</ul>
-      <dl class="def"><dt>Volume</dt><dd>Pessoas na rede inteira abaixo da liderança.</dd><dt>Qualidade</dt><dd>Parte da rede com cadastro confirmado.</dd><dt>Adesão</dt><dd>Tarefas cumpridas sobre tarefas pedidas, puxada para 65% quando há poucas tarefas.</dd><dt>Multiplicação</dt><dd>Parte das indicações diretas que também indicaram alguém.</dd><dt>Ritmo</dt><dd>Cadastros dos últimos 14 dias sobre os 14 dias anteriores.</dd><dt>Conversão</dt><dd>Votos nas seções da rede acima do esperado, medido depois da eleição.</dd></dl></article>
-    <article class="cartao"><header><h2>Distribuição por classe</h2><p>A: 75 ou mais · B: 55 a 74 · C: 35 a 54 · D: abaixo de 35.</p></header><div id="g-classes"></div>
-      <div class="filtros"><select id="f-classe"><option value="">Todas as classes</option><option>A</option><option>B</option><option>C</option><option>D</option></select><select id="f-ord"><option value="iel">Ordenar por IEL</option><option value="rede">Ordenar por rede</option><option value="n14">Ordenar por novos em 14 dias</option></select></div></article>
-  </section>
-  <div class="tab-rolagem"><table class="tab clicavel"><thead><tr><th>Liderança</th><th>Município</th><th class="n">Rede</th><th class="n">Novos 14 dias</th><th>Componentes</th><th class="n">IEL</th></tr></thead><tbody id="t-lid"></tbody></table></div>`;
+    <article class="cartao"><header><h2>Distribuição por classe</h2><p>Lideranças${lider ? ' da sua rede' : ''} em cada classe. A: 75 ou mais · B: 55 a 74 · C: 35 a 54 · D: abaixo de 35.</p></header><div id="g-classes"></div></article>
+    <article class="cartao"><header><h2>Como a nota é feita</h2><p>${ajusta ? 'Mude o peso e veja a classificação mudar.' : 'Pesos definidos por quem tem acesso total.'}</p></header>
+      <ul class="pesos">${Object.entries(CIC.PESOS_IEL).map(([k, w]) => `<li><label for="w-${k}">${NOMES[k]}</label><input type="range" id="w-${k}" min="0" max="40" value="${w}" ${k === 'con' || !ajusta ? 'disabled' : ''}><output>${k === 'con' ? 'após a eleição' : w}</output></li>`).join('')}</ul>
+      <dl class="def"><dt>Volume</dt><dd>Pessoas na rede inteira abaixo da liderança.</dd><dt>Qualidade</dt><dd>Parte da rede com celular confirmado.</dd><dt>Adesão</dt><dd>Tarefas cumpridas sobre tarefas pedidas, puxada para 65% quando há poucas tarefas.</dd><dt>Multiplicação</dt><dd>Parte das indicações diretas que também indicaram alguém.</dd><dt>Ritmo</dt><dd>Cadastros dos últimos 14 dias sobre os 14 dias anteriores.</dd><dt>Conversão</dt><dd>Votos nas seções da rede acima do esperado, medido depois da eleição.</dd></dl></article>
+  </section>`;
   const desenhar = () => {
     CIC.calcularIEL();
     const dentro = new Set(CIC.noEscopo()); let L = CIC.lideres.filter((p) => dentro.has(p));
     G.colunas($('#g-classes'), ['A', 'B', 'C', 'D'].map((c) => ({ rotulo: c, valor: L.filter((p) => p.ielClasse === c).length })), { prefixo: 'Classe ', base: 'das lideranças do recorte' });
     if (st.classe) L = L.filter((p) => p.ielClasse === st.classe);
     L.sort((a, b) => b[st.ord] - a[st.ord]);
+    $('#n-lid').textContent = `${fN.format(L.length)} ${L.length === 1 ? 'liderança' : 'lideranças'}`;
     $('#t-lid').innerHTML = L.slice(0, 150).map((p) => `<tr data-ir="rede?p=${p.id}" tabindex="0"><td><b>${esc(CIC.nomeVisivel(p))}</b><small>nível ${p.gen} · ${fN.format(p.diretos)} diretas</small></td><td>${esc(CIC.nomeMun(p.mun))}</td><td class="n">${fN.format(p.rede)}</td><td class="n">${fN.format(p.n14)}</td>
       <td><span class="comp">${['vol', 'qua', 'ade', 'mul', 'rit'].map((k) => `<i title="${NOMES[k]}: ${p.ielComp[k]}" style="--v:${p.ielComp[k]}%"></i>`).join('')}</span></td><td class="n"><span class="classe c${p.ielClasse}">${p.iel}</span></td></tr>`).join('') || '<tr><td colspan="6" class="vazio">Nenhuma liderança neste recorte.</td></tr>';
   };
@@ -133,15 +136,13 @@ T.acordos = (main) => {
       <article class="kpi"><p class="rotulo">Com documento</p><p class="numero">${fN.format(A.filter((a) => a.negociado && a.contrato).length)}<small> de ${fN.format(A.filter((a) => a.negociado).length)}</small></p><p class="sub">Gastos com contrato ou recibo anexado. É opcional.</p></article>
       <article class="kpi"><p class="rotulo">Na prestação de contas</p><p class="numero">${fP.format(A.length ? (A.filter((a) => a.spce).length / A.length) * 100 : 0)}%</p><p class="sub">Dos gastos já lançados no sistema de contas do TSE (SPCE).</p></article>
     </section>
-    <p class="faixa lei">O tipo de cada gasto vem de uma lista fechada de gastos que a campanha pode fazer e declarar. Não existe campo para voto. Oferecer vantagem em troca de voto é crime eleitoral (Lei 9.504/1997, art. 41-A).</p>
-    <div class="tab-rolagem"><table class="tab clicavel"><thead><tr><th>Com quem</th><th>Tipo de gasto</th><th class="n">Combinado</th><th class="n">Pago</th><th>Situação</th><th>Documento</th><th>Aprovação</th></tr></thead><tbody id="t-ac">
+    <section class="cartao"><header><h2>Para onde foi o dinheiro</h2><p>Valor pago por tipo de gasto e nas cidades que mais receberam.</p></header><div class="grade-2 sem-margem"><div><p class="rotulo">Por tipo de gasto</p><div id="g-gasto-tipo"></div></div><div><p class="rotulo">Por cidade</p><div id="g-gasto-cid"></div></div></div></section>
+    <div class="tab-rolagem" data-titulo="Gastos registrados"><table class="tab clicavel"><thead><tr><th>Com quem</th><th>Tipo de gasto</th><th class="n">Combinado</th><th class="n">Pago</th><th>Situação</th><th>Documento</th><th>Aprovação</th></tr></thead><tbody id="t-ac">
     ${A.map((a) => { const p = CIC.idx.porId.get(a.pessoa); return `<tr data-id="${a.id}" tabindex="0"><td><b>${esc(CIC.nomeVisivel(p))}</b><small>${esc(CIC.nomeMun(p.mun))}</small></td><td>${esc(nomeObj(a.objeto))}</td><td class="n">${fR.format(a.negociado)}</td><td class="n">${fR.format(pago(a))}</td><td><span class="situ a-${situacao(a).replace(' ', '-')}">${esc(situacao(a))}</span></td><td>${a.negociado ? (a.contrato ? 'anexado' : '<span class="pend">sem</span>') : '-'}</td><td>${a.aprovou ? (a.aprovou === a.registrou ? '<b class="ruim">mesma pessoa</b>' : esc(a.aprovou)) : '<span class="pend">aguardando</span>'}</td></tr>`; }).join('')}</tbody></table></div>
-    <section class="grade-2">
-      <article class="cartao"><header><h2>Pessoal contratado por município</h2><p>Coordenação e mobilização contratadas, contra o limite de referência da Lei 9.504/1997, art. 100-A: até 30 mil eleitores, 1% do eleitorado; acima, 300 mais 1 a cada mil eleitores que passam de 30 mil.</p></header>
+    <p class="faixa lei">O tipo de cada gasto vem de uma lista fechada de gastos que a campanha pode fazer e declarar. Não existe campo para voto. Oferecer vantagem em troca de voto é crime eleitoral (Lei 9.504/1997, art. 41-A).</p>
+    <section class="cartao"><header><h2>Pessoal contratado por município</h2><p>Coordenação e mobilização contratadas, contra o limite de referência da Lei 9.504/1997, art. 100-A: até 30 mil eleitores, 1% do eleitorado; acima, 300 mais 1 a cada mil eleitores que passam de 30 mil.</p></header>
       <table class="tab"><thead><tr><th>Município</th><th class="n">Contratados</th><th class="n">Limite de referência</th></tr></thead><tbody>${porMun.map(([c, n]) => `<tr><td>${esc(CIC.nomeMun(c))}</td><td class="n">${fN.format(n)}</td><td class="n">${fN.format(CIC.limiteContratacao(CIC.mun(c).eleit))}</td></tr>`).join('') || '<tr><td colspan="3" class="vazio">Nenhuma contratação no recorte.</td></tr>'}</tbody></table>
-      <p class="ajuda">Para Deputado, Senador, Governador e Presidente, o limite oficial sai da tabela que o TSE publica a cada eleição (em 2026, a Portaria TSE nº 444/2026). A versão completa carrega essa tabela. Aqui, o eleitorado é estimado.</p></article>
-      <article class="cartao"><header><h2>Para onde foi o dinheiro</h2><p>Valor pago por tipo de gasto e nas cidades que mais receberam.</p></header><p class="rotulo">Por tipo de gasto</p><div id="g-gasto-tipo"></div><p class="rotulo mt">Por cidade</p><div id="g-gasto-cid"></div></article>
-    </section>`;
+      <p class="ajuda">Para Deputado, Senador, Governador e Presidente, o limite oficial sai da tabela que o TSE publica a cada eleição (em 2026, a Portaria TSE nº 444/2026). A versão completa carrega essa tabela. Aqui, o eleitorado é estimado.</p></section>`;
     const abrir = (e) => { const tr = e.target.closest('tr[data-id]'); if (tr && (e.type === 'click' || e.key === 'Enter')) ficha(CIC.s.acordos.find((a) => a.id === tr.dataset.id)); };
     $('#t-ac').addEventListener('click', abrir); $('#t-ac').addEventListener('keydown', abrir);
     $('#novo-acordo')?.addEventListener('click', novo);
@@ -161,13 +162,13 @@ T.acordos = (main) => {
       <p class="rotulo mt">Pagamentos</p><ul class="historico">${a.pagamentos.map((x) => `<li><time>${fDA.format(x.data)}</time> ${fR.format(x.valor)} · ${esc(x.forma)} · ${x.comprovante ? 'com comprovante' : 'sem comprovante'}</li>`).join('') || '<li class="vazio">Nenhum pagamento.</li>'}</ul>
       ${escreve && a.negociado ? `<form class="form-pag" id="f-pag"><div class="linha-campos"><label>Valor (R$)<input name="valor" type="number" min="1" step="1" required inputmode="numeric"></label><label>Forma<select name="forma"><option>PIX</option><option>Transferência</option><option>Espécie</option></select></label></div>
         <label class="marca"><input type="checkbox" name="comp"> Comprovante anexado</label><button class="bt">Registrar pagamento</button></form>` : ''}
-      ${escreve && !a.aprovou ? `<button class="bt sec mt" id="aprovar">Aprovar como ${esc(usuario === a.registrou ? 'Financeiro 2' : usuario)}</button><p class="ajuda">Na demonstração, o perfil Financeiro aprova como "Financeiro 2" se foi ele que registrou.</p>` : ''}`;
+      ${escreve && !a.aprovou ? (usuario === a.registrou ? '<p class="ajuda mt">Você registrou este gasto. Outra pessoa com acesso total aprova.</p>' : `<button class="bt sec mt" id="aprovar">Aprovar como ${esc(usuario)}</button><p class="ajuda">Quem registrou o gasto não aprova o mesmo gasto.</p>`) : ''}`;
     CIC.gaveta(`<div id="fa">${html()}</div>`, (corpo) => {
       const ligar = () => {
         corpo.querySelector('#f-pag')?.addEventListener('submit', (e) => { e.preventDefault(); const f = new FormData(e.target); const v = Math.round(+f.get('valor')); if (!(v > 0)) return;
           if (pago(a) + v > a.negociado) { CIC.aviso(`O pagamento passa o valor combinado em ${fR.format(pago(a) + v - a.negociado)}. Registre um aditivo antes.`); return; }
           a.pagamentos.push({ data: Date.now(), valor: v, forma: f.get('forma'), comprovante: !!f.get('comp') }); CIC.audit('Registrou pagamento', `${a.id}, ${fR.format(v)}`); CIC.gravar(); corpo.querySelector('#fa').innerHTML = html(); ligar(); desenhar(); });
-        corpo.querySelector('#aprovar')?.addEventListener('click', () => { const quem = usuario === a.registrou ? 'Financeiro 2' : usuario; if (quem === a.registrou) { CIC.aviso('Quem registrou não pode aprovar.'); return; } a.aprovou = quem; CIC.audit('Aprovou gasto', a.id); CIC.gravar(); corpo.querySelector('#fa').innerHTML = html(); ligar(); desenhar(); });
+        corpo.querySelector('#aprovar')?.addEventListener('click', () => { const quem = usuario; if (quem === a.registrou) { CIC.aviso('Quem registrou não pode aprovar.'); return; } a.aprovou = quem; CIC.audit('Aprovou gasto', a.id); CIC.gravar(); corpo.querySelector('#fa').innerHTML = html(); ligar(); desenhar(); });
       };
       ligar();
     });
@@ -322,12 +323,25 @@ T.cenMeta = (el) => {
 
 /* ---------- ALERTAS ---------- */
 T.alertas = (main) => {
-  const A = CIC.alertas();
-  main.innerHTML = `${CIC.cabecalho('Avisos', 'O que precisa de decisão agora', `${fN.format(A.length)} alertas abertos em ${esc(CIC.nomeEscopo())}. A ordem é pela gravidade. Na versão completa, cada alerta vai por e-mail ou notificação para o responsável do grupo.`)}
-  <ul class="lista-alertas grande">${A.map((a) => `<li>${CIC.selo(a.sev)}<div><b>${esc(a.regra)}</b><p>${esc(a.texto)}</p></div>${CIC.pode(a.rota.split('?')[0]) ? `<a class="bt sec peq" href="#/${a.rota}">Abrir</a>` : ''}</li>`).join('') || '<li class="vazio">Nenhum alerta aberto.</li>'}</ul>
-  <section class="cartao"><header><h2>Regras ativas</h2><p>Cada regra tem limite, responsável e canal. O coordenador ajusta o limite do próprio grupo.</p></header>
-  <table class="tab"><thead><tr><th>Regra</th><th>Dispara quando</th><th>Gravidade</th></tr></thead><tbody>
-  ${[['Liderança parada', 'Rede com 15 pessoas ou mais e 0 cadastro em 14 dias', 'alerta'], ['Queda de ritmo', 'Cadastros em 7 dias abaixo de 80% dos 7 dias anteriores', 'alerta'], ['Município grande sem rede', 'Município com 50 mil habitantes ou mais e nenhum contato', 'alerta'], ['Subgrupo fora do grupo-pai', 'Município do subgrupo não está no grupo-pai e não foi aceito como exceção', 'alerta'], ['Sobreposição de grupos', 'Mesmo município em 2 grupos do mesmo nível', 'alerta'], ['Pagamento sem contrato', 'Pagamento registrado em acordo sem contrato', 'critico'], ['Aprovação pela mesma pessoa', 'Quem registrou também aprovou', 'critico'], ['Pagamento em espécie', 'Qualquer pagamento em dinheiro vivo', 'grave'], ['Pagamento sem comprovante', 'Pagamento sem arquivo de comprovante', 'grave'], ['Contratação acima do limite', 'Pessoal contratado no município passa o limite da Lei 9.504/1997, art. 100-A', 'critico']].map(([a, b, c]) => `<tr><td><b>${a}</b></td><td>${b}</td><td>${CIC.selo(c)}</td></tr>`).join('')}</tbody></table></section>`;
+  const A = CIC.alertas(); const perfil = CIC.PERFIS[CIC.s.perfil]; const lider = !!perfil.soPropriaRede;
+  const REGRAS = [
+    ['Liderança parada', 'Rede com 15 pessoas ou mais e 0 cadastro em 14 dias', 'alerta', 'rede'],
+    ['Queda de ritmo', 'Cadastros em 7 dias abaixo de 80% dos 7 dias anteriores', 'alerta', 'rede'],
+    ['Celular a confirmar', 'Pessoa que ainda não confirmou o celular pelo código do WhatsApp', 'info', 'rede'],
+    ['Sem consentimento de contato', 'Pessoa que não autorizou mensagens', 'info', 'rede'],
+    ['Município grande sem rede', 'Município com 50 mil habitantes ou mais e nenhum contato', 'alerta', 'mapa'],
+    ['Subgrupo fora do grupo-pai', 'Município do subgrupo não está no grupo-pai e não foi aceito como exceção', 'alerta', 'mapa'],
+    ['Sobreposição de grupos', 'Mesmo município em 2 grupos do mesmo nível', 'alerta', 'mapa'],
+    ['Aprovação pela mesma pessoa', 'Quem registrou o gasto também aprovou', 'alerta', 'dinheiro'],
+    ['Pagamento em dinheiro vivo', 'Pagamento feito em espécie', 'alerta', 'dinheiro'],
+    ['Gasto sem documento', 'Gasto pago sem contrato nem recibo anexado (é opcional)', 'info', 'dinheiro'],
+    ['Pagamento sem comprovante', 'Pagamento sem arquivo de comprovante', 'info', 'dinheiro'],
+  ].filter((r) => r[3] === 'rede' || (!lider && (r[3] === 'mapa' || perfil.financeiro)));
+  main.innerHTML = `${CIC.cabecalho('Avisos', 'O que precisa de decisão agora', `${A.length === 1 ? '1 aviso aberto' : `${fN.format(A.length)} avisos abertos`} ${lider ? 'na sua rede' : `em ${esc(CIC.nomeEscopo())}`}. O mais grave vem primeiro.`)}
+  <ul class="lista-alertas grande" data-titulo="Avisos abertos">${A.map((a) => `<li>${CIC.selo(a.sev)}<div><b>${esc(a.regra)}</b><p>${esc(a.texto)}</p></div>${CIC.pode(a.rota.split('?')[0]) ? `<a class="bt sec peq" href="#/${a.rota}">Abrir</a>` : ''}</li>`).join('') || '<li class="vazio">Nenhum aviso aberto.</li>'}</ul>
+  <section class="cartao"><header><h2>Quando um aviso aparece</h2><p>${lider ? 'Avisos sobre a sua rede.' : 'Cada regra olha a região escolhida no alto.'} Na versão completa, o aviso também chega por e-mail ou notificação.</p></header>
+  <table class="tab"><thead><tr><th>Aviso</th><th>Aparece quando</th><th>Gravidade</th></tr></thead><tbody>
+  ${REGRAS.map(([a, b, c]) => `<tr><td><b>${a}</b></td><td>${b}</td><td>${CIC.selo(c)}</td></tr>`).join('')}</tbody></table></section>`;
 };
 
 /* ---------- RELATÓRIOS ---------- */
@@ -338,26 +352,25 @@ const csv = (nome, cab, linhas) => {
 };
 CIC.baixarCSV = csv;
 T.relatorios = (main) => {
-  const fin = CIC.PERFIS[CIC.s.perfil].financeiro;
+  const perfil = CIC.PERFIS[CIC.s.perfil]; const lider = !!perfil.soPropriaRede;
   const R = [
-    ['contatos', 'Pessoas da região', 'Uma linha por pessoa: cidade, quem convidou, fonte inicial, caminho completo de links, canal, redes e situação. Segue as regras do seu perfil.', CIC.pode('contatos')],
-    ['municipios', 'Indicadores por município', 'População, eleitorado estimado, contatos, contatos por 1.000 habitantes, lideranças e cadastros em 7 dias.', true],
-    ['grupos', 'Território: grupos e municípios', 'Cada grupo com nível, grupo-pai e municípios. Serve para conferir a divisão.', true],
-    ['liderancas', 'Lideranças e IEL', 'Rede, indicações diretas, componentes e nota do IEL.', true],
-    ['acordos', 'Gastos e pagamentos', 'Cada gasto com tipo, cidade, combinado, pago, documento e aprovação. Só para quem tem a tela Gastos e pagamentos.', CIC.pode('acordos')],
-    ['auditoria', 'Histórico de ações', 'Quem fez o quê e quando, com perfil e estado.', CIC.pode('auditoria')],
-    ['', 'Boletim diário em PDF', 'Resumo do dia para o candidato: números, alertas e as 10 redes que mais cresceram. Sai às 7h.', false],
-    ['', 'Meta × resultado por seção', 'Depois da apuração: votos por seção contra a meta e o voto atribuído a cada liderança.', false],
-    ['', 'Prestação de contas', 'Despesas com pessoal e serviços, no formato de lançamento do SPCE.', false],
-  ];
-  main.innerHTML = `${CIC.cabecalho('Baixar planilhas', 'Os dados da campanha em planilha', 'Cada planilha usa a região escolhida no alto e as regras do seu perfil. Cada download fica no histórico com o nome de quem baixou.')}
-  <ul class="relatorios">${R.map(([k, t, d, ok]) => `<li><div><b>${t}</b><p>${d}</p></div>${k && ok ? `<button class="bt sec peq" data-r="${k}">Baixar CSV</button>` : `<span class="pend">${k ? 'fora do seu perfil' : 'na versão completa'}</span>`}</li>`).join('')}</ul>`;
+    ['contatos', lider ? 'Pessoas da sua rede' : 'Pessoas', 'Uma linha por pessoa: cidade, quem convidou, fonte inicial, caminho completo de links, canal, redes e celular confirmado.', CIC.pode('contatos')],
+    ['liderancas', lider ? 'Lideranças da sua rede' : 'Lideranças e IEL', 'Rede, indicações diretas, componentes e nota do IEL.', CIC.pode('liderancas')],
+    ['acordos', 'Gastos e pagamentos', 'Cada gasto com tipo, cidade, combinado, pago, documento e aprovação.', CIC.pode('acordos')],
+    ['municipios', 'Pessoas por município', 'População, eleitorado estimado, pessoas na rede e pessoas por 1.000 habitantes.', !lider],
+    ['grupos', 'Regiões e cidades', 'Cada região com nível, região-mãe e cidades. Serve para conferir a divisão.', CIC.pode('territorio')],
+    ['', 'Boletim diário em PDF', 'Resumo do dia para o candidato: números, avisos e as 10 redes que mais cresceram. Sai às 7h.', !lider],
+    ['', 'Meta e resultado por seção', 'Depois da apuração: votos por seção contra a meta e o voto atribuído a cada liderança.', !lider],
+    ['', 'Prestação de contas', 'Despesas com pessoal e serviços, no formato de lançamento do SPCE.', CIC.pode('acordos')],
+  ].filter((x) => x[3]);
+  main.innerHTML = `${CIC.cabecalho('Baixar planilhas', lider ? 'A sua rede em planilha' : 'Os dados da campanha em planilha', lider ? 'Só as pessoas da sua rede entram nas planilhas. Cada download fica no histórico com o seu nome.' : 'Cada planilha usa a região escolhida no alto. Cada download fica no histórico com o nome de quem baixou.')}
+  <ul class="relatorios">${R.map(([k, t, d]) => `<li><div><b>${t}</b><p>${d}</p></div>${k ? `<button class="bt sec peq" data-r="${k}">Baixar CSV</button>` : '<span class="pend">na versão completa</span>'}</li>`).join('')}</ul>`;
   main.querySelector('.relatorios').addEventListener('click', (e) => {
     const b = e.target.closest('[data-r]'); if (!b) return; const v = CIC.noEscopo(); const uf = CIC.s.uf;
     if (b.dataset.r === 'partido') { CIC.ir('partido'); return; }
     if (b.dataset.r === 'auditoria') { CIC.ir('auditoria'); return; }
-    if (b.dataset.r === 'contatos') csv(`contatos-${uf}.csv`, ['codigo', 'nome', 'municipio', 'papel', 'nivel', 'convidado_por', 'fonte_inicial', 'caminho', 'canal', 'redes', 'situacao', 'entrada'], v.map((p) => [p.cod, CIC.nomeVisivel(p), CIC.nomeMun(p.mun), p.papel, p.gen, p.pai != null ? CIC.idx.porId.get(p.pai).cod : '', CIC.rotuloFonte(p), CIC.caminho(p.id).map((x) => x.cod).join(' > '), p.canal, p.redes.map((x) => x.rede).join(' '), p.status, fDA.format(p.entrada)]));
-    if (b.dataset.r === 'municipios') { const c = new Map(); v.forEach((p) => c.set(p.mun, (c.get(p.mun) || 0) + 1)); csv(`municipios-${uf}.csv`, ['ibge', 'municipio', 'populacao_censo_2022', 'eleitorado_estimado', 'contatos', 'contatos_por_mil_hab'], CIC.demo.lista.map((m) => [m.cod, m.nome, m.pop, m.eleit, c.get(m.cod) || 0, fP.format(((c.get(m.cod) || 0) / m.pop) * 1000)])); }
+    if (b.dataset.r === 'contatos') csv(`contatos-${uf}.csv`, ['codigo', 'nome', 'municipio', 'papel', 'nivel', 'convidado_por', 'fonte_inicial', 'caminho', 'canal', 'redes', 'celular_confirmado', 'entrada'], v.map((p) => [p.cod, CIC.nomeVisivel(p), CIC.nomeMun(p.mun), p.papel, p.gen, p.pai != null ? CIC.idx.porId.get(p.pai).cod : '', CIC.rotuloFonte(p), CIC.caminho(p.id).map((x) => x.cod).join(' > '), p.canal, p.redes.map((x) => x.rede).join(' '), p.status === 'confirmado' ? 'sim' : 'nao', fDA.format(p.entrada)]));
+    if (b.dataset.r === 'municipios') { const c = new Map(); v.forEach((p) => c.set(p.mun, (c.get(p.mun) || 0) + 1)); csv(`municipios-${uf}.csv`, ['ibge', 'municipio', 'populacao_censo_2022', 'eleitorado_estimado', 'pessoas', 'pessoas_por_mil_hab'], CIC.demo.lista.map((m) => [m.cod, m.nome, m.pop, m.eleit, c.get(m.cod) || 0, fP.format(((c.get(m.cod) || 0) / m.pop) * 1000)])); }
     if (b.dataset.r === 'grupos') csv(`territorio-${uf}.csv`, ['grupo', 'nivel', 'grupo_pai', 'ibge', 'municipio'], CIC.s.grupos.flatMap((g) => g.munis.map((c) => [g.nome, CIC.s.niveis[g.nivel], g.pai ? CIC.grupo(g.pai)?.nome : '', c, CIC.nomeMun(c)])));
     if (b.dataset.r === 'liderancas') csv(`liderancas-${uf}.csv`, ['codigo', 'nome', 'municipio', 'diretas', 'rede', 'novos_14d', 'volume', 'qualidade', 'adesao', 'multiplicacao', 'ritmo', 'iel', 'classe'], CIC.lideres.filter((p) => v.includes(p)).map((p) => [p.cod, CIC.nomeVisivel(p), CIC.nomeMun(p.mun), p.diretos, p.rede, p.n14, p.ielComp.vol, p.ielComp.qua, p.ielComp.ade, p.ielComp.mul, p.ielComp.rit, p.iel, p.ielClasse]));
     if (b.dataset.r === 'acordos') csv(`gastos-${uf}.csv`, ['gasto', 'com_quem', 'cidade', 'tipo_de_gasto', 'combinado', 'pago', 'documento', 'registrou', 'aprovou'], CIC.s.acordos.map((a) => { const p = CIC.idx.porId.get(a.pessoa); return [a.id, CIC.nomeVisivel(p), CIC.nomeMun(p.mun), nomeObj(a.objeto), a.negociado, pago(a), a.contrato ? 'sim' : 'nao', a.registrou, a.aprovou || '']; }));

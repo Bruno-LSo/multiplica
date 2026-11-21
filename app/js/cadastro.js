@@ -137,6 +137,7 @@ T.cadastro = (main, r) => {
   const quemCurto = ref.papel === 'candidato' ? 'A campanha' : ref.nome.split(' ')[0];
   const ini = ref.papel === 'candidato' ? 'C' : CIC.iniciais(ref.nome);
   const redes = []; let cidade = null;
+  const refMun = ref.papel === 'candidato' ? null : CIC.munBR().porCod.get(ref.mun);
   main.innerHTML = `<div class="cad"><header class="cad-topo"><div class="marca-cad">${CIC.SIMBOLO}<b>Multiplica</b></div><span class="quem"><span class="av">${esc(ini)}</span>${esc(quemCurto)} te chamou</span><h1>Faça parte da rede</h1>
     <p>Entre na rede de apoio de <b>${esc(CIC.campAtual().nome)}</b> (${esc(CIC.CARGOS[CIC.s.cargo].nome)}). Só 3 campos são obrigatórios: nome, celular e cidade.</p></header>
     <form id="cad" class="form" novalidate autocomplete="on">
@@ -146,7 +147,7 @@ T.cadastro = (main, r) => {
       <div class="campo"><div class="tel-linha"><select id="c-pais" aria-label="País do celular">${CIC.PAISES.map(([sig, nome, ddi]) => `<option value="${ddi}" ${sig === 'BR' ? 'selected' : ''}>${esc(nome)} +${ddi}</option>`).join('')}</select>
         <input id="c-tel" name="tel" inputmode="tel" autocomplete="tel-national" placeholder="(11) 91234-5678"></div><p class="grava" id="g-tel"></p></div>
       <label for="c-cidade">Cidade onde vota <em>obrigatório</em></label>
-      <div class="campo combo" id="combo-cidade"><input id="c-cidade" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="lista-cidade" autocomplete="off" placeholder="Digite o nome da cidade"><ul id="lista-cidade" role="listbox" hidden></ul><p class="grava" id="g-cidade"></p></div>
+      <div class="campo combo" id="combo-cidade"><input id="c-cidade" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="lista-cidade" autocomplete="off" placeholder="Digite o nome da cidade"><ul id="lista-cidade" role="listbox" hidden></ul>${refMun ? `<button type="button" class="sugestao" id="c-mesma">Mesma cidade de ${esc(quemCurto)}: ${esc(refMun.nome)} - ${esc(refMun.uf)}</button>` : ''}<p class="grava" id="g-cidade"></p></div>
       <details class="opcionais"><summary>Mais dados (opcional): e-mail, CPF e endereço</summary>
         <label for="c-email">E-mail</label>
         <div class="campo"><input id="c-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="maria@gmail.com"><p class="grava" id="g-email"></p></div>
@@ -168,7 +169,7 @@ T.cadastro = (main, r) => {
       <p class="erro" id="cad-erro" role="alert"></p>
       <button class="bt grande">Entrar na rede</button>
       <p class="ajuda">Demonstração: o cadastro fica só neste navegador. Na versão real, um código por SMS confirma o celular.</p>
-    </form>${CIC.s.usuario ? '<a class="ligacao" href="#/painel">Voltar ao início</a>' : ''}</div>`;
+    </form>${CIC.s.usuario ? '<a class="ligacao" href="#/painel">Voltar ao início</a>' : '<a class="ligacao" href="#/entrar">Versão de exemplo: voltar aos perfis para testar</a>'}</div>`;
 
   const g = (id, texto, ok) => { const el = $('#g-' + id); el.innerHTML = texto; el.className = 'grava' + (texto ? (ok ? ' ok' : ' erro') : ''); };
   const nomeIn = $('#c-nome'), pais = $('#c-pais'), tel = $('#c-tel'), email = $('#c-email'), cpf = $('#c-cpf'), cep = $('#c-cep');
@@ -183,7 +184,9 @@ T.cadastro = (main, r) => {
   cpf.addEventListener('input', () => { cpf.value = N.mascaraCpf(cpf.value); if (N.digitos(cpf.value).length === 11) verCpf(); else g('cpf', ''); });
   cpf.addEventListener('blur', verCpf);
 
-  const combo = CIC.comboCidade($('#combo-cidade'), (m) => { cidade = m; g('cidade', m ? `Fica gravado assim: <b>${esc(m.nome)} - ${esc(m.uf)}</b> (código IBGE ${m.cod})` : '', true); }, CIC.munBR().porCod.get(ref.mun));
+  const combo = CIC.comboCidade($('#combo-cidade'), (m) => { cidade = m; const sug = $('#c-mesma'); if (sug) sug.hidden = !!m; g('cidade', m ? `Fica gravado assim: <b>${esc(m.nome)} - ${esc(m.uf)}</b> (código IBGE ${m.cod})` : '', true); });
+  $('#c-mesma')?.addEventListener('pointerdown', (e) => { e.preventDefault(); combo.definir(refMun); });
+  $('#c-mesma')?.addEventListener('click', () => combo.definir(refMun));
 
   cep.addEventListener('input', async () => {
     cep.value = N.mascaraCep(cep.value);
@@ -245,6 +248,7 @@ T.cadastro = (main, r) => {
         ${p.email ? `<div><dt>E-mail</dt><dd>${esc(p.email)}</dd></div>` : ''}${p.cpf ? `<div><dt>CPF</dt><dd>${esc(cp.rotulo)}</dd></div>` : ''}${endereco ? `<div><dt>Endereço</dt><dd>${esc([endereco.logradouro, endereco.numero, endereco.complemento, endereco.bairro, endereco.cep ? N.cep(endereco.cep).rotulo : ''].filter(Boolean).join(', '))}</dd></div>` : ''}
         ${redes.length ? `<div><dt>Redes</dt><dd>${redes.map((x) => esc(CIC.REDES[x.rede].nome + ' ' + x.id)).join(' · ')}</dd></div>` : ''}</dl></div>
       <p class="cadeia">Você é o <b>${fN.format(p.gen)}º elo</b> desta rede. A campanha vê de quem veio cada convite, até a fonte inicial.</p>
+      ${CIC.s.usuario ? '' : `<a class="ligacao" href="#/entrar">Versão de exemplo: voltar aos perfis para testar.${ref.papel === 'candidato' ? '' : ` Entre como ${esc(quemCurto)} e veja a sua entrada em Quem entrou agora.`}</a>`}
       </div>`;
   });
 };
