@@ -209,6 +209,8 @@ CIC.distribuir = (partidos, vagas) => {
   res.forEach((p) => (p.total = p.qp + p.sobra));
   return { validos, qe, res };
 };
+// escreve a saída nas partes fixas da seção; a divisão de tela não perde o lugar de cada parte
+const encher = (id, html) => html.split('<!--parte-->').forEach((h, i) => { const a = document.getElementById(id + '-' + i); if (a) a.innerHTML = h; });
 T.cenarios = (main, r) => {
   const aba = r.sub || 'quociente';
   const abas = [['quociente', 'Quociente e sobras'], ['aliancas', 'Alianças'], ['dobradinha', 'Dobradinha'], ['meta', 'Meta de votos']];
@@ -227,23 +229,23 @@ T.cenQuociente = (el) => {
     { let lo = 0, hi = d.qe * 2; const alvo = nosso.total + 1;
       const teste = (x) => CIC.distribuir(st.partidos.map((p, i) => (i === st.nosso ? { ...p, votos: p.votos + x } : p)), st.vagas).res[st.nosso].total >= alvo;
       if (teste(hi)) { while (hi - lo > 1) { const m = (lo + hi) >> 1; if (teste(m)) hi = m; else lo = m; } falta = hi; } }
-    el.querySelector('#q-saida').innerHTML = `
+    encher('q-saida', `
       <div class="grade-kpi tres"><article class="kpi"><p class="rotulo">Votos válidos</p><p class="numero">${fN.format(d.validos)}</p><p class="sub">Soma dos votos dos partidos e federações da tabela.</p></article>
       <article class="kpi"><p class="rotulo">Quociente eleitoral</p><p class="numero">${fN.format(d.qe)}</p><p class="sub">Votos válidos ÷ ${fN.format(st.vagas)} vagas. Partido com 80% do quociente (${fN.format(Math.ceil(d.qe * 0.8))} votos) entra nas sobras.</p></article>
-      <article class="kpi heroi-p"><p class="rotulo">${esc(nosso.nome)}</p><p class="numero">${fN.format(nosso.total)}<small> cadeiras</small></p><p class="sub">${falta != null ? `Faltam <b>${fN.format(falta)} votos</b> para a ${fN.format(nosso.total + 1)}ª cadeira.` : 'Mais uma cadeira pede mais de 2 quocientes de votos.'}</p></article></div>
+      <article class="kpi heroi-p"><p class="rotulo">${esc(nosso.nome)}</p><p class="numero">${fN.format(nosso.total)}<small> cadeiras</small></p><p class="sub">${falta != null ? `Faltam <b>${fN.format(falta)} votos</b> para a ${fN.format(nosso.total + 1)}ª cadeira.` : 'Mais uma cadeira pede mais de 2 quocientes de votos.'}</p></article></div><!--parte-->
       <div class="tab-rolagem"><table class="tab"><thead><tr><th>Partido ou federação</th><th class="n">Votos</th><th class="n">Parte dos votos válidos</th><th class="n">Pelo quociente</th><th class="n">Pelas sobras</th><th class="n">Cadeiras</th></tr></thead>
       <tbody>${d.res.map((p, i) => `<tr class="${i === st.nosso ? 'nosso' : ''}"><td>${esc(p.nome)}${p.votos < 0.8 * d.qe ? ' <small>abaixo de 80% do quociente</small>' : ''}</td><td class="n">${fN.format(p.votos)}</td><td class="n">${fP.format((p.votos / d.validos) * 100)}%</td><td class="n">${p.qp}</td><td class="n">${p.sobra}</td><td class="n"><b>${p.total}</b></td></tr>`).join('')}</tbody></table></div>
-      <p class="ajuda">Regra simulada: cadeiras pelo quociente partidário; depois, sobras pela maior média entre quem tem 80% do quociente; se ainda sobrar vaga, maior média entre todos (decisão do STF de 2024). A versão completa também aplica o mínimo de votos de cada candidato (10% e 20% do quociente).</p>`;
+      <p class="ajuda">Regra simulada: cadeiras pelo quociente partidário; depois, sobras pela maior média entre quem tem 80% do quociente; se ainda sobrar vaga, maior média entre todos (decisão do STF de 2024). A versão completa também aplica o mínimo de votos de cada candidato (10% e 20% do quociente).</p>`);
   };
-  el.innerHTML = `<div class="cen-grade"><aside class="cartao"><h2>Entradas</h2>
+  el.className = 'cen-grade'; el.innerHTML = `<aside class="cartao"><h2>Entradas</h2>
     <label>Vagas em disputa<input type="number" id="q-vagas" min="1" value="${st.vagas}"></label>
     <label>Seu partido<select id="q-nosso">${st.partidos.map((p, i) => `<option value="${i}" ${i === st.nosso ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></label>
     <p class="rotulo mt">Votos por partido ou federação</p>
     <ul class="entradas">${st.partidos.map((p, i) => `<li><span>${esc(p.nome)}</span><input type="number" min="0" data-i="${i}" value="${p.votos}" aria-label="Votos de ${esc(p.nome)}"></li>`).join('')}</ul>
-    <p class="ajuda">Votos iniciais: 66% do eleitorado estimado de ${esc(s.uf)}, divididos entre partidos fictícios. Vagas: ${esc(CIC.CARGOS[cargo].nome)} em ${esc(s.uf)}.</p></aside><section id="q-saida"></section></div>`;
-  el.querySelector('#q-vagas').addEventListener('input', (e) => { st.vagas = Math.max(1, +e.target.value || 1); desenhar(); });
-  el.querySelector('#q-nosso').addEventListener('change', (e) => { st.nosso = +e.target.value; desenhar(); });
-  el.querySelectorAll('.entradas input').forEach((i) => i.addEventListener('input', () => { st.partidos[+i.dataset.i].votos = Math.max(0, +i.value || 0); desenhar(); }));
+    <p class="ajuda">Votos iniciais: 66% do eleitorado estimado de ${esc(s.uf)}, divididos entre partidos fictícios. Vagas: ${esc(CIC.CARGOS[cargo].nome)} em ${esc(s.uf)}.</p></aside><section id="q-saida"><div id="q-saida-0" data-titulo="Resultado"></div><div id="q-saida-1" data-titulo="Cadeiras por partido"></div></section>`;
+  document.querySelector('#q-vagas').addEventListener('input', (e) => { st.vagas = Math.max(1, +e.target.value || 1); desenhar(); });
+  document.querySelector('#q-nosso').addEventListener('change', (e) => { st.nosso = +e.target.value; desenhar(); });
+  document.querySelectorAll('.entradas input').forEach((i) => i.addEventListener('input', () => { st.partidos[+i.dataset.i].votos = Math.max(0, +i.value || 0); desenhar(); }));
   desenhar();
 };
 T.cenAliancas = (el) => {
@@ -253,22 +255,22 @@ T.cenAliancas = (el) => {
     const A = s.aliados; const esp = (a) => Math.round(a.base * taxa[a.forca] / 100);
     const tot = A.reduce((x, a) => x + esp(a), 0);
     const porG = nv0.map((g) => ({ rotulo: g.nome, valor: A.filter((a) => g.munis.includes(a.mun)).reduce((x, a) => x + esp(a), 0) })).filter((x) => x.valor).sort((a, b) => b.valor - a.valor);
-    el.querySelector('#al-saida').innerHTML = `<div class="grade-kpi tres"><article class="kpi heroi-p"><p class="rotulo">Votos esperados dos aliados</p><p class="numero">${fN.format(tot)}</p><p class="sub">Soma de base × taxa de transferência de ${fN.format(A.length)} aliados.</p></article>
+    encher('al-saida', `<div class="grade-kpi tres"><article class="kpi heroi-p"><p class="rotulo">Votos esperados dos aliados</p><p class="numero">${fN.format(tot)}</p><p class="sub">Soma de base × taxa de transferência de ${fN.format(A.length)} aliados.</p></article>
       <article class="kpi"><p class="rotulo">Aliados fortes</p><p class="numero">${fN.format(A.filter((a) => a.forca === 'forte').length)}</p><p class="sub">Com taxa de ${taxa.forte}% sobre a base.</p></article>
-      <article class="kpi"><p class="rotulo">Base somada dos aliados</p><p class="numero">${fN.format(A.reduce((x, a) => x + a.base, 0))}</p><p class="sub">Votos dos aliados na última eleição (fictícios).</p></article></div>
-      <div class="grade-2"><article class="cartao"><header><h2>Votos esperados por ${esc(s.niveis[0].toLowerCase())}</h2><p>Grupos do nível 1 do território.</p></header><div id="al-g"></div></article>
+      <article class="kpi"><p class="rotulo">Base somada dos aliados</p><p class="numero">${fN.format(A.reduce((x, a) => x + a.base, 0))}</p><p class="sub">Votos dos aliados na última eleição (fictícios).</p></article></div><!--parte-->
+      <article class="cartao"><header><h2>Votos esperados por ${esc(s.niveis[0].toLowerCase())}</h2><p>Grupos do nível 1 do território.</p></header><div id="g-aliados"></div></article><!--parte-->
       <article class="cartao"><header><h2>Aliados</h2><p>Mude a força de cada um para refazer a conta.</p></header><div class="tab-rolagem"><table class="tab"><thead><tr><th>Aliado</th><th>Município</th><th class="n">Base</th><th>Força</th><th class="n">Esperado</th></tr></thead><tbody>
-      ${A.map((a, i) => `<tr><td><b>${esc(a.nome)}</b><small>${esc(a.cargo)} · ${esc(a.partido)}</small></td><td>${esc(CIC.nomeMun(a.mun))}</td><td class="n">${fN.format(a.base)}</td><td><select data-i="${i}" aria-label="Força">${['forte', 'média', 'fraca'].map((f) => `<option ${f === a.forca ? 'selected' : ''}>${f}</option>`).join('')}</select></td><td class="n">${fN.format(esp(a))}</td></tr>`).join('')}</tbody></table></div></article></div>`;
-    if (porG.length) G.barrasH(el.querySelector('#al-g'), porG.slice(0, 12), { base: 'dos votos esperados dos aliados' }); else el.querySelector('#al-g').innerHTML = '<p class="vazio">Crie grupos no Território para ver esta divisão.</p>';
-    el.querySelectorAll('select[data-i]').forEach((x) => x.addEventListener('change', () => { s.aliados[+x.dataset.i].forca = x.value; CIC.gravar(); desenhar(); }));
+      ${A.map((a, i) => `<tr><td><b>${esc(a.nome)}</b><small>${esc(a.cargo)} · ${esc(a.partido)}</small></td><td>${esc(CIC.nomeMun(a.mun))}</td><td class="n">${fN.format(a.base)}</td><td><select data-i="${i}" aria-label="Força">${['forte', 'média', 'fraca'].map((f) => `<option ${f === a.forca ? 'selected' : ''}>${f}</option>`).join('')}</select></td><td class="n">${fN.format(esp(a))}</td></tr>`).join('')}</tbody></table></div></article>`);
+    if (porG.length) G.barrasH(document.querySelector('#g-aliados'), porG.slice(0, 12), { base: 'dos votos esperados dos aliados' }); else document.querySelector('#g-aliados').innerHTML = '<p class="vazio">Crie grupos no Território para ver esta divisão.</p>';
+    document.querySelectorAll('select[data-i]').forEach((x) => x.addEventListener('change', () => { s.aliados[+x.dataset.i].forca = x.value; CIC.gravar(); desenhar(); }));
   };
-  el.innerHTML = `<div class="cen-grade"><aside class="cartao"><h2>Taxa de transferência</h2><p class="ajuda">Parte dos votos do aliado que deve vir para a candidatura. Ajuste pela experiência da região.</p>
+  el.className = 'cen-grade'; el.innerHTML = `<aside class="cartao"><h2>Taxa de transferência</h2><p class="ajuda">Parte dos votos do aliado que deve vir para a candidatura. Ajuste pela experiência da região.</p>
     <ul class="pesos">${Object.keys(taxa).map((k) => `<li><label for="tx-${k}">Aliado ${k}</label><input type="range" id="tx-${k}" min="0" max="60" value="${taxa[k]}"><output>${taxa[k]}%</output></li>`).join('')}</ul>
     <p class="rotulo mt">Novo aliado</p><form id="f-al" class="form"><label>Nome<input name="nome" required></label><label>Cargo<select name="cargo"><option>Prefeito</option><option>Vereador</option><option>Liderança comunitária</option><option>Deputado estadual</option></select></label>
     <label>Município<input name="mun" list="al-mun" required></label><datalist id="al-mun">${CIC.demo.lista.map((m) => `<option value="${esc(m.nome)}">`).join('')}</datalist>
-    <label>Votos na última eleição<input name="base" type="number" min="0" required></label><label>Força<select name="forca"><option>forte</option><option selected>média</option><option>fraca</option></select></label><button class="bt">Incluir aliado</button></form></aside><section id="al-saida"></section></div>`;
-  Object.keys(taxa).forEach((k) => { const i = el.querySelector('#tx-' + k); i.addEventListener('input', () => { taxa[k] = +i.value; i.nextElementSibling.textContent = i.value + '%'; desenhar(); }); });
-  el.querySelector('#f-al').addEventListener('submit', (e) => { e.preventDefault(); const f = new FormData(e.target); const m = CIC.demo.lista.find((x) => x.nome.toLowerCase() === String(f.get('mun')).trim().toLowerCase()); if (!m) { CIC.aviso('Escolha um município da lista.'); return; }
+    <label>Votos na última eleição<input name="base" type="number" min="0" required></label><label>Força<select name="forca"><option>forte</option><option selected>média</option><option>fraca</option></select></label><button class="bt">Incluir aliado</button></form></aside><section id="al-saida"><div id="al-saida-0" data-titulo="Resultado"></div><div id="al-saida-1"></div><div id="al-saida-2"></div></section>`;
+  Object.keys(taxa).forEach((k) => { const i = document.querySelector('#tx-' + k); i.addEventListener('input', () => { taxa[k] = +i.value; i.nextElementSibling.textContent = i.value + '%'; desenhar(); }); });
+  document.querySelector('#f-al').addEventListener('submit', (e) => { e.preventDefault(); const f = new FormData(e.target); const m = CIC.demo.lista.find((x) => x.nome.toLowerCase() === String(f.get('mun')).trim().toLowerCase()); if (!m) { CIC.aviso('Escolha um município da lista.'); return; }
     s.aliados.unshift({ id: 'a' + Date.now(), nome: f.get('nome'), cargo: f.get('cargo'), mun: m.cod, base: +f.get('base'), forca: f.get('forca'), partido: 'informado' }); CIC.audit('Incluiu aliado', f.get('nome')); CIC.gravar(); e.target.reset(); desenhar(); });
   desenhar();
 };
@@ -284,20 +286,20 @@ T.cenDobradinha = (el) => {
     const ganhoM = (x) => Math.max(0, x.b / SB - x.a / SA) * SB * (st.tx / 100);
     const ganho = Math.round(A.reduce((s, x) => s + ganhoM(x), 0));
     const top = A.map((x) => ({ ...x, g: ganhoM(x) })).sort((p, q) => q.g - p.g).slice(0, 10);
-    el.querySelector('#d-saida').innerHTML = `<div class="grade-kpi tres">
+    encher('d-saida', `<div class="grade-kpi tres">
       <article class="kpi"><p class="rotulo">Base em comum</p><p class="numero">${fP.format(sobre)}%</p><p class="sub">Parte da votação das duas candidaturas que cai nos mesmos municípios. Quanto menor, mais uma completa a outra.</p></article>
       <article class="kpi"><p class="rotulo">Correlação entre as votações</p><p class="numero">${corr.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p class="sub">Votos por eleitor, município a município (de -1 a 1). Perto de 1: as duas bases são fortes nos mesmos lugares.</p></article>
-      <article class="kpi heroi-p"><p class="rotulo">Ganho estimado</p><p class="numero">+${fN.format(ganho)}<small> votos</small></p><p class="sub">${st.tx}% da votação extra do parceiro nos municípios onde ele é mais forte que a nossa base.</p></article></div>
-      <div class="grade-2"><article class="cartao"><header><h2>Onde trabalhar a dobradinha</h2><p>Os 10 municípios com maior ganho estimado.</p></header><table class="tab"><thead><tr><th>Município</th><th class="n">Nossos votos</th><th class="n">Votos do parceiro</th><th class="n">Ganho</th></tr></thead><tbody>${top.map((x) => `<tr><td>${esc(x.m.nome)}</td><td class="n">${fN.format(x.a)}</td><td class="n">${fN.format(x.b)}</td><td class="n">+${fN.format(Math.round(x.g))}</td></tr>`).join('')}</tbody></table></article>
-      <article class="cartao"><header><h2>Por ${esc(CIC.s.niveis[0].toLowerCase())}</h2><p>Ganho estimado em cada grupo do nível 1.</p></header><div id="d-g"></div></article></div>`;
+      <article class="kpi heroi-p"><p class="rotulo">Ganho estimado</p><p class="numero">+${fN.format(ganho)}<small> votos</small></p><p class="sub">${st.tx}% da votação extra do parceiro nos municípios onde ele é mais forte que a nossa base.</p></article></div><!--parte-->
+      <article class="cartao"><header><h2>Onde trabalhar a dobradinha</h2><p>Os 10 municípios com maior ganho estimado.</p></header><table class="tab"><thead><tr><th>Município</th><th class="n">Nossos votos</th><th class="n">Votos do parceiro</th><th class="n">Ganho</th></tr></thead><tbody>${top.map((x) => `<tr><td>${esc(x.m.nome)}</td><td class="n">${fN.format(x.a)}</td><td class="n">${fN.format(x.b)}</td><td class="n">+${fN.format(Math.round(x.g))}</td></tr>`).join('')}</tbody></table></article><!--parte-->
+      <article class="cartao"><header><h2>Por ${esc(CIC.s.niveis[0].toLowerCase())}</h2><p>Ganho estimado em cada grupo do nível 1.</p></header><div id="g-dobra"></div></article>`);
     const porG = nv0.map((g) => { const set = new Set(g.munis); return { rotulo: g.nome, valor: Math.round(A.filter((x) => set.has(x.m.cod)).reduce((s, x) => s + ganhoM(x), 0)) }; }).filter((x) => x.valor).sort((a, b) => b.valor - a.valor);
-    if (porG.length) G.barrasH(el.querySelector('#d-g'), porG.slice(0, 12), { base: 'do ganho estimado' }); else el.querySelector('#d-g').innerHTML = '<p class="vazio">Crie grupos no Território para ver esta divisão.</p>';
+    if (porG.length) G.barrasH(document.querySelector('#g-dobra'), porG.slice(0, 12), { base: 'do ganho estimado' }); else document.querySelector('#g-dobra').innerHTML = '<p class="vazio">Crie grupos no Território para ver esta divisão.</p>';
   };
-  el.innerHTML = `<div class="cen-grade"><aside class="cartao"><h2>Parceiro</h2><label>Candidatura parceira<select id="d-par">${d.parceiros.map((p, i) => `<option value="${i}" ${i === st.par ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select></label>
+  el.className = 'cen-grade'; el.innerHTML = `<aside class="cartao"><h2>Parceiro</h2><label>Candidatura parceira<select id="d-par">${d.parceiros.map((p, i) => `<option value="${i}" ${i === st.par ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select></label>
     <ul class="pesos"><li><label for="d-tx">Transferência</label><input type="range" id="d-tx" min="0" max="60" value="${st.tx}"><output>${st.tx}%</output></li></ul>
-    <p class="ajuda">Base: resultado de referência por município (fictício nesta demonstração; na versão completa, a votação oficial do TSE por seção). A dobradinha junta candidaturas de cargos diferentes, como Deputado Federal e Deputado Estadual, que pedem voto juntas.</p></aside><section id="d-saida"></section></div>`;
-  el.querySelector('#d-par').addEventListener('change', (e) => { st.par = +e.target.value; desenhar(); });
-  el.querySelector('#d-tx').addEventListener('input', (e) => { st.tx = +e.target.value; e.target.nextElementSibling.textContent = st.tx + '%'; desenhar(); });
+    <p class="ajuda">Base: resultado de referência por município (fictício nesta demonstração; na versão completa, a votação oficial do TSE por seção). A dobradinha junta candidaturas de cargos diferentes, como Deputado Federal e Deputado Estadual, que pedem voto juntas.</p></aside><section id="d-saida"><div id="d-saida-0" data-titulo="Resultado"></div><div id="d-saida-1"></div><div id="d-saida-2"></div></section>`;
+  document.querySelector('#d-par').addEventListener('change', (e) => { st.par = +e.target.value; desenhar(); });
+  document.querySelector('#d-tx').addEventListener('input', (e) => { st.tx = +e.target.value; e.target.nextElementSibling.textContent = st.tx + '%'; desenhar(); });
   desenhar();
 };
 T.cenMeta = (el) => {
@@ -308,16 +310,16 @@ T.cenMeta = (el) => {
     const pesoG = nv0.map((g) => { const set = new Set(g.munis); const el2 = g.munis.reduce((a, c) => a + (CIC.mun(c)?.eleit || 0), 0); const ref = g.munis.reduce((a, c) => a + (CIC.demo.ref[c]?.nos || 0), 0); return { g, set, el2, ref }; });
     const somaRef = pesoG.reduce((a, x) => a + x.ref, 0) || 1;
     const linhas = pesoG.map((x) => { const meta = Math.round(st.votos * x.ref / somaRef); const cont = v.filter((p) => x.set.has(p.mun)).length; const lid = CIC.lideres.filter((p) => x.set.has(p.mun)).length; const pc = Math.ceil(meta / st.vpc); const pl = Math.ceil(pc / st.cpl); return { ...x, meta, cont, lid, pc, pl, gap: pc - cont }; }).sort((a, b) => b.gap - a.gap);
-    el.querySelector('#m-saida').innerHTML = `<div class="grade-kpi tres"><article class="kpi heroi-p"><p class="rotulo">Meta de votos</p><p class="numero">${fN.format(st.votos)}</p><p class="sub">Dividida pelos grupos na proporção da votação de referência.</p></article>
+    encher('m-saida', `<div class="grade-kpi tres"><article class="kpi heroi-p"><p class="rotulo">Meta de votos</p><p class="numero">${fN.format(st.votos)}</p><p class="sub">Dividida pelos grupos na proporção da votação de referência.</p></article>
       <article class="kpi"><p class="rotulo">Contatos necessários</p><p class="numero">${fN.format(Math.ceil(st.votos / st.vpc))}</p><p class="sub">Meta ÷ ${st.vpc} votos por contato. Hoje: ${fN.format(v.length)} contatos.</p></article>
-      <article class="kpi"><p class="rotulo">Lideranças necessárias</p><p class="numero">${fN.format(Math.ceil(st.votos / st.vpc / st.cpl))}</p><p class="sub">Contatos ÷ ${st.cpl} por liderança. Hoje: ${fN.format(CIC.lideres.length)}.</p></article></div>
+      <article class="kpi"><p class="rotulo">Lideranças necessárias</p><p class="numero">${fN.format(Math.ceil(st.votos / st.vpc / st.cpl))}</p><p class="sub">Contatos ÷ ${st.cpl} por liderança. Hoje: ${fN.format(CIC.lideres.length)}.</p></article></div><!--parte-->
       <table class="tab"><thead><tr><th>${esc(s.niveis[0])}</th><th class="n">Meta de votos</th><th class="n">Contatos: meta</th><th class="n">Contatos: hoje</th><th class="n">Falta</th><th class="n">Lideranças: meta / hoje</th></tr></thead>
-      <tbody>${linhas.map((x) => `<tr><td>${esc(x.g.nome)}</td><td class="n">${fN.format(x.meta)}</td><td class="n">${fN.format(x.pc)}</td><td class="n">${fN.format(x.cont)}</td><td class="n">${x.gap > 0 ? `<b class="ruim">${fN.format(x.gap)}</b>` : 'meta batida'}</td><td class="n">${fN.format(x.pl)} / ${fN.format(x.lid)}</td></tr>`).join('') || '<tr><td colspan="6" class="vazio">Crie grupos no Território.</td></tr>'}</tbody></table>`;
+      <tbody>${linhas.map((x) => `<tr><td>${esc(x.g.nome)}</td><td class="n">${fN.format(x.meta)}</td><td class="n">${fN.format(x.pc)}</td><td class="n">${fN.format(x.cont)}</td><td class="n">${x.gap > 0 ? `<b class="ruim">${fN.format(x.gap)}</b>` : 'meta batida'}</td><td class="n">${fN.format(x.pl)} / ${fN.format(x.lid)}</td></tr>`).join('') || '<tr><td colspan="6" class="vazio">Crie grupos no Território.</td></tr>'}</tbody></table>`);
   };
-  el.innerHTML = `<div class="cen-grade"><aside class="cartao"><h2>Entradas</h2><label>Meta de votos<input type="number" id="m-v" min="0" value="${st.votos}"></label>
+  el.className = 'cen-grade'; el.innerHTML = `<aside class="cartao"><h2>Entradas</h2><label>Meta de votos<input type="number" id="m-v" min="0" value="${st.votos}"></label>
     <label>Votos por contato<input type="number" id="m-vpc" min="0.5" step="0.5" value="${st.vpc}"></label><label>Contatos por liderança<input type="number" id="m-cpl" min="1" value="${st.cpl}"></label>
-    <p class="ajuda">Votos por contato: quantos votos cada contato cadastrado traz, com a família e o círculo próximo. Depois da eleição, a plataforma mede este número por seção e corrige a meta do ciclo seguinte.</p></aside><section id="m-saida"></section></div>`;
-  [['m-v', 'votos'], ['m-vpc', 'vpc'], ['m-cpl', 'cpl']].forEach(([id, k]) => el.querySelector('#' + id).addEventListener('input', (e) => { st[k] = Math.max(+e.target.min || 0, +e.target.value || 0) || st[k]; desenhar(); }));
+    <p class="ajuda">Votos por contato: quantos votos cada contato cadastrado traz, com a família e o círculo próximo. Depois da eleição, a plataforma mede este número por seção e corrige a meta do ciclo seguinte.</p></aside><section id="m-saida"><div id="m-saida-0" data-titulo="Resultado"></div><div id="m-saida-1" data-titulo="Meta por grupo"></div></section>`;
+  [['m-v', 'votos'], ['m-vpc', 'vpc'], ['m-cpl', 'cpl']].forEach(([id, k]) => document.querySelector('#' + id).addEventListener('input', (e) => { st[k] = Math.max(+e.target.min || 0, +e.target.value || 0) || st[k]; desenhar(); }));
   desenhar();
 };
 

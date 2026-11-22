@@ -8,7 +8,7 @@
 (() => {
 const { $, esc } = CIC;
 CIC.paginaTela = {};
-const NAO_ABRE = '.fazer, .cartao, .kpi, form, table, fieldset, article, header, nav, ul, ol, dl, svg, .mini-mapa, .mapa, .tab-rolagem, .link-pessoal';
+const NAO_ABRE = '.terr-mapa, .fazer, .cartao, .kpi, form, table, fieldset, article, header, nav, ul, ol, dl, svg, .mini-mapa, .mapa, .tab-rolagem, .link-pessoal';
 const alt = (el) => { const cs = getComputedStyle(el); return el.getBoundingClientRect().height + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom); };
 const umaColuna = (el) => {
   const cs = getComputedStyle(el);
@@ -43,7 +43,7 @@ const paginar = (el, por) => {
   el._obs.observe(corpo, { childList: true });
   aplicar();
 };
-const PAGINAVEIS = 'table, ul.lista-alertas, ul.relatorios, ol.historico, ul.controles';
+const PAGINAVEIS = 'table, ol.feed, ul.lista-alertas, ul.relatorios, ol.historico, ul.controles';
 const soltarTabelas = (raiz) => raiz.querySelectorAll(PAGINAVEIS).forEach((t) => { t._obs?.disconnect(); t._obs = null; t._barra?.remove(); t._barra = null; itensDe(t).forEach((x) => { if (x.hidden) x.hidden = false; }); });
 
 const caberTabelas = (main, blocos, H) => {
@@ -52,7 +52,7 @@ const caberTabelas = (main, blocos, H) => {
     .sort((a, b) => b.getBoundingClientRect().height - a.getBoundingClientRect().height).forEach((t) => {
       const excesso = usado() - H; if (excesso <= 2) return;
       const L = itensDe(t); const h = t.getBoundingClientRect().height / L.length || 40;
-      const por = Math.max(3, L.length - Math.ceil((excesso + 44) / h));
+      const por = Math.max(h > 70 ? 2 : 3, L.length - Math.ceil((excesso + 52) / h));
       if (por < L.length) paginar(t, por);
     });
 };
@@ -75,12 +75,18 @@ CIC.ajustar = (main = $('#principal')) => {
   const util = Math.floor(H + 48);
   if (Math.abs((CIC._altoUtil || 0) - util) > 8) {
     CIC._altoUtil = util; main.style.setProperty('--alto-util', util + 'px');
-    if (main.querySelector('.terr, .cen-grade') && innerWidth > 1020 && !CIC._reajuste) { CIC._reajuste = true; ajustando = false; CIC.render(); CIC._reajuste = false; return; }
+    if ((main.querySelector('.terr') || (main.querySelector('.cen-grade') && innerWidth > 1020)) && !CIC._reajuste) { CIC._reajuste = true; ajustando = false; CIC.render(); CIC._reajuste = false; return; }
   }
   // abre blocos de uma coluna que sozinhos passam da altura
   for (let volta = 0; volta < 3; volta++) {
     let mudou = false;
     blocos = blocos.flatMap((b) => {
+      // invólucro de um filho só (colunas da tela de trabalho): abre o filho, mantendo os dois níveis
+      const unico = b.children.length === 1 ? b.children[0] : null;
+      if (unico && alt(b) > H && !b.matches(NAO_ABRE) && !unico.matches(NAO_ABRE) && unico.children.length > 1 && !unico.children[0].matches('h1, h2, h3, header, legend') && umaColuna(unico)) {
+        const novos = [...unico.children].map((f, k) => { const w = b.cloneNode(false); const w2 = unico.cloneNode(false); if (k) { w.removeAttribute('id'); w2.removeAttribute('id'); } w2.appendChild(f); w.appendChild(w2); return w; });
+        b.replaceWith(...novos); mudou = true; return novos;
+      }
       const filhosB = [...b.children];
       if (alt(b) <= H || b.matches(NAO_ABRE) || filhosB.length < 2 || filhosB[0].matches('h1, h2, h3, header, legend') || !umaColuna(b)) return [b];
       const novos = filhosB.map((f, k) => { const w = b.cloneNode(false); if (k) w.removeAttribute('id'); w.appendChild(f); return w; });

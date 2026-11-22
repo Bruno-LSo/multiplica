@@ -391,23 +391,7 @@ T.territorio = async (main, r) => {
   ${CIC.cabecalho('Mapa e regiões · ' + CIC.nomeUF(s.uf), 'Regiões e cidades da campanha', `Divida o estado em até ${s.niveis.length} níveis, com os nomes que quiser. Cada nível fica dentro do anterior. Se uma cidade ficar fora da região de cima, a plataforma avisa. Nomes das cidades: IBGE.`,
     s.store[s.camp].ufs.length > 1 ? `<div class="cab-acoes"><span class="faixa">Estado em uso: troque no seletor "Estado", no alto.</span></div>` : '')}
   <div class="terr">
-    <aside class="terr-lado">
-      <div class="bloco">
-        <h2>Níveis</h2>
-        <ol class="niveis">${s.niveis.map((n, i) => `<li><span class="nv">${i + 1}</span><input value="${esc(n)}" data-nivel="${i}" aria-label="Nome do nível ${i + 1}" ${podeEditar ? '' : 'disabled'}></li>`).join('')}</ol>
-        <p class="ajuda">Exemplos: Regional, Unidade, Posto. Ou GRE, UGI, UOP. Ou Região, Cidade, Bairro.</p>
-      </div>
-      <div class="bloco">
-        <div class="bloco-cab"><h2>Grupos</h2>${podeEditar ? '<button class="bt peq" id="novo-grupo">Novo grupo…</button>' : ''}</div>
-        <div class="arvore" id="arvore"></div>
-      </div>
-      <div class="bloco" id="avisos-terr"></div>
-      ${podeEditar ? `<div class="bloco"><h2>Ponto de partida</h2><div class="pilha">
-        <button class="bt sec" id="ibge">Usar as regiões do IBGE…</button><button class="bt sec" id="zerar">Começar do zero…</button>
-        <button class="bt sec" id="exportar">Exportar divisão (JSON)</button><label class="bt sec arquivo">Importar divisão…<input type="file" id="importar" accept="application/json"></label></div>
-        <p class="ajuda">As regiões do IBGE montam 2 níveis de uma vez: regiões intermediárias e imediatas.</p></div>` : ''}
-    </aside>
-    <section class="terr-mapa">
+    <section class="terr-mapa" data-titulo="Mapa">
       <div class="barra-mapa">
         <div class="seletor-mun">
           <button class="bt" id="abrir-sel" aria-expanded="false" aria-controls="sel-pop">Escolher municípios</button>
@@ -428,6 +412,22 @@ T.territorio = async (main, r) => {
       <div class="mapa" id="mapa"><p class="carregando">Carregando o mapa do IBGE…</p></div>
       <div class="rodape-mapa"><div id="leg-mapa" class="legenda"></div><p class="ajuda" id="ajuda-mapa"></p></div>
     </section>
+    <aside class="terr-lado">
+      <div class="bloco">
+        <h2>Níveis</h2>
+        <ol class="niveis">${s.niveis.map((n, i) => `<li><span class="nv">${i + 1}</span><input value="${esc(n)}" data-nivel="${i}" aria-label="Nome do nível ${i + 1}" ${podeEditar ? '' : 'disabled'}></li>`).join('')}</ol>
+        <p class="ajuda">Exemplos: Regional, Unidade, Posto. Ou GRE, UGI, UOP. Ou Região, Cidade, Bairro.</p>
+      </div>
+      <div class="bloco">
+        <div class="bloco-cab"><h2>Grupos</h2>${podeEditar ? '<button class="bt peq" id="novo-grupo">Novo grupo…</button>' : ''}</div>
+        <div class="arvore" id="arvore"></div>
+      </div>
+      <div class="bloco" id="avisos-terr"></div>
+      ${podeEditar ? `<div class="bloco"><h2>Ponto de partida</h2><div class="pilha">
+        <button class="bt sec" id="ibge">Usar as regiões do IBGE…</button><button class="bt sec" id="zerar">Começar do zero…</button>
+        <button class="bt sec" id="exportar">Exportar divisão (JSON)</button><label class="bt sec arquivo">Importar divisão…<input type="file" id="importar" accept="application/json"></label></div>
+        <p class="ajuda">As regiões do IBGE montam 2 níveis de uma vez: regiões intermediárias e imediatas.</p></div>` : ''}
+    </aside>
     <aside class="terr-det" id="detalhe"></aside>
   </div>`;
   const v = CIC.todas().filter((p) => p.gen > 0);
